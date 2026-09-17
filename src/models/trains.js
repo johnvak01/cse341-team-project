@@ -1,10 +1,13 @@
-//src/models/trains.js. 
-import Train from "../train.js";
+import { getDb } from '../db/connect.js';
 
 export async function getTrainById(id) {
-  return Train.findOne({ id }).lean();
+    const db = getDb();
+    return db.collection('trains').findOne({ id });
 }
 
 export async function getAllTrains() {
-  return Train.find({}).lean();
+    const db = getDb();
+    return db.collection('trains').find({}).toArray();
 }
+
+

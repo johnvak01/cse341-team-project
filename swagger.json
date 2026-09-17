@@ -1,0 +1,67 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Books API",
+    "version": "1.0.0",
+    "description": "A simple API for working with books"
+  },
+  "servers": [
+    {
+      "url": "/api/",
+      "description": "Current server"
+    }
+  ],
+  "paths": {
+    "/trains": {
+      "get": {
+        "tags": [
+          "Trains"
+        ],
+        "summary": "Get all trains",
+        "description": "Returns every train in the trains collection",
+        "responses": {
+          "200": {
+            "description": "Trains retrieved successfully"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/trains/{id}": {
+      "get": {
+        "tags": [
+          "Trains"
+        ],
+        "summary": "Get a train by ID",
+        "description": "Returns one train matching the requested ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the train to retrieve, such as t1",
+            "schema": {
+              "type": "string"
+            },
+            "example": "t1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Train retrieved successfully."
+          },
+          "404": {
+            "description": "Train was not found."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    }
+  },
+  "components": {},
+  "tags": []
+}
