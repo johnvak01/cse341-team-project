@@ -1,11 +1,11 @@
 import { getDb } from "../db/connect.js";
 
 export default async (req, res) => {
-    const { confirmationId } = req.params;
+    const { bookingId } = req.params;
 
     const confirmation = await getDb()
-        .collection("confirmations")
-        .findOne({ id: confirmationId });
+        .collection("bookings")
+        .findOne({ id: bookingId });
 
     res.render("trips/confirm", {
         title: "Trip Confirmation",

@@ -29,7 +29,7 @@ const processBookingRequest = async (req, res) => {
         createdAt: new Date().toISOString(),
         ...req.body
     };
-    await getDb().collection('confirmations').insertOne(confirmation);
+    await getDb().collection('bookings').insertOne(confirmation);
 
     res.redirect(`/trips/confirmation/${confirmation.id}`);
 };
