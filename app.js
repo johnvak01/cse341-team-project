@@ -3,7 +3,7 @@ import Path from "path";
 import { fileURLToPath } from "url";
 import pkg from "./package.json" with { type: "json" };
 import globalMiddleware from "./src/middleware/global.js";
-import routes from "./src/routes/api-routes.js";
+import routes from "./src/routes/router.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerDoc from "./swagger.json" with { type: "json" };
 
