@@ -48,7 +48,7 @@ router.get('/trains/:id', getTrainById);
 
 /**
  * @openapi
- * /api/bookings:
+ * /bookings:
  *   get:
  *     summary: Get all bookings
  *     tags:
@@ -59,6 +59,6 @@ router.get('/trains/:id', getTrainById);
  *       500:
  *         description: Unable to retrieve bookings
  */
-router.get('/api/bookings', getAllBookings);
+router.get('/bookings', getAllBookings);
 
 export default router;

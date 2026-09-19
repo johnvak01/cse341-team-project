@@ -95,6 +95,7 @@ const hookBookingCatalog = async () => {
     const errorEl = document.getElementById('bookings-error');
 
     if (!listEl || !templateEl) {
+        console.log("not booking page");
         return;
     }
 
@@ -104,20 +105,15 @@ const hookBookingCatalog = async () => {
             throw new Error(`Failed to load bookings (${response.status})`);
         }
 
-        const payload = await response.json();
-        const bookings = payload.booking || [];
+        const bookings = await response.json();
         const fragment = document.createDocumentFragment();
-
+        console.log("bookings: ", bookings);
         bookings.forEach((booking) => {
             const card = templateEl.content.cloneNode(true);
-            // const imageEl = card.querySelector('[data-field="image"]');
 
-            imageEl.src = train.imageUrl;
-            imageEl.alt = train.imageAlt || `${train.name} train`;
-
-            card.querySelector('[data-field="name"]').textContent = booking.firstName + " " + booking.lastName;
-            card.querySelector('[data-field="email"]').textContent = booking.email;
-            card.querySelector('[data-field="email"]').textContent = booking.trainId;
+            card.querySelector('[data-field="name"]').textContent = booking.passenger.firstName + " " + booking.passenger.lastName;
+            card.querySelector('[data-field="email"]').textContent = booking.passenger.email;
+            card.querySelector('[data-field="trainId"]').textContent = booking.trainId;
             card.querySelector('[data-field="bookingDate"]').textContent = booking.bookingDate;
 
             fragment.appendChild(card);
@@ -128,6 +124,7 @@ const hookBookingCatalog = async () => {
             loadingEl.hidden = true;
         }
     } catch (error) {
+        console.log("error: ", error);
         if (loadingEl) {
             loadingEl.hidden = true;
         }

@@ -61,7 +61,7 @@
         }
       }
     },
-    "/api/bookings": {
+    "/bookings": {
       "get": {
         "summary": "Get all bookings",
         "tags": [
