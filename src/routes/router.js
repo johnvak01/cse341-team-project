@@ -5,6 +5,6 @@ import ejsRoutes from "./ejs-routes.js";
 const router = Router();
 
 router.use("/", ejsRoutes);
-router.use("/api", apiRoutes);
+router.use("/", apiRoutes);
 
 export default router;

@@ -3,15 +3,16 @@ import { getAllTrains, getTrainById } from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
-    getSchedulesForTrip,
-    getSchedulesForTripAndMonth,
+    getSchedulesByTripId,
+    getSchedulesByTripAndMonth,
+    validateMonth,
 } from "../controllers/schedules.js";
 
 const router = Router();
 
 /**
  * @openapi
- * /trains:
+ * /api/trains:
  *   get:
  *     tags:
  *       - Trains
@@ -23,11 +24,11 @@ const router = Router();
  *       '500':
  *         description: Internal server error
  */
-router.get("/trains", getAllTrains);
+router.get("/api/trains", getAllTrains);
 
 /**
  * @openapi
- * /trains/{id}:
+ * /api/trains/{id}:
  *   get:
  *     tags:
  *       - Trains
@@ -37,10 +38,10 @@ router.get("/trains", getAllTrains);
  *       - name: id
  *         in: path
  *         required: true
- *         description: The ID of the train to retrieve, such as t1
+ *         description: The ID of the train to retrieve, such as kiha-261
  *         schema:
  *           type: string
- *         example: t1
+ *         example: kiha-261
  *     responses:
  *       '200':
  *         description: Train retrieved successfully.
@@ -49,9 +50,48 @@ router.get("/trains", getAllTrains);
  *       '500':
  *         description: Internal server error.
  */
-router.get("/trains/:id", getTrainById);
+router.get("/api/trains/:id", getTrainById);
 
+/**
+ * @openapi
+ * /api/schedules:
+ *   get:
+ *     tags:
+ *       - Schedules
+ *     summary: Get all schedules
+ *     description: Returns every schedule in the schedule collection
+ *     responses:
+ *       '200':
+ *         description: Schedules retrieved successfully
+ *       '500':
+ *         description: Internal server error
+ */
 router.get("/api/schedules", getAllSchedules);
+
+/**
+ * @openapi
+ * /api/schedules/{id}:
+ *   get:
+ *     tags:
+ *       - Schedules
+ *     summary: Get a schedule by ID
+ *     description: Returns one schedule matching the requested ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the schedule to retrieve, such as 1
+ *         schema:
+ *           type: string
+ *         example: 1
+ *     responses:
+ *       '200':
+ *         description: Schedule retrieved successfully.
+ *       '404':
+ *         description: Schedule was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
 router.get("/api/schedules/:id", getScheduleById);
 
 /**
@@ -87,11 +127,11 @@ router.get("/api/schedules/:id", getScheduleById);
  *       '500':
  *         description: Internal server error.
  */
-router.get("/api/trips/:tripId/schedules", (req, res, next) => {
+router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
     if (req.query.month !== undefined) {
-        return getSchedulesForTripAndMonth(req, res, next);
+        return getSchedulesByTripAndMonth(req, res, next);
     }
-    return getSchedulesForTrip(req, res, next);
+    return getSchedulesByTripId(req, res, next);
 });
 
 export default router;
