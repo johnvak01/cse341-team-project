@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getTrainById, trainsApi } from '../controllers/trains.js';
+import { getAllBookings } from '../controllers/bookings.js';
 
 const router = Router();
 
@@ -44,5 +45,20 @@ router.get('/trains', trainsApi);
  *         description: Internal server error.
  */
 router.get('/trains/:id', getTrainById);
+
+/**
+ * @openapi
+ * /api/bookings:
+ *   get:
+ *     summary: Get all bookings
+ *     tags:
+ *       - Bookings
+ *     responses:
+ *       200:
+ *         description: Bookings returned successfully
+ *       500:
+ *         description: Unable to retrieve bookings
+ */
+router.get('/api/bookings', getAllBookings);
 
 export default router;

@@ -1,5 +1,8 @@
 //src/models/schemas/trains.js.
 import mongoose from "mongoose";
+mongoose.set("debug", true);
+
+
 const bookingSchema = new mongoose.Schema({
   _id: {
     type: String,
@@ -33,9 +36,9 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
-  },
-}, 
-{timestamps: true,}
+  }
+}, {collection: "bookings"} 
+// {timestamps: true,}
 );
 
 const Booking = mongoose.model("Booking", bookingSchema);

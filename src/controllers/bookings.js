@@ -52,8 +52,11 @@ const bookingPage = async (req, res) => {
         ticketOptions
     });
 };
+const bookingsPage = (req, res) => {
+    res.render("bookings", { title: "Bookings" });
+};
 
-export { getAllBookings, processBookingRequest, bookingPage };
+export { getAllBookings, processBookingRequest, bookingPage, bookingsPage };
 
 // export const bookingsPage = (req, res) => {
 //     res.render("bookings", { title: "Bookings" });

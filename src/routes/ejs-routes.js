@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { bookingPage, processBookingRequest } from "../controllers/bookings.js";
+import { bookingPage, processBookingRequest, bookingsPage } from "../controllers/bookings.js";
 import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import  railTripsRouter from "./trips.js";
@@ -17,6 +17,9 @@ router.get("/trains", trainsPage);
 
 // Rail trips
 router.use("/trips", railTripsRouter);
+
+//bookings page
+router.get("/bookings-admin", bookingsPage);
 
 // Test 500 error page
 router.get("/500", testErrorPage);
