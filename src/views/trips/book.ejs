@@ -390,6 +390,7 @@
             }
             
             const availableTickets = await response.json();
+            console.log(availableTickets);
             const availableClasses = availableTickets.map(ticket => ticket.class);
 
             ticketLabels.forEach(label => {
@@ -417,23 +418,18 @@
         }
     };
 
-    selectedDayLabels.forEach((dayLabel) => {
-        dayLabel.addEventListener('click', (e) => {
-            e.preventDefault();
-            const currentLabel = e.currentTarget;
+    const dayRadios = document.querySelectorAll('input[name="selectedDay"]');
 
-            selectedDayLabels.forEach((lbl) => {
-                lbl.classList.remove('selected');
-                lbl.querySelector('input').checked = false;
-                lbl.querySelector('input').removeAttribute('checked');
-            });
+    dayRadios.forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+            // 1. Remove 'selected' class from all day labels
+            selectedDayLabels.forEach((lbl) => lbl.classList.remove('selected'));
+            
+            // 2. Add 'selected' class to the currently checked radio's parent label
+            e.target.closest('label').classList.add('selected');
 
-            currentLabel.classList.add('selected');
-            const input = currentLabel.querySelector('input');
-            input.checked = true;
-            input.setAttribute('checked', true);
-
-            updateTicketAvailability(input.value);
+            // 3. Fetch availability for the newly selected day
+            updateTicketAvailability(e.target.value);
         });
     });
 

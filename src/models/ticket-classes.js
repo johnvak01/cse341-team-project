@@ -5,5 +5,8 @@ export const getAllTicketClasses = async () => {
 };
 
 export const getTicketClassesForDay = async (day) => {
-    return TicketClass.find({ availableDays: day });
+    // Use regex for a case-insensitive match
+    return TicketClass.find({ 
+        availableDays: { $regex: new RegExp(`^${day}$`, 'i') } 
+    });
 };
