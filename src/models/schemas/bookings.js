@@ -37,8 +37,8 @@ const bookingSchema = new mongoose.Schema({
     required: true,
     trim: true
   }
-}, {collection: "bookings"} 
-// {timestamps: true,}
+}, { collection: "bookings" },
+  { timestamps: true, }
 );
 
 const Booking = mongoose.model("Booking", bookingSchema);

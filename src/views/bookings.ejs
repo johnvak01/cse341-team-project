@@ -1,33 +1,21 @@
 <%- include('./partials/header') %>
 
 <section class="trains-catalog">
-    <div class="trains-state" id="trains-loading">Loading Bookings...</div>
-    <div class="trains-state trains-error" id="trains-error" hidden></div>
+    <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
+    <div class="trains-state trains-error" id="bookings-error" hidden></div>
 
-    <div class="trains-grid" id="trains-list"></div>
+    <div class="trains-grid" id="bookings-list"></div>
 
     <template id="booking-card-template">
         <article class="trains-card">
             <header class="train-card-header">
                 <h2 data-field="name"></h2>
-                <span class="train-operator" data-field="operator"></span>
+                <span class="train-operator" data-field="email"></span>
             </header>
 
             <p class="train-description" data-field="description"></p>
 
             <dl class="train-specs">
-                <div class="spec-item">
-                    <dt>Passenger First Name</dt>
-                    <dd data-field="firstName"></dd>
-                </div>
-                <div class="spec-item">
-                    <dt>Passenger Last Name</dt>
-                    <dd data-field="lastName"></dd>
-                </div>
-                <div class="spec-item">
-                    <dt>Passenger Email</dt>
-                    <dd data-field="email"></dd>
-                </div>
                 <div class="spec-item">
                     <dt>Train ID</dt>
                     <dd data-field="trainId"></dd>
