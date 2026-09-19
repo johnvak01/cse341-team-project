@@ -1,18 +1,18 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Books API",
+    "title": "Kizuna Rail API",
     "version": "1.0.0",
-    "description": "A simple API for working with books"
+    "description": "API for the Kizuna Rail website."
   },
   "servers": [
     {
-      "url": "/api/",
+      "url": "/",
       "description": "Current server"
     }
   ],
   "paths": {
-    "/trains": {
+    "/api/trains": {
       "get": {
         "tags": [
           "Trains"
@@ -29,7 +29,7 @@
         }
       }
     },
-    "/trains/{id}": {
+    "/api/trains/{id}": {
       "get": {
         "tags": [
           "Trains"
@@ -41,11 +41,11 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "description": "The ID of the train to retrieve, such as t1",
+            "description": "The ID of the train to retrieve, such as kiha-261",
             "schema": {
               "type": "string"
             },
-            "example": "t1"
+            "example": "kiha-261"
           }
         ],
         "responses": {
@@ -54,6 +54,100 @@
           },
           "404": {
             "description": "Train was not found."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/api/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get all schedules",
+        "description": "Returns every schedule in the schedule collection",
+        "responses": {
+          "200": {
+            "description": "Schedules retrieved successfully"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/schedules/{id}": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get a schedule by ID",
+        "description": "Returns one schedule matching the requested ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the schedule to retrieve, such as 1",
+            "schema": {
+              "type": "string"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule retrieved successfully."
+          },
+          "404": {
+            "description": "Schedule was not found."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/api/trips/{tripId}/schedules": {
+      "get": {
+        "tags": [
+          "Schedules"
+        ],
+        "summary": "Get schedules for a trip",
+        "description": "Returns schedules for a trip, with optional month filtering.",
+        "parameters": [
+          {
+            "name": "tripId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "alpine-panorama"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12
+            },
+            "example": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedules were returned successfully."
+          },
+          "400": {
+            "description": "Invalid month value."
+          },
+          "404": {
+            "description": "Trip was not found."
           },
           "500": {
             "description": "Internal server error."
