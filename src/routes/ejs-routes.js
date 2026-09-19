@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { bookingPage, processBookingRequest } from "./book.js";
+import { bookingPage, processBookingRequest } from "../controllers/bookings.js";
 import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import  railTripsRouter from "./trips.js";
