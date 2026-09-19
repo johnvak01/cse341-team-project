@@ -151,10 +151,39 @@ article.route-detail {
                         letter-spacing: 0.05em;
                     }
 
+                    .station-name-row {
+                        display: flex;
+                        align-items: center;
+                        gap: var(--space-xs);
+                    }
+
                     .station-name {
                         font-size: var(--font-size-lg);
                         font-weight: 500;
                         color: var(--clr-primary);
+                    }
+
+                    .station-info-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        padding: 0;
+                        border: 1px solid var(--clr-border);
+                        border-radius: 50%;
+                        background-color: var(--clr-surface);
+                        color: var(--clr-text-secondary);
+                        cursor: pointer;
+                        font-size: var(--font-size-sm);
+                        line-height: 1;
+                        transition: all 0.2s ease;
+
+                        &:hover,
+                        &:focus-visible {
+                            background-color: var(--clr-primary-pale);
+                            color: var(--clr-primary);
+                        }
                     }
                 }
             }
@@ -367,4 +396,92 @@ article.route-detail {
             }
         }
     }
+}
+
+.station-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .station-popup-backdrop {
+        position: absolute;
+        inset: 0;
+        background-color: rgb(0 0 0 / 55%);
+    }
+
+    .station-popup-content {
+        position: relative;
+        max-width: 480px;
+        width: calc(100% - var(--space-xl));
+        max-height: 80vh;
+        overflow-y: auto;
+        background-color: var(--clr-surface);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: var(--space-xl);
+
+        .station-popup-close {
+            position: absolute;
+            top: var(--space-sm);
+            right: var(--space-sm);
+            width: 2rem;
+            height: 2rem;
+            border: none;
+            border-radius: 50%;
+            background-color: transparent;
+            color: var(--clr-text-secondary);
+            font-size: var(--font-size-lg);
+            line-height: 1;
+            cursor: pointer;
+
+            &:hover,
+            &:focus-visible {
+                background-color: var(--clr-primary-pale);
+                color: var(--clr-primary);
+            }
+        }
+
+        .station-popup-name {
+            font-size: var(--font-size-xl);
+            color: var(--clr-text-primary);
+            margin: 0 0 var(--space-xs);
+        }
+
+        .station-popup-meta {
+            font-size: var(--font-size-sm);
+            color: var(--clr-text-muted);
+            margin: 0 0 var(--space-md);
+        }
+
+        .station-popup-description {
+            font-size: var(--font-size-md);
+            color: var(--clr-text-secondary);
+            line-height: var(--line-height-lg);
+            margin: 0 0 var(--space-md);
+        }
+
+        .station-popup-facilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+
+            .facility-badge {
+                background-color: var(--clr-primary-pale);
+                border: 1px solid var(--clr-border);
+                color: var(--clr-text-secondary);
+                padding: calc(var(--space-xs) / 2) var(--space-sm);
+                font-size: var(--font-size-sm);
+                line-height: var(--line-height-sm);
+                border-radius: var(--radius-sm);
+                text-transform: capitalize;
+            }
+        }
+    }
+}
+
+.station-popup[hidden] {
+    display: none;
 }

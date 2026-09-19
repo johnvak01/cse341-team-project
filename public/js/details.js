@@ -87,4 +87,69 @@ const initializeScheduleList = () => {
     loadSchedules(tripId, monthSelect, scheduleGrid, scheduleStatus);
 };
 
-document.addEventListener("DOMContentLoaded", initializeScheduleList);
+const renderStationInfo = (station) => {
+    const facilities = (station.facilities || [])
+        .map((facility) => `<span class="facility-badge">${facility.replace(/_/g, " ")}</span>`)
+        .join("");
+
+    return `
+		<h2 id="stationPopupName" class="station-popup-name">${station.name}</h2>
+		${station.prefecture ? `<p class="station-popup-meta">${station.prefecture}</p>` : ""}
+		${station.description ? `<p class="station-popup-description">${station.description}</p>` : ""}
+		${facilities ? `<div class="station-popup-facilities">${facilities}</div>` : ""}
+	`;
+};
+
+const openStationPopup = async (stationId, popup, popupBody) => {
+    popupBody.innerHTML = "<p>Loading station information...</p>";
+    popup.hidden = false;
+
+    try {
+        const response = await fetch(`/api/stations/${stationId}`);
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const station = await response.json();
+        popupBody.innerHTML = renderStationInfo(station);
+    } catch (error) {
+        console.error("Failed to load station information:", error);
+        popupBody.innerHTML = "<p>Unable to load station information right now.</p>";
+    }
+};
+
+const closeStationPopup = (popup) => {
+    popup.hidden = true;
+};
+
+const initializeStationPopup = () => {
+    const popup = document.getElementById("stationPopup");
+    const popupBody = document.getElementById("stationPopupBody");
+    const infoButtons = document.querySelectorAll(".station-info-btn");
+
+    if (!popup || !popupBody || infoButtons.length === 0) {
+        return;
+    }
+
+    infoButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            openStationPopup(button.dataset.stationId, popup, popupBody);
+        });
+    });
+
+    popup.querySelectorAll("[data-close-popup]").forEach((element) => {
+        element.addEventListener("click", () => closeStationPopup(popup));
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !popup.hidden) {
+            closeStationPopup(popup);
+        }
+    });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    initializeScheduleList();
+    initializeStationPopup();
+});

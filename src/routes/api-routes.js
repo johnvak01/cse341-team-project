@@ -7,6 +7,7 @@ import {
     getSchedulesByTripAndMonth,
     validateMonth,
 } from "../controllers/schedules.js";
+import { getAllStations, getStationById } from "../controllers/stations.js";
 
 const router = Router();
 
@@ -133,5 +134,47 @@ router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
     }
     return getSchedulesByTripId(req, res, next);
 });
+
+/**
+ * @openapi
+ * /api/stations:
+ *   get:
+ *     tags:
+ *       - Stations
+ *     summary: Get all stations
+ *     description: Returns every station in the stations collection
+ *     responses:
+ *       '200':
+ *         description: Stations retrieved successfully
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/stations", getAllStations);
+
+/**
+ * @openapi
+ * /api/stations/{id}:
+ *   get:
+ *     tags:
+ *       - Stations
+ *     summary: Get a station by ID
+ *     description: Returns one station matching the requested ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the station to retrieve, such as nagoya
+ *         schema:
+ *           type: string
+ *         example: nagoya
+ *     responses:
+ *       '200':
+ *         description: Station retrieved successfully.
+ *       '404':
+ *         description: Station was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.get("/api/stations/:id", getStationById);
 
 export default router;
