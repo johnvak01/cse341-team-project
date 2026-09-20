@@ -1,4 +1,5 @@
 <%- include('../partials/header') %>
+
 <h1><%- title %></h1>
 
 <div id="filters">
@@ -6,7 +7,7 @@
     <select id="region-filter">
         <option value="all">All Regions</option>
         <% regions.forEach((region) => { %>
-            <option value="<%= region %>" <%= query.region === region ? 'selected' : '' %>><%= region.charAt(0).toUpperCase() + region.slice(1) %></option>
+            <option value="<%= region %>"><%= region.charAt(0).toUpperCase() + region.slice(1) %></option>
         <% }); %>
     </select>
 
@@ -14,66 +15,157 @@
     <select id="season-filter">
         <option value="all">Any Season</option>
         <% seasons.forEach((season) => { %>
-            <option value="<%= season %>" <%= query.season === season ? 'selected' : '' %>><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
+            <option value="<%= season %>"><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
         <% }); %>
     </select>
 </div>
 
-<div class="routes-grid">
-    <% trips.forEach(trip => { %>
-        <div class="route-card <%= trip.region %>">
-            <div class="route-header">
-                <h2 class="route-name"><%= trip.name %></h2>
-                <span class="route-region"><%= trip.region %></span>
-            </div>
+<!--below generates the trip card info dynamically-->
+<div id="trips-list">
+    <p>Loading trips...</p>
+</div>
 
-            <div class="station-info">
-                <div class="station">
-                    <div class="station-type">From:</div>
-                    <div class="station-name"><%= trip.startStation %></div>
-                </div>
-                <div class="route-arrow">&#8594;</div>
-                <div class="station">
-                    <div class="station-type">To:</div>
-                    <div class="station-name"><%= trip.endStation %></div>
-                </div>
-            </div>
+<template id="trip-card-template">
+    <div class="route-card">
+        <div class="route-header">
+            <h2 class="route-name"></h2>
+            <span class="route-region"></span>
+        </div>
 
-            <div class="route-details">
-                <div class="detail-item">
-                    <span class="detail-icon">&#128337;</span>
-                    <span><span class="detail-label">Duration:</span> <%= trip.duration %></span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-icon">&#128205;</span>
-                    <span><span class="detail-label">Distance:</span> <%= trip.distance %>km</span>
-                </div>
-                <div class="detail-item">
-                    <span class="season-badge season-<%= trip.bestSeason %>">
-                        Best in <%= trip.bestSeason %>
-                    </span>
-                </div>
+        <div class="station-info">
+            <div class="station">
+                <div class="station-type">From:</div>
+                <div class="station-name start-station"></div>
             </div>
-
-            <div class="route-description">
-                <%= trip.description %>
-            </div>
-
-            <div class="highlights">
-                <div class="highlights-list">
-                    <% trip.highlights.forEach(highlight => { %>
-                        <span class="highlight-tag"><%= highlight %></span>
-                    <% }); %>
-                </div>
-            </div>
-                
-            <div class="route-actions">
-                <a href="/trips/<%= trip.id %>" class="view-details-btn">
-                    View Details &amp; Book &#8594;
-                </a>
+            <div class="route-arrow">→</div>
+            <div class="station">
+                <div class="station-type">To:</div>
+                <div class="station-name end-station"></div>
             </div>
         </div>
-    <% }); %>
-</div>
+
+        <div class="route-details">
+            <div class="detail-item">
+                <span class="detail-icon">🕑</span>
+                <span><span class="detail-label">Duration:</span> <span class="trip-duration"></span></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-icon">📍</span>
+                <span><span class="detail-label">Distance:</span> <span class="trip-distance"></span>km</span>
+            </div>
+            <div class="detail-item">
+                <span class="season-badge"></span>
+            </div>
+        </div>
+
+        <div class="route-description"></div>
+
+        <div class="highlights">
+            <div class="highlights-list">
+                <!-- JavaScript will inject highlight tags here -->
+            </div>
+        </div>
+            
+        <div class="route-actions">
+            <a href="" class="view-details-btn">
+                View Details &amp; Book →
+            </a>
+        </div>
+    </div>
+</template>
+
+<!--Script to fetch API endpoint and dynamically populate-->
+<script>
+    const loadTrips = async () => {
+        const tripsCard = document.getElementById('trips-list');
+        const templateTrip = document.getElementById('trip-card-template');
+
+        try {
+            const response = await fetch('/api/trips');
+            
+            if(!response.ok){
+                throw new Error('Failed to retrieve Trips');
+            }
+
+            const trips = await response.json();
+            tripsCard.innerHTML = "";
+
+            if(trips.length === 0){
+                tripsCard.innerHTML = `<p>No trips found.</p>`;
+                return;
+            }
+
+            trips.forEach(trip => {
+                const clone = templateTrip.content.cloneNode(true);
+                
+                const cardWrapper = clone.querySelector('.route-card');
+                if(trip.region) cardWrapper.classList.add(trip.region);
+
+                clone.querySelector('.route-name').textContent = trip.name;
+                clone.querySelector('.route-region').textContent = trip.region;
+                clone.querySelector('.start-station').textContent = trip.startStation;
+                clone.querySelector('.end-station').textContent = trip.endStation;
+                clone.querySelector('.trip-duration').textContent = trip.duration;
+                clone.querySelector('.trip-distance').textContent = trip.distance;
+                clone.querySelector('.route-description').textContent = trip.description;
+
+                const seasonBadge = clone.querySelector('.season-badge');
+                seasonBadge.textContent = `Best in ${trip.bestSeason}`;
+                seasonBadge.classList.add(`season-${trip.bestSeason}`);
+
+                const highlightsList = clone.querySelector('.highlights-list');
+                if (trip.highlights && Array.isArray(trip.highlights)) {
+                    trip.highlights.forEach(highlight => {
+                        const tag = document.createElement('span');
+                        tag.className = 'highlight-tag';
+                        tag.textContent = highlight;
+                        highlightsList.appendChild(tag);
+                    });
+                }
+
+                const viewBtn = clone.querySelector('.view-details-btn');
+                viewBtn.setAttribute('href', `/trips/${trip.id}`);
+
+                tripsCard.appendChild(clone);
+            });
+
+        } catch(error) {
+            console.error('Error running trip hydration process:', error);
+            tripsCard.innerHTML = `<p class="error">Failed to render trips.</p>`;
+        }    
+    }
+
+    // FIXED: Wrapped filtering logic securely into a scoped applyFilters function block
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadTrips();
+
+        const regionFilter = document.getElementById('region-filter');
+        const seasonFilter = document.getElementById('season-filter');
+
+        const applyFilters = () => {
+            const selectedRegion = regionFilter.value;
+            const selectedSeason = seasonFilter.value.toLowerCase();
+            const cards = document.querySelectorAll('#trips-list .route-card');
+
+            cards.forEach(card => {
+                const cardRegion = card.querySelector('.route-region').textContent;
+                const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
+
+                const matchesRegion = (selectedRegion === 'all' || cardRegion === selectedRegion);
+                const matchesSeason = (selectedSeason === 'all' || badgeText.includes(selectedSeason));
+
+                if (matchesRegion && matchesSeason) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        // FIXED: Moved inside the event listener block so elements are found safely
+        regionFilter.addEventListener('change', applyFilters);
+        seasonFilter.addEventListener('change', applyFilters);
+    });
+</script>
 
 <%- include('../partials/footer') %>

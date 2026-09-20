@@ -7,6 +7,7 @@ import {
     getSchedulesByTripAndMonth,
     validateMonth,
 } from "../controllers/schedules.js";
+import { getAllTrips, getTripById } from "../controllers/trips.js"
 
 const router = Router();
 
@@ -133,5 +134,47 @@ router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
     }
     return getSchedulesByTripId(req, res, next);
 });
+
+/**
+ * @openapi
+ * /api/trips:
+ *   get:
+ *     tags:
+ *       - trips
+ *     summary: Get all trips
+ *     description: Returns every trip in the trips collection
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully
+ *       '500':
+ *         description: Internal error 
+ */
+router.get("/api/trips", getAllTrips);
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   get:
+ *     tags:
+ *       - Trips
+ *     summary: Get a trip by ID
+ *     description: Returns one trip matching the requested ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the trip to retrieve, such as alpine-panorama
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     responses:
+ *       '200':
+ *         description: Trip retrieved successfully.
+ *       '404':
+ *         description: Trip was not found
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/trips/:id", getTripById);
 
 export default router;
