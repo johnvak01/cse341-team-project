@@ -3,7 +3,7 @@ import { bookingPage, processBookingRequest, bookingsPage } from "../controllers
 import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
-import { getTripsList, getTripsDetails } from "../controllers/trips.js";
+import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
 
 const router = Router();
