@@ -43,7 +43,7 @@ export async function getTripDetails (req, res) {
     const {tripId} = req.params;
 
     try{
-        const details = await getTripById(tripId);
+        const details = await findTripById(tripId);
 
         if(!details){
             return res.status(404).render("errors/404", {
