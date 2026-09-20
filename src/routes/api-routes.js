@@ -305,7 +305,7 @@ router.get("/api/trips/:id", getTripById);
 
 /**
  * @openapi
- * /bookings:
+ * /api/bookings:
  *   get:
  *     summary: Get all bookings
  *     tags:
