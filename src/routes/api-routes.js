@@ -8,6 +8,7 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js"
+import { getAllBookings } from  "../controllers/bookings.js"
 
 const router = Router();
 
