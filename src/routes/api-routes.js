@@ -18,7 +18,7 @@ const router = Router();
  *       '500':
  *         description: Internal server error
  */
-router.get('/trains', trainsApi);
+router.get('/api/trains', trainsApi);
 
 /**
  * @openapi
@@ -44,7 +44,7 @@ router.get('/trains', trainsApi);
  *       '500':
  *         description: Internal server error.
  */
-router.get('/trains/:id', getTrainById);
+router.get('/api/trains/:id', getTrainById);
 
 /**
  * @openapi
@@ -59,6 +59,6 @@ router.get('/trains/:id', getTrainById);
  *       500:
  *         description: Unable to retrieve bookings
  */
-router.get('/bookings', getAllBookings);
+router.get('/api/bookings', getAllBookings);
 
 export default router;
