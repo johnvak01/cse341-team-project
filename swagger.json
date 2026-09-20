@@ -203,6 +203,22 @@
           }
         }
       }
+    },
+    "/bookings": {
+      "get": {
+        "summary": "Get all bookings",
+        "tags": [
+          "Bookings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Bookings returned successfully"
+          },
+          "500": {
+            "description": "Unable to retrieve bookings"
+          }
+        }
+      }
     }
   },
   "components": {},

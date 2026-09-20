@@ -23,6 +23,11 @@ const connectToDb = async (options = {}) => {
   client = mongoose.connection.getClient();
   database = mongoose.connection.db;
   return database;
+
+  // client = new MongoClient(connectionString);
+  // await client.connect();
+  // database = client.db(databaseName);
+  // return database;
 };
 
 const getDb = () => {

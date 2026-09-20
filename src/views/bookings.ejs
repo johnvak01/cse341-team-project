@@ -1,0 +1,31 @@
+<%- include('./partials/header') %>
+
+<section class="trains-catalog">
+    <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
+    <div class="trains-state trains-error" id="bookings-error" hidden></div>
+
+    <div class="trains-grid" id="bookings-list"></div>
+
+    <template id="booking-card-template">
+        <article class="trains-card">
+            <header class="train-card-header">
+                <h2 data-field="name"></h2>
+                <span class="train-operator" data-field="email">a</span>
+            </header>
+
+            <p class="train-description" data-field="description"></p>
+
+            <dl class="train-specs">
+                <div class="spec-item">
+                    <dt>Train ID</dt>
+                    <dd data-field="trainId"></dd>
+                </div><div class="spec-item">
+                    <dt>Booking Date</dt>
+                    <dd data-field="bookingDate"></dd>
+                </div>
+            </dl>
+        </article>
+    </template>
+</section>
+
+<%- include('./partials/footer') %>

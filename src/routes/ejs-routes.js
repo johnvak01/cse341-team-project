@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { bookingPage, processBookingRequest } from "./book.js";
+import { bookingPage, processBookingRequest, bookingsPage } from "../controllers/bookings.js";
 import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
@@ -17,16 +17,23 @@ router.get("/about", aboutPage);
 // Trains page
 router.get("/trains", trainsPage);
 
+//bookings page
+router.get("/bookings-admin", bookingsPage);
+
 // Test 500 error page
 router.get("/500", testErrorPage);
 
-// Trips list and detail pages
+// Trips List Page
 router.get("/trips", getTripsList);
+
+// Trips Details Page
 router.get("/trips/:tripId", getTripDetails);
 
-// Booking and confirmation pages
+// Book ticket
 router.get("/trips/booking/:scheduleId", bookingPage);
 router.post("/trips/book", processBookingRequest);
+
+// Booking confirmation page
 router.get("/trips/confirmation/:confirmationId", confirmationPage);
 
 export default router;
