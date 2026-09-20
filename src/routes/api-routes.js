@@ -140,7 +140,7 @@ router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
  * /api/trips:
  *   get:
  *     tags:
- *       - trips
+ *       - Trips
  *     summary: Get all trips
  *     description: Returns every trip in the trips collection
  *     responses:
