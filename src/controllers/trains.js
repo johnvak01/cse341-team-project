@@ -1,20 +1,25 @@
 import {
-    getTrainById as findTrainById,
     getAllTrains as findAllTrains,
+    getTrainById as findTrainById,
 } from "../models/trains.js";
 
 export const trainsPage = (req, res) => {
     res.render("trains", { title: "Trains" });
 };
 
-export const trainsApi = async (req, res, next) => {
+export async function getAllTrains(req, res) {
     try {
         const trains = await findAllTrains();
-        return res.json({ trains });
+
+        return res.status(200).json(trains);
     } catch (error) {
-        return next(error);
+        console.error("Error fetching trains:", error);
+
+        return res.status(500).json({
+            error: "Failed to fetch trains",
+        });
     }
-};
+}
 
 export async function getTrainById(req, res) {
     try {
@@ -38,16 +43,3 @@ export async function getTrainById(req, res) {
     }
 }
 
-export async function getAllTrains(req, res) {
-    try {
-        const trains = await findAllTrains();
-
-        return res.status(200).json(trains);
-    } catch (error) {
-        console.error("Error fetching trains:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch trains",
-        });
-    }
-}

@@ -5,13 +5,13 @@ const options = {
     definition: {
         openapi: "3.0.0",
         info: {
-            title: "Books API",
+            title: "Kizuna Rail API",
             version: "1.0.0",
-            description: "A simple API for working with books",
+            description: "API for the Kizuna Rail website.",
         },
         servers: [
             {
-                url: "/api/",
+                url: "/",
                 description: "Current server",
             },
         ],

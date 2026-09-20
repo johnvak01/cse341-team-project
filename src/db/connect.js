@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { MongoClient } from 'mongodb';
 import mongoose from 'mongoose';
 
@@ -20,7 +21,6 @@ const connectToDb = async (options = {}) => {
     dbName: databaseName,
   });
 
-
   client = mongoose.connection.getClient();
   database = mongoose.connection.db;
   return database;
@@ -42,14 +42,9 @@ const closeDb = async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.disconnect();
   }
- 
+
   client = undefined;
   database = undefined;
-//   if (client) {
-//     await client.close();
-//     client = undefined;
-//     database = undefined;
-//   }
 };
 
 export { closeDb, connectToDb, getDb };
