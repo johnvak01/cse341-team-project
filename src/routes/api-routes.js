@@ -7,8 +7,9 @@ import {
     getSchedulesByTripAndMonth,
     validateMonth,
 } from "../controllers/schedules.js";
-import { getAllTrips, getTripById } from "../controllers/trips.js"
-import { getAllBookings } from '../controllers/bookings.js';
+import { getAllStations, getStationById } from "../controllers/stations.js";
+import { getAllTrips, getTripById } from "../controllers/trips.js";
+import { getAllBookings } from "../controllers/bookings.js";
 import { 
     getAllTicketClasses, 
     getTicketClassesForDay 
@@ -142,127 +143,45 @@ router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
 
 /**
  * @openapi
- * /api/trips:
+ * /api/stations:
  *   get:
  *     tags:
- *       - Trips
- *     summary: Get all trips
- *     description: Returns every trip in the trips collection
+ *       - Stations
+ *     summary: Get all stations
+ *     description: Returns every station in the stations collection
  *     responses:
  *       '200':
- *         description: Trips retrieved successfully
+ *         description: Stations retrieved successfully
  *       '500':
- *         description: Internal error 
+ *         description: Internal server error
  */
-router.get("/api/trips", getAllTrips);
+router.get("/api/stations", getAllStations);
 
 /**
  * @openapi
- * /api/trips/{id}:
+ * /api/stations/{id}:
  *   get:
  *     tags:
- *       - Trips
- *     summary: Get a trip by ID
- *     description: Returns one trip matching the requested ID
+ *       - Stations
+ *     summary: Get a station by ID
+ *     description: Returns one station matching the requested ID
  *     parameters:
  *       - name: id
  *         in: path
  *         required: true
- *         description: The ID of the trip to retrieve, such as alpine-panorama
+ *         description: The ID of the station to retrieve, such as nagoya
  *         schema:
  *           type: string
- *           example: alpine-panorama
+ *         example: nagoya
  *     responses:
  *       '200':
- *         description: Trip retrieved successfully.
+ *         description: Station retrieved successfully.
  *       '404':
- *         description: Trip was not found
+ *         description: Station was not found.
  *       '500':
  *         description: Internal server error
  */
-router.get("/api/trips/:id", getTripById);
-
-/**
- * @openapi
- * /api/schedules:
- *   get:
- *     tags:
- *       - Schedules
- *     summary: Get all schedules
- *     description: Returns every schedule in the schedule collection
- *     responses:
- *       '200':
- *         description: Schedules retrieved successfully
- *       '500':
- *         description: Internal server error
- */
-router.get("/api/schedules", getAllSchedules);
-
-/**
- * @openapi
- * /api/schedules/{id}:
- *   get:
- *     tags:
- *       - Schedules
- *     summary: Get a schedule by ID
- *     description: Returns one schedule matching the requested ID
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: The ID of the schedule to retrieve, such as 1
- *         schema:
- *           type: string
- *         example: 1
- *     responses:
- *       '200':
- *         description: Schedule retrieved successfully.
- *       '404':
- *         description: Schedule was not found.
- *       '500':
- *         description: Internal server error.
- */
-router.get("/api/schedules/:id", getScheduleById);
-
-/**
- * @openapi
- * /api/trips/{tripId}/schedules:
- *   get:
- *     tags:
- *       - Schedules
- *     summary: Get schedules for a trip
- *     description: Returns schedules for a trip, with optional month filtering.
- *     parameters:
- *       - name: tripId
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *         example: alpine-panorama
- *       - name: month
- *         in: query
- *         required: false
- *         schema:
- *           type: integer
- *           minimum: 1
- *           maximum: 12
- *         example: 10
- *     responses:
- *       '200':
- *         description: Schedules were returned successfully.
- *       '400':
- *         description: Invalid month value.
- *       '404':
- *         description: Trip was not found.
- *       '500':
- *         description: Internal server error.
- */
-router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
-    if (req.query.month !== undefined) {
-        return getSchedulesByTripAndMonth(req, res, next);
-    }
-    return getSchedulesByTripId(req, res, next);
-});
+router.get("/api/stations/:id", getStationById);
 
 /**
  * @openapi
@@ -276,7 +195,7 @@ router.get("/api/trips/:tripId/schedules", validateMonth, (req, res, next) => {
  *       '200':
  *         description: Trips retrieved successfully
  *       '500':
- *         description: Internal error 
+ *         description: Internal error
  */
 router.get("/api/trips", getAllTrips);
 
