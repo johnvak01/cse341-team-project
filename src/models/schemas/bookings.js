@@ -1,6 +1,5 @@
 //src/models/schemas/trains.js.
 import mongoose from "mongoose";
-mongoose.set("debug", true);
 
 
 const bookingSchema = new mongoose.Schema({
