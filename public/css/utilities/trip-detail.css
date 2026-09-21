@@ -429,10 +429,14 @@ article.route-detail {
             right: var(--space-sm);
             width: 2rem;
             height: 2rem;
+            padding: 0;
             border: none;
             border-radius: 50%;
             background-color: transparent;
             color: var(--clr-text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: var(--font-size-lg);
             line-height: 1;
             cursor: pointer;
