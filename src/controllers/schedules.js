@@ -1,9 +1,9 @@
-import Trip from "../models/schemas/trips.js";
 import {
     getAllSchedules as findAllSchedules,
     getScheduleById as findScheduleById,
     getSchedulesByTripId as findSchedulesByTripId,
 } from "../models/schedules.js";
+import { getTripById as findTripById } from "../models/trips.js";
 
 // --------------------------
 /***HELPER Function***/
@@ -65,7 +65,7 @@ export async function getScheduleById(req, res) {
 export async function getSchedulesByTripId(req, res) {
     try {
         const { tripId } = req.params;
-        const trip = await Trip.findOne({ id: tripId }).lean();
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: `Trip ${tripId} not found` });
         }
@@ -82,7 +82,7 @@ export async function getSchedulesByTripAndMonth(req, res) {
     try {
         const { tripId } = req.params;
         const month = req.month;
-        const trip = await Trip.findOne({ id: tripId }).lean();
+        const trip = await findTripById(tripId);
         if (!trip) {
             return res.status(404).json({ error: `Trip ${tripId} not found` });
         }

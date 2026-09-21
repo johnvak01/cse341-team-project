@@ -335,8 +335,8 @@ router.get('/api/bookings', getAllBookings);
  *         required: false
  *         schema:
  *           type: string
+ *           example: Monday
  *         description: The day of the week to filter ticket availability.
- *         example: Monday
  *     responses:
  *       '200':
  *         description: Ticket classes retrieved successfully.

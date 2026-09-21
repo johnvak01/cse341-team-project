@@ -1,9 +1,10 @@
 import {
-    getBookingById as findBookingById,
     getAllBookings as findAllBookings,
     createBooking as createNewBooking
 } from "../models/bookings.js";
-import Booking from "../models/schemas/bookings.js";
+import { getScheduleById as findScheduleById } from "../models/schedules.js";
+import { getTripById as findTripById } from "../models/trips.js";
+import { getAllTicketClasses } from "../models/ticket-classes.js";
 import { generateConfirmationCode } from '../includes/helpers.js';
 
 const getAllBookings = async (req, res) =>{
@@ -21,32 +22,61 @@ const getAllBookings = async (req, res) =>{
 };
 
 const processBookingRequest = async (req, res) => {
-    const confirmation = {
-        _id: generateConfirmationCode(),
-        createdAt: new Date().toISOString(),
-        ...req.body
+    const passengers = Array.isArray(req.body.passengers)
+        ? req.body.passengers
+        : Object.values(req.body.passengers || {});
+    const booking = {
+        id: generateConfirmationCode(),
+        scheduleId: Number(req.body.scheduleId),
+        tripId: req.body.tripId,
+        ticketClass: req.body.ticketClass,
+        selectedDay: req.body.selectedDay,
+        passengers,
     };
-    createNewBooking(confirmation);
 
-    res.redirect(`/trips/confirmation/${confirmation._id}`);
+    try {
+        await createNewBooking(booking);
+        return res.redirect(`/trips/confirmation/${booking.id}`);
+    } catch (error) {
+        console.error("Error creating booking:", error);
+        return res.status(500).render("errors/500", {
+            title: "Server Error",
+            error: error.message,
+            stack: error.stack,
+        });
+    }
 };
 
 const bookingPage = async (req, res) => {
     const { scheduleId } = req.params;
 
-    const db = getDb();
-    const schedule = await db.collection('schedules').findOne({ id: Number(scheduleId) });
-    const trip = await db.collection('trips').findOne({ id: schedule.tripId });
-    const ticketClasses = await db.collection('ticketClasses').find({}).toArray();
+    const schedule = await findScheduleById(Number(scheduleId));
+
+    if (!schedule) {
+        return res.status(404).render("errors/404", {
+            title: "Schedule Not Found",
+            error: "The requested schedule could not be found.",
+        });
+    }
+
+    const trip = await findTripById(schedule.tripId);
+    if (!trip) {
+        return res.status(404).render("errors/404", {
+            title: "Trip Not Found",
+            error: "The trip for this schedule could not be found.",
+        });
+    }
+
+    const ticketClasses = await getAllTicketClasses();
     const ticketOptions = ticketClasses.map((ticketClass) => ({
         class: ticketClass.class,
         name: ticketClass.name,
-        price: trip.distance * ticketClass.pricePerKm,
+        price: trip.distance * ticketClass.priceMultiplier,
         amenities: ticketClass.amenities,
         description: ticketClass.description
     }));
 
-    res.render('trips/book', {
+    return res.render('trips/book', {
         title: 'Book Trip',
         schedule,
         ticketOptions

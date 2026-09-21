@@ -7,20 +7,29 @@
     <div class="trains-grid" id="bookings-list"></div>
 
     <template id="booking-card-template">
-        <article class="trains-card">
+        <article class="train-card">
             <header class="train-card-header">
                 <h2 data-field="name"></h2>
-                <span class="train-operator" data-field="email">a</span>
+                <span class="train-operator" data-field="email"></span>
             </header>
 
-            <p class="train-description" data-field="description"></p>
+            <p class="train-description" data-field="ticket"></p>
 
             <dl class="train-specs">
                 <div class="spec-item">
-                    <dt>Train ID</dt>
-                    <dd data-field="trainId"></dd>
-                </div><div class="spec-item">
-                    <dt>Booking Date</dt>
+                    <dt>Trip</dt>
+                    <dd data-field="tripId"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Travel Day</dt>
+                    <dd data-field="selectedDay"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Passengers</dt>
+                    <dd data-field="passengers"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Booked On</dt>
                     <dd data-field="bookingDate"></dd>
                 </div>
             </dl>

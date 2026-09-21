@@ -1,6 +1,4 @@
 import Booking from './schemas/bookings.js';
-import mongoose from 'mongoose';
-// import MONGODB_URI from '../config.js';
 
 export async function getAllBookings() {
     // console.log(Booking);
@@ -9,9 +7,9 @@ export async function getAllBookings() {
     return Booking.find();
 }
 
-export async function getBookingById(_id) {
+export async function getBookingById(id) {
     // await mongoose.connect(process.env.MONGODB_URI+"/"+process.env.MONGODB_DB_NAME);
-    return Booking.findOne({ _id });
+    return Booking.findOne({ id });
 }
 
 export async function createBooking(bookingData) {

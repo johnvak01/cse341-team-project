@@ -1,4 +1,9 @@
 <%- include('../partials/header') %>
+<% const passengers = Array.isArray(confirmation.passengers)
+    ? confirmation.passengers
+    : confirmation.passenger
+        ? [confirmation.passenger]
+        : []; %>
 <article class="confirmation-page">
     <div class="confirmation-header">
         <div class="success-icon">
@@ -41,7 +46,7 @@
                     <div class="detail-icon">👥</div>
                     <div class="detail-content">
                         <span class="detail-label">Number of Passengers</span>
-                        <span class="detail-value"><%= confirmation.passengers.length %></span>
+                        <span class="detail-value"><%= passengers.length %></span>
                     </div>
                 </div>
 
@@ -59,7 +64,7 @@
             <h2 class="section-title">Passenger Information</h2>
             
             <div class="passengers-list">
-                <% confirmation.passengers.forEach(function(passenger, index) { %>
+                <% passengers.forEach(function(passenger, index) { %>
                 <div class="passenger-info-card">
                     <div class="passenger-header">
                         <h3 class="passenger-title">Passenger <%= index + 1 %></h3>
@@ -91,7 +96,7 @@
                     <div class="step-number">1</div>
                     <div class="step-content">
                         <h3 class="step-title">Check Your Email</h3>
-                        <p class="step-description">A confirmation email with your booking details and QR code has been sent to <%= confirmation.passengers[0].email %></p>
+                        <p class="step-description">A confirmation email with your booking details and QR code has been sent to <%= passengers[0]?.email || 'the email address provided' %></p>
                     </div>
                 </div>
 

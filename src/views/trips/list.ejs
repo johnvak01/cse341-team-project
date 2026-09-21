@@ -137,32 +137,60 @@
 
     // FIXED: Wrapped filtering logic securely into a scoped applyFilters function block
     window.addEventListener('DOMContentLoaded', async () => {
-        await loadTrips();
-
         const regionFilter = document.getElementById('region-filter');
         const seasonFilter = document.getElementById('season-filter');
+        const query = new URLSearchParams(window.location.search);
+
+        const requestedRegion = query.get('region');
+        const requestedSeason = query.get('season');
+
+        if (requestedRegion && Array.from(regionFilter.options).some((option) => option.value === requestedRegion)) {
+            regionFilter.value = requestedRegion;
+        }
+
+        if (requestedSeason && Array.from(seasonFilter.options).some((option) => option.value === requestedSeason)) {
+            seasonFilter.value = requestedSeason;
+        }
 
         const applyFilters = () => {
-            const selectedRegion = regionFilter.value;
+            const selectedRegion = regionFilter.value.toLowerCase();
             const selectedSeason = seasonFilter.value.toLowerCase();
             const cards = document.querySelectorAll('#trips-list .route-card');
+            const tripsList = document.getElementById('trips-list');
+            let visibleCount = 0;
 
             cards.forEach(card => {
-                const cardRegion = card.querySelector('.route-region').textContent;
+                const cardRegion = card.querySelector('.route-region').textContent.trim().toLowerCase();
                 const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
 
                 const matchesRegion = (selectedRegion === 'all' || cardRegion === selectedRegion);
                 const matchesSeason = (selectedSeason === 'all' || badgeText.includes(selectedSeason));
 
                 if (matchesRegion && matchesSeason) {
-                    card.style.display = 'block';
+                    card.style.removeProperty('display');
+                    visibleCount += 1;
                 } else {
                     card.style.display = 'none';
                 }
             });
+
+            let emptyState = document.getElementById('trips-empty');
+            if (visibleCount === 0) {
+                if (!emptyState) {
+                    emptyState = document.createElement('p');
+                    emptyState.id = 'trips-empty';
+                    emptyState.className = 'trips-empty';
+                    tripsList.appendChild(emptyState);
+                }
+                emptyState.textContent = 'No trips match the selected filters.';
+            } else if (emptyState) {
+                emptyState.remove();
+            }
         };
 
-        // FIXED: Moved inside the event listener block so elements are found safely
+        await loadTrips();
+        applyFilters();
+
         regionFilter.addEventListener('change', applyFilters);
         seasonFilter.addEventListener('change', applyFilters);
     });

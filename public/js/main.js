@@ -51,7 +51,7 @@ const hookTrainsCatalog = async () => {
         }
 
         const payload = await response.json();
-        const trains = payload.trains || [];
+        const trains = Array.isArray(payload) ? payload : payload.trains || [];
         const fragment = document.createDocumentFragment();
 
         trains.forEach((train) => {
@@ -105,16 +105,35 @@ const hookBookingCatalog = async () => {
             throw new Error(`Failed to load bookings (${response.status})`);
         }
 
-        const bookings = await response.json();
+        const payload = await response.json();
+        const bookings = Array.isArray(payload) ? payload : payload.bookings || [];
         const fragment = document.createDocumentFragment();
-        console.log("bookings: ", bookings);
+
         bookings.forEach((booking) => {
             const card = templateEl.content.cloneNode(true);
+            const passengers = Array.isArray(booking.passengers)
+                ? booking.passengers
+                : booking.passenger
+                    ? [booking.passenger]
+                    : [];
+            const primaryPassenger = passengers[0] || {};
+            const bookedOn = booking.createdAt || booking.bookingDate;
 
-            card.querySelector('[data-field="name"]').textContent = booking.passenger.firstName + " " + booking.passenger.lastName;
-            card.querySelector('[data-field="email"]').textContent = booking.passenger.email;
-            card.querySelector('[data-field="trainId"]').textContent = booking.trainId;
-            card.querySelector('[data-field="bookingDate"]').textContent = booking.bookingDate;
+            card.querySelector('[data-field="name"]').textContent =
+                `${primaryPassenger.firstName || "Unknown"} ${primaryPassenger.lastName || "Passenger"}`;
+            card.querySelector('[data-field="email"]').textContent =
+                primaryPassenger.email || "No email provided";
+            card.querySelector('[data-field="ticket"]').textContent =
+                `Ticket: ${booking.ticketClass || "Unknown"}`;
+            card.querySelector('[data-field="tripId"]').textContent =
+                booking.tripId || booking.trainId || "Unknown";
+            card.querySelector('[data-field="selectedDay"]').textContent =
+                booking.selectedDay || "Unknown";
+            card.querySelector('[data-field="passengers"]').textContent =
+                passengers.length;
+            card.querySelector('[data-field="bookingDate"]').textContent = bookedOn
+                ? new Date(bookedOn).toLocaleDateString()
+                : "Unknown";
 
             fragment.appendChild(card);
         });
