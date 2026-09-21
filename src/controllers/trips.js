@@ -1,5 +1,5 @@
 import {getAllTrips as findAllTrips, getTripById as findTripById} from "../models/trips.js";
-import {getDb} from "../db/connect.js";
+import { getTripFilters } from "../models/trips.js";
 
 //get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
 export async function getAllTrips(req, res) {
@@ -67,12 +67,7 @@ export async function getTripDetails (req, res) {
 
 export async function getTripsList (req, res) {
     try{
-        const db = getDb ();
-
-        const [regions, seasons] = await Promise.all([
-            db.collection('trips').distinct("region"),
-            db.collection('trips').distinct("bestSeason")
-        ]);
+        const { regions, seasons } = await getTripFilters();
 
         res.render("trips/list", {
             title:"Scenic Train Trips",

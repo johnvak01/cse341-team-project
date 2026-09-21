@@ -172,38 +172,6 @@
         }
       }
     },
-    "/api/stations/{id}": {
-      "get": {
-        "tags": [
-          "Stations"
-        ],
-        "summary": "Get a station by ID",
-        "description": "Returns one station matching the requested ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "The ID of the station to retrieve, such as nagoya",
-            "schema": {
-              "type": "string"
-            },
-            "example": "nagoya"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Station retrieved successfully."
-          },
-          "404": {
-            "description": "Station was not found."
-          },
-          "500": {
-            "description": "Internal server error."
-          }
-        }
-      }
-    },
     "/api/trips": {
       "get": {
         "tags": [
@@ -265,6 +233,38 @@
           },
           "500": {
             "description": "Unable to retrieve bookings"
+          }
+        }
+      }
+    },
+    "/api/ticket-classes": {
+      "get": {
+        "tags": [
+          "Ticket Classes"
+        ],
+        "summary": "Get ticket classes",
+        "description": "Returns all ticket classes or filters them by an available day.",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "Monday"
+            },
+            "description": "The day of the week to filter ticket availability."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket classes retrieved successfully."
+          },
+          "400": {
+            "description": "Day query parameter is missing or invalid."
+          },
+          "500": {
+            "description": "Internal server error."
           }
         }
       }

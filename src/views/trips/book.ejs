@@ -195,8 +195,8 @@
     const passengersList = document.getElementById('passengersList');
     const addPassengerBtn = document.getElementById('addPassenger');
     const ticketRadios = document.querySelectorAll('input[name="ticketClass"]');
+    const ticketLabels = document.querySelectorAll('.ticket-card');
     
-    // Update summary displays
     const selectedTicketName = document.getElementById('selectedTicketName');
     const passengerCountDisplay = document.getElementById('passengerCount');
     const pricePerTicket = document.getElementById('pricePerTicket');
@@ -223,6 +223,28 @@
         btn.innerHTML = '<span class="remove-icon">×</span>';
         btn.setAttribute('aria-label', 'Remove passenger');
         return btn;
+    };
+
+    const addRemoveAllButtons = () => {
+        const firstCard = document.querySelector('.passenger-card');
+        const existingBtn = firstCard.querySelector('.btn-remove-passenger');
+        
+        if (passengerCount > 1 && !existingBtn) {
+            const removeBtn = createRemoveButton();
+            firstCard.querySelector('.passenger-card-header').appendChild(removeBtn);
+        } else if (passengerCount === 1 && existingBtn) {
+            existingBtn.remove();
+        }
+    };
+
+    const updateAddButtonState = () => {
+        if (passengerCount >= maxPassengers) {
+            addPassengerBtn.disabled = true;
+            addPassengerBtn.classList.add('disabled');
+        } else {
+            addPassengerBtn.disabled = false;
+            addPassengerBtn.classList.remove('disabled');
+        }
     };
 
     const addPassenger = () => {
@@ -317,28 +339,6 @@
         addRemoveAllButtons();
     };
 
-    const updateAddButtonState = () => {
-        if (passengerCount >= maxPassengers) {
-            addPassengerBtn.disabled = true;
-            addPassengerBtn.classList.add('disabled');
-        } else {
-            addPassengerBtn.disabled = false;
-            addPassengerBtn.classList.remove('disabled');
-        }
-    };
-
-    const addRemoveAllButtons = () => {
-        const firstCard = document.querySelector('.passenger-card');
-        const existingBtn = firstCard.querySelector('.btn-remove-passenger');
-        
-        if (passengerCount > 1 && !existingBtn) {
-            const removeBtn = createRemoveButton();
-            firstCard.querySelector('.passenger-card-header').appendChild(removeBtn);
-        } else if (passengerCount === 1 && existingBtn) {
-            existingBtn.remove();
-        }
-    };
-
     const autoFillForm = () => {
         const westernFirstNames = ['James', 'Olivia', 'William', 'Emily', 'Charlotte', 'George', 'Anna', 'Henry'];
         const westernLastNames = ['Smith', 'Johnson', 'Brown', 'Taylor', 'Wilson', 'Evans', 'Clark', 'Davis'];
@@ -354,7 +354,6 @@
         cards.forEach((card, index) => {
             const i = card.dataset.passengerIndex ? Number(card.dataset.passengerIndex) : index;
             
-            // 30% chance for Japanese name
             const isJapanese = Math.random() < 0.30;
             const firstName = randomItem(isJapanese ? japaneseFirstNames : westernFirstNames);
             const lastName = randomItem(isJapanese ? japaneseLastNames : westernLastNames);
@@ -371,13 +370,10 @@
             }
             if (phoneInput) {
                 if (isJapanese) {
-                    // Japanese fictional: using 0120 (toll-free, safe for testing)
                     phoneInput.value = `+81 120-${randInt(100, 999)}-${randInt(1000, 9999)}`;
                 } else if (Math.random() < 0.5) {
-                    // US fictional: 555-01xx
                     phoneInput.value = `+1 555-01${String(randInt(10, 99)).padStart(2, '0')}-${randInt(1000, 9999)}`;
                 } else {
-                    // UK fictional: 01632
                     phoneInput.value = `+44 1632 960${String(randInt(100, 999))}`;
                 }
             }
@@ -386,22 +382,54 @@
         console.log(`✓ Filled ${cards.length} passenger form(s)`);
     };
 
-    // Event Listeners
-    selectedDayLabels.forEach((label) => {
-        label.addEventListener('click', (e) => {
-            e.preventDefault();
-            const label = e.currentTarget;
+    const updateTicketAvailability = async (selectedDay) => {
+        try {
+            const response = await fetch(`/api/ticket-classes?day=${selectedDay}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch ticket availability');
+            }
+            
+            const availableTickets = await response.json();
+            console.log(availableTickets);
+            const availableClasses = availableTickets.map(ticket => ticket.class);
 
-            // Update visual and input selection
-            selectedDayLabels.forEach((lbl) => {
-                lbl.classList.remove('selected');
-                lbl.querySelector('input').checked = false;
-                lbl.querySelector('input').removeAttribute('checked');
+            ticketLabels.forEach(label => {
+                const input = label.querySelector('input[name="ticketClass"]');
+                
+                if (availableClasses.includes(input.value)) {
+                    label.style.opacity = '1';
+                    label.style.pointerEvents = 'auto';
+                    input.disabled = false;
+                } else {
+                    label.style.opacity = '0.5';
+                    label.style.pointerEvents = 'none';
+                    input.disabled = true;
+                    
+                    if (input.checked) {
+                        input.checked = false;
+                        ticketPrice = 0;
+                        selectedTicketName.textContent = 'Select an available ticket';
+                        updateSummary();
+                    }
+                }
             });
+        } catch (error) {
+            console.error(error);
+        }
+    };
 
-            label.classList.add('selected');
-            label.querySelector('input').checked = true;
-            label.querySelector('input').setAttribute('checked', true);
+    const dayRadios = document.querySelectorAll('input[name="selectedDay"]');
+
+    dayRadios.forEach((radio) => {
+        radio.addEventListener('change', (e) => {
+            // 1. Remove 'selected' class from all day labels
+            selectedDayLabels.forEach((lbl) => lbl.classList.remove('selected'));
+            
+            // 2. Add 'selected' class to the currently checked radio's parent label
+            e.target.closest('label').classList.add('selected');
+
+            // 3. Fetch availability for the newly selected day
+            updateTicketAvailability(e.target.value);
         });
     });
 
@@ -420,7 +448,6 @@
             e.preventDefault();
             const selected = e.currentTarget;
 
-            // Update visual and input selection
             ticketRadios.forEach((input) => {
                 input.checked = false;
                 input.removeAttribute('checked');
@@ -429,7 +456,6 @@
             selected.checked = true;
             selected.setAttribute('checked', true);
 
-            // Update summary
             const ticketName = e.target.dataset.name;
             ticketPrice = parseInt(e.target.dataset.price);
             
@@ -443,7 +469,6 @@
         autoFillForm();
     });
 
-    // Initialize ticket based on default selection
     const selectedRadio = document.querySelector('input[name="ticketClass"]:checked');
     if (selectedRadio) {
         const ticketName = selectedRadio.dataset.name;
