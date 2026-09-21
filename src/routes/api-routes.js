@@ -322,8 +322,6 @@ router.get("/api/trips/:id", getTripById);
  */
 router.get('/api/bookings', getAllBookings);
 
-export default router;
-
 /**
  * @openapi
  * /api/ticket-classes:
