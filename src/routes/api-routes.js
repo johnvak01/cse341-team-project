@@ -8,6 +8,8 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
+import { getAllTrips, getTripById } from "../controllers/trips.js";
+import { getAllBookings } from "../controllers/bookings.js";
 
 const router = Router();
 
@@ -176,5 +178,62 @@ router.get("/api/stations", getAllStations);
  *         description: Internal server error.
  */
 router.get("/api/stations/:id", getStationById);
+
+/**
+ * @openapi
+ * /api/trips:
+ *   get:
+ *     tags:
+ *       - Trips
+ *     summary: Get all trips
+ *     description: Returns every trip in the trips collection
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully
+ *       '500':
+ *         description: Internal error
+ */
+router.get("/api/trips", getAllTrips);
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   get:
+ *     tags:
+ *       - Trips
+ *     summary: Get a trip by ID
+ *     description: Returns one trip matching the requested ID
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the trip to retrieve, such as alpine-panorama
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     responses:
+ *       '200':
+ *         description: Trip retrieved successfully.
+ *       '404':
+ *         description: Trip was not found
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/trips/:id", getTripById);
+
+/**
+ * @openapi
+ * /api/bookings:
+ *   get:
+ *     summary: Get all bookings
+ *     tags:
+ *       - Bookings
+ *     responses:
+ *       200:
+ *         description: Bookings returned successfully
+ *       500:
+ *         description: Unable to retrieve bookings
+ */
+router.get('/api/bookings', getAllBookings);
 
 export default router;
