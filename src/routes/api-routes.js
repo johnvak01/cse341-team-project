@@ -181,7 +181,6 @@ router.get("/api/trips", getAllTrips);
  *         description: Internal server error
  */
 router.get("/api/trips/:id", getTripById);
-router.get("/api/trains/:id", getTrainById);
 
 /**
  * @openapi
