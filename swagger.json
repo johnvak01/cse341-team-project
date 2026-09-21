@@ -158,7 +158,7 @@
     "/api/trips": {
       "get": {
         "tags": [
-          "trips"
+          "Trips"
         ],
         "summary": "Get all trips",
         "description": "Returns every trip in the trips collection",
