@@ -4,42 +4,55 @@ mongoose.set("debug", true);
 
 
 const bookingSchema = new mongoose.Schema({
-  _id: {
+  id: {
     type: String,
     required: true,
     unique: true,
     trim: true
   },
-  passenger: {
-    firstName: {
-      type: String,
-      required: true,
-      trim: true
+  passengers: [{
+    firstName: { 
+      type: String, 
+      required: true, 
+      trim: true 
     },
-    lastName: {
-      type: String,
-      required: true,
-      trim: true
+    lastName: { 
+        type: String, 
+        required: true, 
+        trim: true 
     },
-    email: {
-      type: String,
-      required: true,
-      trim: true
-    }
+    email: { 
+      type: String, 
+      required: true, 
+      trim: true },
+    phone: { 
+        type: String, 
+        required: true, 
+        trim: true }
+  }],
+  scheduleId: {
+    type: Number,
+    required: true
   },
-  trainId: {
+  tripId: {
     type: String,
     required: true,
     trim: true
   },
-  bookingDate: {
+  ticketClass: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  selectedDay: {
     type: String,
     required: true,
     trim: true
   }
-}, { collection: "bookings" },
-  { timestamps: true, }
-);
+}, 
+{
+  timestamps: true
+});
 
 const Booking = mongoose.model("Booking", bookingSchema);
 
