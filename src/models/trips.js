@@ -7,3 +7,12 @@ export async function getAllTrips() {
 export async function getTripById (id) {
     return Trip.findOne({id}).lean();
 }
+
+export async function getTripFilters() {
+    const [regions, seasons] = await Promise.all([
+        Trip.distinct("region"),
+        Trip.distinct("bestSeason"),
+    ]);
+
+    return { regions, seasons };
+}

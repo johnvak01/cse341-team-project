@@ -1,16 +1,15 @@
 //src/models/schemas/trains.js.
 import mongoose from "mongoose";
-mongoose.set("debug", true);
 
 
 const bookingSchema = new mongoose.Schema({
-  _id: {
+  id: {
     type: String,
     required: true,
     unique: true,
     trim: true
   },
-  passenger: {
+  passengers: [{
     firstName: {
       type: String,
       required: true,
@@ -25,21 +24,36 @@ const bookingSchema = new mongoose.Schema({
       type: String,
       required: true,
       trim: true
+    },
+    phone: {
+      type: String,
+      required: true,
+      trim: true
     }
+  }],
+  scheduleId: {
+    type: Number,
+    required: true
   },
-  trainId: {
+  tripId: {
     type: String,
     required: true,
     trim: true
   },
-  bookingDate: {
+  ticketClass: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  selectedDay: {
     type: String,
     required: true,
     trim: true
   }
 }, 
-// { collection: "bookings" },
-  { timestamps: true, }
+{
+  timestamps: true,
+}
 );
 
 const Booking = mongoose.model("Booking", bookingSchema);

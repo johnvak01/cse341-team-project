@@ -8,7 +8,7 @@ const starterCollections = [
   ['trips', trips],
   ['schedules', schedules],
   ['stations', stations],
-  ['ticketClasses', ticketClasses],
+  ['ticket-classes', ticketClasses],
   ['trains', trains]
 ];
 

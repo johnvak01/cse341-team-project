@@ -9,6 +9,10 @@ import {
 } from "../controllers/schedules.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js"
 import { getAllBookings } from '../controllers/bookings.js';
+import { 
+    getAllTicketClasses, 
+    getTicketClassesForDay 
+} from "../controllers/ticket-classes.js";
 
 const router = Router();
 
@@ -177,7 +181,6 @@ router.get("/api/trips", getAllTrips);
  *         description: Internal server error
  */
 router.get("/api/trips/:id", getTripById);
-router.get("/api/trains/:id", getTrainById);
 
 /**
  * @openapi
@@ -318,5 +321,37 @@ router.get("/api/trips/:id", getTripById);
  */
 router.get('/api/bookings', getAllBookings);
 
-export default router;
+/**
+ * @openapi
+ * /api/ticket-classes:
+ *   get:
+ *     tags:
+ *       - Ticket Classes
+ *     summary: Get ticket classes
+ *     description: Returns all ticket classes or filters them by an available day.
+ *     parameters:
+ *       - name: day
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           example: Monday
+ *         description: The day of the week to filter ticket availability.
+ *     responses:
+ *       '200':
+ *         description: Ticket classes retrieved successfully.
+ *       '400':
+ *         description: Day query parameter is missing or invalid.
+ *       '500':
+ *         description: Internal server error.
+ */
 
+router.get("/api/ticket-classes", (req, res, next) => {
+    if (req.query.day !== undefined) {
+        return getTicketClassesForDay(req, res, next);
+    }
+    return getAllTicketClasses(req, res, next);
+});
+
+
+export default router;
