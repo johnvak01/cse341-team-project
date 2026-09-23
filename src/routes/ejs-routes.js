@@ -4,7 +4,7 @@ import {
     processBookingRequest,
     bookingsPage,
 } from "../controllers/bookings.js";
-import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
+import { homePage, aboutPage, testErrorPage, registerPage, loginPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
@@ -40,5 +40,7 @@ router.post("/trips/book", processBookingRequest);
 router.get("/trips/confirmation/:bookingId", confirmationPage);
 
 // login and register routes
+router.get("/login", loginPage);
+router.get("/register", registerPage);
 
 export default router;
