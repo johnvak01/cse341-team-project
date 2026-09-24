@@ -74,7 +74,10 @@ export async function login(req, res) {
                 console.log('User logged in:', user);
             }
 
-            res.redirect('/');
+            const redirectTo = req.session.returnTo || '/dashboard';
+            delete req.session.returnTo;
+
+            res.redirect(redirectTo);
         } else {
             // req.flash('error', 'Invalid email or password.');
             res.redirect('/login');

@@ -1,7 +1,7 @@
 export const loadSessionUser = (req, res, next) => {
     req.user = req.session.user || null;
     res.locals.user = req.user;
-    next();
+    return next();
 };
 
 const isLoggedIn = (req) => { return Boolean(req.user); };
@@ -11,14 +11,15 @@ export const requireApiLogin = (req, res, next) => {
     if (!isLoggedIn(req)) {
         return res.status(401).json({ message: 'Authentication required' });
     }
-    next();
+    return next();
 };
 
 export const requirePageLogin = (req, res, next) => {
     if (!isLoggedIn(req)) {
+        req.session.returnTo = req.originalUrl;
         return res.redirect('/login');
     }
-    next();
+    return next();
 };
 
 export const requireApiRole = (role) => (req, res, next) => {
@@ -28,7 +29,7 @@ export const requireApiRole = (role) => (req, res, next) => {
     if (!hasRole(req, role)) {
         return res.status(403).json({ message: 'Forbidden' });
     }
-    next();
+    return next();
 };
 
 export const requirePageRole = (role) => (req, res, next) => {
@@ -41,5 +42,5 @@ export const requirePageRole = (role) => (req, res, next) => {
     if (!hasRole(req, role)) {
         return res.status(403).json({ message: 'Forbidden' });
     }
-    next();
+    return next();
 };

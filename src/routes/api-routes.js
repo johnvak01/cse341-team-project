@@ -9,7 +9,7 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js";
-import { getAllBookings } from "../controllers/bookings.js";
+import { getAllBookings, getMyBookings } from "../controllers/bookings.js";
 import { 
     getAllTicketClasses, 
     getTicketClassesForDay 
@@ -241,6 +241,23 @@ router.get("/api/trips/:id", getTripById);
  *         description: Unable to retrieve bookings
  */
 router.get('/api/bookings', getAllBookings);
+
+/**
+ * @openapi
+ * /api/bookings/me:
+ *   get:
+ *     summary: Get the logged-in user's bookings
+ *     tags:
+ *       - Bookings
+ *     responses:
+ *       200:
+ *         description: Bookings returned successfully
+ *       401:
+ *         description: Authentication required
+ *       500:
+ *         description: Unable to retrieve bookings
+ */
+router.get('/api/bookings/me', requireApiLogin, getMyBookings);
 
 /**
  * @openapi
