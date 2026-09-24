@@ -11,6 +11,10 @@ import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
 import { registerUser, login, logout } from "../controllers/users.js";
 
+import { requirePageLogin, requirePageRole } from "../middleware/auth.js";
+import { adminDashboardPage } from "../controllers/admin.js";
+import { accountPage } from "../controllers/account.js";
+
 const router = Router();
 
 // Home page
@@ -52,7 +56,7 @@ router.post("/register", register);
 router.get('/account', requirePageLogin, accountPage);
 router.get('/admin/users', requirePageRole('admin'), adminUsersPage);
 
-
+router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 
 
 export default router;
