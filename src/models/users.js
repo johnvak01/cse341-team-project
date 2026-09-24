@@ -1,5 +1,5 @@
-import User from "./schemas/users.js";
-import Role from "./schemas/roles.js";
+import {User} from "./schemas/users.js";
+import {Role} from "./schemas/roles.js";
 import bcrypt from "bcrypt";
 
 export async function getAllUsers() {

@@ -49,11 +49,11 @@ export async function register(req, res) {
         const userId = await createUser(name, email, password);
 
         // Redirect to the home page after successful registration
-        req.flash('success', 'Registration successful! Please log in.');
+        // req.flash('success', 'Registration successful! Please log in.');
         res.redirect('/login');
     } catch (error) {
         console.error('Error registering user:', error);
-        req.flash('error', 'An error occurred during registration. Please try again.');
+        // req.flash('error', 'An error occurred during registration. Please try again.');
         res.redirect('/register');
     }
 };
@@ -68,7 +68,7 @@ export async function login(req, res) {
         if (authenticated) {
             // Store user info in session
             req.session.user = user;
-            req.flash('success', 'Login successful!');
+            // req.flash('success', 'Login successful!');
 
             if (res.locals.NODE_ENV === 'development') {
                 console.log('User logged in:', user);
@@ -76,12 +76,12 @@ export async function login(req, res) {
 
             res.redirect('/');
         } else {
-            req.flash('error', 'Invalid email or password.');
+            // req.flash('error', 'Invalid email or password.');
             res.redirect('/login');
         }
     } catch (error) {
         console.error('Error during login:', error);
-        req.flash('error', 'An error occurred during login. Please try again.');
+        // req.flash('error', 'An error occurred during login. Please try again.');
         res.redirect('/login');
     }
 };
@@ -91,6 +91,6 @@ export async function logout(req, res) {
         delete req.session.user;
     }
 
-    req.flash('success', 'Logout successful!');
+    // req.flash('success', 'Logout successful!');
     res.redirect('/login');
 };
