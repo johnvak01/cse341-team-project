@@ -9,6 +9,8 @@ import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
+import { registerUser, login, logout } from "../controllers/users.js";
+
 const router = Router();
 
 // Home page
@@ -39,8 +41,18 @@ router.post("/trips/book", processBookingRequest);
 // Booking confirmation page
 router.get("/trips/confirmation/:bookingId", confirmationPage);
 
-// login and register routes
+// login, logout and register routes
 router.get("/login", loginPage);
+router.post("/login", login);
+router.post("/logout", logout);
+
 router.get("/register", registerPage);
+router.post("/register", register);
+// Page routes: render EJS or redirect to the login page
+router.get('/account', requirePageLogin, accountPage);
+router.get('/admin/users', requirePageRole('admin'), adminUsersPage);
+
+
+
 
 export default router;
