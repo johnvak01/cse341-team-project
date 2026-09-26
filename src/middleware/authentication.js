@@ -40,7 +40,10 @@ export const requirePageRole = (role) => (req, res, next) => {
     console.log('Checking role for user:', req.user);
     console.log('Required role:', role);
     if (!hasRole(req, role)) {
-        return res.status(403).json({ message: 'Forbidden' });
+        return res.status(403).render('errors/403', {
+            title: 'Forbidden',
+            error: 'You do not have permission to access this page.'
+        });
     }
     return next();
 };
