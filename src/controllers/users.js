@@ -74,7 +74,7 @@ export async function login(req, res) {
                 console.log('User logged in:', user);
             }
 
-            const redirectTo = req.session.returnTo || '/dashboard';
+            const redirectTo = user.role.name === 'admin' ? '/admin' : '/dashboard';
             delete req.session.returnTo;
 
             res.redirect(redirectTo);

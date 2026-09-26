@@ -4,6 +4,11 @@
     <h1>Welcome, <%= user.name %></h1>
 </section>
 
+<% if (user.role.name === 'admin') { %>
+    <a href="/admin">Admin Panel</a>
+    <a href="/bookings-admin">Manage Bookings</a>
+<% } %>
+
 <section class="trains-catalog">
     <div class="trains-state" id="dashboard-loading">Loading your bookings...</div>
     <div class="trains-state trains-error" id="dashboard-error" hidden></div>
