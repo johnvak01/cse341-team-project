@@ -78,6 +78,11 @@
                 color: var(--clr-primary);
                 letter-spacing: 0.02em;
             }
+
+            .booking-email {
+                color: var(--clr-text-primary);
+                font-weight: 500;
+            }
         }
 
         .train-description {

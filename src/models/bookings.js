@@ -12,6 +12,10 @@ export async function getBookingById(id) {
     return Booking.findOne({ id });
 }
 
+export async function getBookingsByUserId(userId) {
+    return Booking.find({ userId });
+}
+
 export async function createBooking(bookingData) {
     // await mongoose.connect(process.env.MONGODB_URI+"/"+process.env.MONGODB_DB_NAME);
     return Booking.create(bookingData);

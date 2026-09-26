@@ -13,6 +13,7 @@ import { register, login, logout } from "../controllers/users.js";
 
 import { requirePageLogin, requirePageRole } from "../middleware/authentication.js";
 import { adminDashboardPage } from "../controllers/admin.js";
+import { dashboardPage } from "../controllers/dashboard.js";
 // import { accountPage } from "../controllers/account.js";
 
 const router = Router();
@@ -55,6 +56,8 @@ router.post("/register", register);
 // Page routes: render EJS or redirect to the login page
 // router.get('/account', requirePageLogin, accountPage);
 // router.get('/admin/users', requirePageRole('admin'), adminUsersPage);
+
+router.get("/dashboard", requirePageLogin, dashboardPage);
 
 router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 
