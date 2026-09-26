@@ -5,41 +5,7 @@ import {
 
 import { createUser, findUserByEmail, verifyPassword } from "../models/users.js";
 
-export async function getAllStations(req, res) {
-    try {
-        const stations = await findAllStations();
 
-        return res.status(200).json(stations);
-    } catch (error) {
-        console.error("Error fetching stations:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch stations",
-        });
-    }
-}
-
-export async function getStationById(req, res) {
-    try {
-        const { id } = req.params;
-
-        const station = await findStationById(id);
-
-        if (!station) {
-            return res.status(404).json({
-                error: "Station not found",
-            });
-        }
-
-        return res.status(200).json(station);
-    } catch (error) {
-        console.error("Error fetching station:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch station",
-        });
-    }
-}
 
 export async function register(req, res) {
     const { name, email, password } = req.body;
@@ -94,3 +60,39 @@ export async function logout(req, res) {
     // req.flash('success', 'Logout successful!');
     res.redirect('/login');
 };
+
+// export async function getAllStations(req, res) {
+//     try {
+//         const stations = await findAllStations();
+
+//         return res.status(200).json(stations);
+//     } catch (error) {
+//         console.error("Error fetching stations:", error);
+
+//         return res.status(500).json({
+//             error: "Failed to fetch stations",
+//         });
+//     }
+// }
+
+// export async function getStationById(req, res) {
+//     try {
+//         const { id } = req.params;
+
+//         const station = await findStationById(id);
+
+//         if (!station) {
+//             return res.status(404).json({
+//                 error: "Station not found",
+//             });
+//         }
+
+//         return res.status(200).json(station);
+//     } catch (error) {
+//         console.error("Error fetching station:", error);
+
+//         return res.status(500).json({
+//             error: "Failed to fetch station",
+//         });
+//     }
+// }
