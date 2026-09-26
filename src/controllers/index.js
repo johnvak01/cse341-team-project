@@ -12,4 +12,12 @@ const testErrorPage = (req, res, next) => {
     next(err);
 };
 
-export { homePage, aboutPage, testErrorPage };
+const loginPage = (req, res) => {
+    res.render('login', { title: 'Login' });
+};
+
+const registerPage = (req, res) => {
+    res.render('register', { title: 'Register' });
+};
+
+export { homePage, aboutPage, testErrorPage, loginPage, registerPage };
