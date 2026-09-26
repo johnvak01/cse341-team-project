@@ -3,17 +3,29 @@ import Path from "path";
 import { fileURLToPath } from "url";
 import pkg from "./package.json" with { type: "json" };
 import globalMiddleware from "./src/middleware/global.js";
+import { loadSessionUser, requireApiLogin, requireApiRole, requirePageLogin, requirePageRole } from "./src/middleware/authentication.js";
 import routes from "./src/routes/router.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerDoc from "./swagger.json" with { type: "json" };
+import session from "express-session";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = Path.dirname(__filename);
+const SESSION_SECRET = process.env.SESSION_SECRET || "default_secret_key";
 
 const app = express();
 
 // Serve Swagger UI documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc));
+app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: { maxAge: 60 * 60 * 1000 }
+}));
+
+app.use(loadSessionUser);
 
 // Add version info to res.locals for access in templates.
 app.use((req, res, next) => {
@@ -52,5 +64,6 @@ app.use((err, req, res, next) => {
 
     return res.status(status).render(`errors/${template}`, context);
 });
+
 
 export default app;

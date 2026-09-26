@@ -15,6 +15,8 @@ import {
     getTicketClassesForDay 
 } from "../controllers/ticket-classes.js";
 
+import { requireApiLogin, requireApiRole } from "../middleware/authentication.js";
+
 const router = Router();
 
 /**
@@ -272,5 +274,11 @@ router.get("/api/ticket-classes", (req, res, next) => {
     return getAllTicketClasses(req, res, next);
 });
 
+// API routes: send JSON errors that fetch() can inspect
+
+
+// router.get('/orders/me', requireApiLogin, getMyOrders);
+
+// router.delete('/projects/:id', requireApiRole('admin'), deleteProject);
 
 export default router;

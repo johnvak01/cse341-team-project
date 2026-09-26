@@ -4,10 +4,16 @@ import {
     processBookingRequest,
     bookingsPage,
 } from "../controllers/bookings.js";
-import { homePage, aboutPage, testErrorPage } from "../controllers/index.js";
+import { homePage, aboutPage, testErrorPage, registerPage, loginPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
+
+import { register, login, logout } from "../controllers/users.js";
+
+import { requirePageLogin, requirePageRole } from "../middleware/authentication.js";
+import { adminDashboardPage } from "../controllers/admin.js";
+// import { accountPage } from "../controllers/account.js";
 
 const router = Router();
 
@@ -38,5 +44,19 @@ router.post("/trips/book", processBookingRequest);
 
 // Booking confirmation page
 router.get("/trips/confirmation/:bookingId", confirmationPage);
+
+// login, logout and register routes
+router.get("/login", loginPage);
+router.post("/login", login);
+router.post("/logout", logout);
+
+router.get("/register", registerPage);
+router.post("/register", register);
+// Page routes: render EJS or redirect to the login page
+// router.get('/account', requirePageLogin, accountPage);
+// router.get('/admin/users', requirePageRole('admin'), adminUsersPage);
+
+router.get("/admin", requirePageRole("admin"), adminDashboardPage);
+
 
 export default router;
