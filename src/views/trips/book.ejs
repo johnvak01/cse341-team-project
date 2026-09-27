@@ -7,7 +7,7 @@
         </div>
     </div>
 
-    <form class="booking-form" method="POST" action="/trips/book">
+    <form class="booking-form" method="POST" action="/trips/book" data-authenticated="<%= Boolean(user) %>">
         <input type="hidden" name="scheduleId" value="<%= schedule.id %>">
         <input type="hidden" name="tripId" value="<%= schedule.tripId %>">
 
@@ -184,6 +184,18 @@
             <button type="submit" class="btn btn-primary">Confirm Booking</button>
         </div>
     </form>
+
+    <dialog class="account-required-dialog" id="account-required-dialog" aria-labelledby="account-required-title">
+        <div class="account-required-content">
+            <button type="button" class="account-required-close" aria-label="Close">&times;</button>
+            <h2 id="account-required-title">Create an account to book</h2>
+            <p>You need a registered account to complete this booking.</p>
+            <div class="account-required-actions">
+                <button type="button" class="btn btn-secondary" data-close-account-dialog>Close</button>
+                <a href="/register" class="btn btn-primary">Register</a>
+            </div>
+        </div>
+    </dialog>
 </article>
 
 <script>
@@ -476,6 +488,25 @@
         ticketPrice = parseInt(selectedRadio.dataset.price);
     }
     updateSummary();
+
+    const bookingForm = document.querySelector('.booking-form');
+    const accountDialog = document.getElementById('account-required-dialog');
+    const closeAccountDialog = () => accountDialog.close();
+
+    bookingForm.addEventListener('submit', (event) => {
+        if (bookingForm.dataset.authenticated !== 'true') {
+            event.preventDefault();
+            accountDialog.showModal();
+        }
+    });
+
+    accountDialog.querySelector('.account-required-close').addEventListener('click', closeAccountDialog);
+    accountDialog.querySelector('[data-close-account-dialog]').addEventListener('click', closeAccountDialog);
+    accountDialog.addEventListener('click', (event) => {
+        if (event.target === accountDialog) {
+            closeAccountDialog();
+        }
+    });
 </script>
 
 <%- include('../partials/footer') %>

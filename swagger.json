@@ -12,6 +12,459 @@
     }
   ],
   "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log in a user",
+        "description": "Authenticates a guest. Requests with an active session are rejected; log out before switching accounts.",
+        "security": [
+          {},
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "hector@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "mysecurepassword"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User logged in successfully."
+          },
+          "400": {
+            "description": "Invalid input data."
+          },
+          "401": {
+            "description": "Invalid email or password."
+          },
+          "409": {
+            "description": "A user is already logged in in this session."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log out a user",
+        "description": "Logs out the currently authenticated user.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User logged out successfully."
+          },
+          "400": {
+            "description": "No user is currently logged in."
+          },
+          "401": {
+            "description": "Unauthorized."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new user",
+        "description": "Guests and admins may create a customer account. Signed-in customers are not allowed to register another account.",
+        "security": [
+          {},
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Hector"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "hector@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "mysecurepassword"
+                  }
+                },
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully."
+          },
+          "400": {
+            "description": "Invalid input data."
+          },
+          "403": {
+            "description": "Signed-in customer cannot register another account."
+          },
+          "409": {
+            "description": "Email is already in use."
+          },
+          "500": {
+            "description": "Internal server error."
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List all users",
+        "description": "Admin only. Password hashes are never returned.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users returned successfully."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "Admin role required."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Register a user",
+        "description": "Guests and admins may create customer accounts. Signed-in customers are forbidden.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Hector"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "hector@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "mysecurepassword"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully."
+          },
+          "400": {
+            "description": "Required registration data is missing or invalid."
+          },
+          "403": {
+            "description": "Signed-in customers cannot create accounts."
+          },
+          "409": {
+            "description": "Email is already in use."
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get a user by ID",
+        "description": "The user may retrieve their own record; admins may retrieve any user.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "MongoDB user ID.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User returned successfully."
+          },
+          "400": {
+            "description": "Invalid user ID."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "The caller is neither this user nor an admin."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update a user",
+        "description": "Users may update their own name and email. Admins may update any user and may also set role.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000001"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "email"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Hector"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "hector@example.com"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "customer",
+                      "admin"
+                    ],
+                    "description": "Admin only.",
+                    "example": "customer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully."
+          },
+          "400": {
+            "description": "Invalid ID or user information."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "Caller is not authorized or cannot change roles."
+          },
+          "404": {
+            "description": "User not found."
+          },
+          "409": {
+            "description": "Email is already in use."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete a user",
+        "description": "Users may delete their own account; admins may delete any account. Associated bookings are deleted too.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000001"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully."
+          },
+          "400": {
+            "description": "Invalid user ID."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "Caller is neither this user nor an admin."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        }
+      }
+    },
+    "/api/roles": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "List roles",
+        "responses": {
+          "200": {
+            "description": "Roles returned successfully."
+          }
+        }
+      }
+    },
+    "/api/roles/{id}": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Get a role by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "65f000000000000000000002"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role returned successfully."
+          },
+          "404": {
+            "description": "Role not found."
+          }
+        }
+      }
+    },
+    "/api/roles/name/{name}": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "Get a role by name",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "customer",
+                "admin"
+              ]
+            },
+            "example": "customer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role returned successfully."
+          },
+          "404": {
+            "description": "Role not found."
+          }
+        }
+      }
+    },
     "/api/trains": {
       "get": {
         "tags": [
@@ -259,12 +712,105 @@
         "tags": [
           "Bookings"
         ],
+        "description": "Admin only. Returns all bookings.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Bookings returned successfully"
+            "description": "Bookings returned successfully."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "Admin role required."
           },
           "500": {
-            "description": "Unable to retrieve bookings"
+            "description": "Unable to retrieve bookings."
+          }
+        }
+      }
+    },
+    "/api/bookings/{id}": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Get a booking by ID",
+        "description": "Returns one booking to its owner or an admin.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "JRN69ZGP6Y"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking returned successfully."
+          },
+          "401": {
+            "description": "Missing or invalid session."
+          },
+          "403": {
+            "description": "Forbidden."
+          },
+          "404": {
+            "description": "Booking not found."
+          },
+          "500": {
+            "description": "Unable to retrieve booking."
+          }
+        }
+      }
+    },
+    "/api/users/{userId}/bookings": {
+      "get": {
+        "tags": [
+          "Bookings"
+        ],
+        "summary": "Get bookings for a user",
+        "description": "A user may retrieve their own bookings; admins may retrieve any user's bookings.",
+        "security": [
+          {
+            "SessionCookieAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "6ab9358a87b7afeb8a3794b1"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User bookings returned successfully."
+          },
+          "401": {
+            "description": "Authentication required."
+          },
+          "403": {
+            "description": "Forbidden for other users."
+          },
+          "500": {
+            "description": "Unable to retrieve bookings."
           }
         }
       }

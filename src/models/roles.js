@@ -1,4 +1,4 @@
-import Role from "./schemas/roles.js";
+import { Role } from "./schemas/roles.js";
 
 export async function getAllRoles() {
     return Role.find({}).lean();
@@ -6,6 +6,10 @@ export async function getAllRoles() {
 
 export async function getRoleById(_id) {
     return Role.findOne({ _id }).lean();
+}
+
+export async function getRoleByName(name) {
+    return Role.findOne({ name }).lean();
 }
 
 export const createRole = async (name) => {
@@ -16,5 +20,4 @@ export const createRole = async (name) => {
 
     return newRole.name.toString();
 };
-
 

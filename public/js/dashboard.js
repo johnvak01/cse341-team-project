@@ -1,16 +1,18 @@
 const hookDashboardBookings = async () => {
+    const dashboardEl = document.getElementById('dashboard-bookings');
     const listEl = document.getElementById('dashboard-bookings-list');
     const templateEl = document.getElementById('dashboard-booking-card-template');
     const loadingEl = document.getElementById('dashboard-loading');
     const errorEl = document.getElementById('dashboard-error');
     const emptyEl = document.getElementById('dashboard-empty');
 
-    if (!listEl || !templateEl) {
+    if (!dashboardEl || !listEl || !templateEl) {
         return;
     }
 
     try {
-        const response = await fetch('/api/bookings/me');
+        const userId = encodeURIComponent(dashboardEl.dataset.userId);
+        const response = await fetch(`/api/users/${userId}/bookings`);
         if (!response.ok) {
             throw new Error(`Failed to load bookings (${response.status})`);
         }

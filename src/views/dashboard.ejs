@@ -4,12 +4,9 @@
     <h1>Welcome, <%= user.name %></h1>
 </section>
 
-<% if (user.role.name === 'admin') { %>
-    <a href="/admin">Admin Panel</a>
-    <a href="/bookings-admin">Manage Bookings</a>
-<% } %>
+<a href="/account">Update Your Account</a>
 
-<section class="trains-catalog">
+<section class="trains-catalog" id="dashboard-bookings" data-user-id="<%= user._id %>">
     <div class="trains-state" id="dashboard-loading">Loading your bookings...</div>
     <div class="trains-state trains-error" id="dashboard-error" hidden></div>
     <p id="dashboard-empty" hidden>You don't have any bookings yet. <a href="/trips">Browse trips</a> to book your first trip.</p>

@@ -1,5 +1,6 @@
 import {
     getAllBookings as findAllBookings,
+    getBookingById as findBookingById,
     getBookingsByUserId as findBookingsByUserId,
     createBooking as createNewBooking
 } from "../models/bookings.js";
@@ -22,9 +23,9 @@ const getAllBookings = async (req, res) =>{
     }
 };
 
-const getMyBookings = async (req, res) => {
+const getBookingsByUserId = async (req, res) => {
     try {
-        const bookings = await findBookingsByUserId(req.user._id);
+        const bookings = await findBookingsByUserId(req.params.userId);
 
         return res.status(200).json(bookings);
     } catch (error) {
@@ -33,6 +34,26 @@ const getMyBookings = async (req, res) => {
         return res.status(500).json({
             error: "Failed to fetch bookings",
         });
+    }
+};
+
+const getBookingById = async (req, res) => {
+    try {
+        const booking = await findBookingById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        const isAdmin = req.user.role?.name === 'admin';
+        const isOwner = booking.userId && String(booking.userId) === String(req.user._id);
+        if (!isAdmin && !isOwner) {
+            return res.status(403).json({ error: "Forbidden" });
+        }
+
+        return res.status(200).json(booking);
+    } catch (error) {
+        console.error("Error fetching booking:", error);
+        return res.status(500).json({ error: "Failed to fetch booking" });
     }
 };
 
@@ -102,7 +123,32 @@ const bookingsPage = (req, res) => {
     res.render("bookings", { title: "Bookings" });
 };
 
-export { getAllBookings, getMyBookings, processBookingRequest, bookingPage, bookingsPage };
+export const confirmationPage = async (req, res) => {
+    const { bookingId } = req.params;
+
+    const confirmation = await findBookingById(bookingId);
+
+    if (!confirmation) {
+        return res.status(404).render("errors/404", {
+            title: "Booking Not Found",
+            error: "The requested booking could not be found.",
+        });
+    }
+
+    return res.render("trips/confirm", {
+        title: "Trip Confirmation",
+        confirmation,
+    });
+};
+
+export {
+    getAllBookings,
+    getBookingsByUserId,
+    getBookingById,
+    processBookingRequest,
+    bookingPage,
+    bookingsPage,
+};
 
 // export const bookingsPage = (req, res) => {
 //     res.render("bookings", { title: "Bookings" });
