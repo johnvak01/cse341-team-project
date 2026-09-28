@@ -1,19 +1,37 @@
 import { Router } from "express";
 import { getAllTrains, getTrainById } from "../controllers/trains.js";
-import { getAllSchedules, getScheduleById, getSchedulesByTripId, getSchedulesByTripAndMonth, validateMonth } from "../controllers/schedules.js";
+import {
+    getAllSchedules,
+    getScheduleById,
+    getSchedulesByTripId,
+    getSchedulesByTripAndMonth,
+    validateMonth,
+} from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js";
-import { getAllBookings, getBookingsByUserId, getBookingById } from "../controllers/bookings.js";
+import {
+    getAllBookings,
+    getBookingsByUserId,
+    getBookingById,
+} from "../controllers/bookings.js";
 import { getUserById as getUserById } from "../controllers/users.js";
-import { getAllTicketClasses, getTicketClassesForDay } from "../controllers/ticket-classes.js";
+import {
+    getAllTicketClasses,
+    getTicketClassesForDay,
+} from "../controllers/ticket-classes.js";
 import {
     requireApiGuestOrAdmin,
     requireApiLogin,
     requireApiRole,
     requireApiSelfOrAdmin,
 } from "../middleware/authentication.js";
-import { deleteUser, getUsers, updateUser, register } from "../controllers/users.js";
-import { getAllRoles, getRoleById, getRoleByName } from "../controllers/roles.js";
+import {
+    deleteUser,
+    getUsers,
+    updateUser,
+    register,
+} from "../controllers/users.js";
+import { getAllRoles, getRoleByUserId } from "../controllers/roles.js";
 import { login, logout } from "../controllers/login.js";
 const router = Router();
 
@@ -33,17 +51,28 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 example: hector@example.com
- *               password:
- *                 type: string
- *                 example: mysecurepassword
- *             required:
- *               - email
- *               - password
+ *             oneOf:
+ *               - type: object
+ *                 properties:
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     example: hector@example.com
+ *                   password:
+ *                     type: string
+ *                     format: password
+ *                     example: mysecurepassword
+ *                 required: [email, password]
+ *               - type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     example: hector
+ *                   password:
+ *                     type: string
+ *                     format: password
+ *                     example: mysecurepassword
+ *                 required: [username, password]
  *     responses:
  *       '200':
  *         description: User logged in successfully.
@@ -102,6 +131,9 @@ router.post("/api/auth/logout", logout);
  *               name:
  *                 type: string
  *                 example: Hector
+ *               username:
+ *                 type: string
+ *                 example: hector
  *               email:
  *                 type: string
  *                 example: hector@example.com
@@ -110,6 +142,7 @@ router.post("/api/auth/logout", logout);
  *                 example: mysecurepassword
  *             required:
  *               - name
+ *               - username
  *               - email
  *               - password
  *     responses:
@@ -143,7 +176,7 @@ router.post("/api/auth/register", requireApiGuestOrAdmin, register);
  *       '403':
  *         description: Admin role required.
  */
-router.get('/api/users', requireApiRole('admin'), getUsers);
+router.get("/api/users", requireApiRole("admin"), getUsers);
 
 /**
  * @openapi
@@ -161,7 +194,7 @@ router.get('/api/users', requireApiRole('admin'), getUsers);
  *         description: MongoDB user ID.
  *         schema:
  *           type: string
- *         example: 65f000000000000000000001
+ *         example: 6ab9358a87b7afeb8a3794b1
  *     responses:
  *       '200':
  *         description: User returned successfully.
@@ -174,7 +207,7 @@ router.get('/api/users', requireApiRole('admin'), getUsers);
  *       '404':
  *         description: User not found.
  */
-router.get('/api/users/:id', requireApiSelfOrAdmin, getUserById);
+router.get("/api/users/:id", requireApiSelfOrAdmin, getUserById);
 
 /**
  * @openapi
@@ -191,7 +224,7 @@ router.get('/api/users/:id', requireApiSelfOrAdmin, getUserById);
  *         required: true
  *         schema:
  *           type: string
- *         example: 65f000000000000000000001
+ *         example: 6ab9358a87b7afeb8a3794b1
  *     requestBody:
  *       required: true
  *       content:
@@ -226,7 +259,7 @@ router.get('/api/users/:id', requireApiSelfOrAdmin, getUserById);
  *       '409':
  *         description: Email is already in use.
  */
-router.put('/api/users/:id', requireApiSelfOrAdmin, updateUser);
+router.put("/api/users/:id", requireApiSelfOrAdmin, updateUser);
 
 /**
  * @openapi
@@ -243,7 +276,7 @@ router.put('/api/users/:id', requireApiSelfOrAdmin, updateUser);
  *         required: true
  *         schema:
  *           type: string
- *         example: 65f000000000000000000001
+ *         example: 6ab9358a87b7afeb8a3794b1
  *     responses:
  *       '200':
  *         description: User deleted successfully.
@@ -256,7 +289,7 @@ router.put('/api/users/:id', requireApiSelfOrAdmin, updateUser);
  *       '404':
  *         description: User not found.
  */
-router.delete('/api/users/:id', requireApiSelfOrAdmin, deleteUser);
+router.delete("/api/users/:id", requireApiSelfOrAdmin, deleteUser);
 
 /**
  * @openapi
@@ -271,11 +304,14 @@ router.delete('/api/users/:id', requireApiSelfOrAdmin, deleteUser);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password]
+ *             required: [name, username, email, password]
  *             properties:
  *               name:
  *                 type: string
  *                 example: Hector
+ *               username:
+ *                 type: string
+ *                 example: hector
  *               email:
  *                 type: string
  *                 format: email
@@ -294,7 +330,7 @@ router.delete('/api/users/:id', requireApiSelfOrAdmin, deleteUser);
  *       '409':
  *         description: Email is already in use.
  */
-router.post('/api/users', requireApiGuestOrAdmin, register);
+router.post("/api/users", requireApiGuestOrAdmin, register);
 
 /**
  * @openapi
@@ -302,55 +338,48 @@ router.post('/api/users', requireApiGuestOrAdmin, register);
  *   get:
  *     tags: [Roles]
  *     summary: List roles
+ *     description: Admin only.
+ *     security:
+ *       - SessionCookieAuth: []
  *     responses:
  *       '200':
  *         description: Roles returned successfully.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Admin role required.
  */
-router.get('/api/roles', getAllRoles);
+router.get("/api/roles", requireApiRole("admin"), getAllRoles);
 
 /**
  * @openapi
- * /api/roles/{id}:
+ * /api/roles/user/{userId}:
  *   get:
  *     tags: [Roles]
- *     summary: Get a role by ID
+ *     summary: Get a role by user ID
+ *     description: Admin only.
+ *     security:
+ *       - SessionCookieAuth: []
  *     parameters:
- *       - name: id
+ *       - name: userId
  *         in: path
  *         required: true
  *         schema:
  *           type: string
- *         example: 65f000000000000000000002
+ *         example: 64b8f0c2e1b2a3d4f5678901
  *     responses:
  *       '200':
  *         description: Role returned successfully.
  *       '404':
- *         description: Role not found.
+ *         description: User or role not found.
+ *       '400':
+ *         description: Invalid user ID.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Admin role required.
  */
-router.get('/api/roles/:id', getRoleById);
-
-/**
- * @openapi
- * /api/roles/name/{name}:
- *   get:
- *     tags: [Roles]
- *     summary: Get a role by name
- *     parameters:
- *       - name: name
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *           enum: [customer, admin]
- *         example: customer
- *     responses:
- *       '200':
- *         description: Role returned successfully.
- *       '404':
- *         description: Role not found.
- */
-router.get('/api/roles/name/:name', getRoleByName);
-
+router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
 
 /**
  * @openapi
@@ -424,11 +453,14 @@ router.get("/api/schedules", getAllSchedules);
  *         required: true
  *         description: The ID of the schedule to retrieve, such as 1
  *         schema:
- *           type: string
+    *           type: integer
+    *           format: int32
  *         example: 1
  *     responses:
  *       '200':
  *         description: Schedule retrieved successfully.
+    *       '400':
+    *         description: Schedule ID must be an integer.
  *       '404':
  *         description: Schedule was not found.
  *       '500':
@@ -580,7 +612,7 @@ router.get("/api/trips/:id", getTripById);
  *       '500':
  *         description: Unable to retrieve bookings.
  */
-router.get('/api/bookings', requireApiRole('admin'), getAllBookings);
+router.get("/api/bookings", requireApiRole("admin"), getAllBookings);
 
 /**
  * @openapi
@@ -611,7 +643,7 @@ router.get('/api/bookings', requireApiRole('admin'), getAllBookings);
  *       '500':
  *         description: Unable to retrieve booking.
  */
-router.get('/api/bookings/:id', requireApiLogin, getBookingById);
+router.get("/api/bookings/:id", requireApiLogin, getBookingById);
 
 /**
  * @openapi
@@ -633,14 +665,22 @@ router.get('/api/bookings/:id', requireApiLogin, getBookingById);
  *     responses:
  *       '200':
  *         description: User bookings returned successfully.
+ *       '400':
+ *         description: Invalid user ID.
  *       '401':
  *         description: Authentication required.
  *       '403':
  *         description: Forbidden for other users.
+ *       '404':
+ *         description: User not found or user has no bookings.
  *       '500':
- *         description: Unable to retrieve bookings.
+ *         description: Failed to fetch bookings.
  */
-router.get('/api/users/:userId/bookings', requireApiSelfOrAdmin, getBookingsByUserId);
+router.get(
+    "/api/users/:userId/bookings",
+    requireApiSelfOrAdmin,
+    getBookingsByUserId
+);
 
 /**
  * @openapi
@@ -675,7 +715,6 @@ router.get("/api/ticket-classes", (req, res, next) => {
 });
 
 // API routes: send JSON errors that fetch() can inspect
-
 
 // router.get('/orders/me', requireApiLogin, getMyOrders);
 

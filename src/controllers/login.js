@@ -1,4 +1,4 @@
-import { getUserByEmail } from "../models/users.js";
+import { getUserByEmail, getUserByUsername } from "../models/users.js";
 import { hasRole, verifyPassword } from "../middleware/authentication.js";
 
 const isApiRequest = (req) => req.path.startsWith('/api/');
@@ -7,7 +7,12 @@ const sendLoginError = (req, res, status, error) => {
     if (isApiRequest(req)) {
         return res.status(status).json({ error });
     }
-    return res.redirect('/login');
+    const identifier = req.body?.identifier ?? req.body?.email ?? req.body?.username ?? '';
+    return res.status(status).render('login', {
+        title: 'Login',
+        loginError: error,
+        oldIdentifier: typeof identifier === 'string' ? identifier : '',
+    });
 };
 
 export async function login(req, res) {
@@ -16,17 +21,24 @@ export async function login(req, res) {
         if (isApiRequest(req)) {
             return res.status(409).json({ error });
         }
-        return res.status(409).render('login', { title: 'Login', loginError: error });
+        return res.status(409).render('login', {
+            title: 'Login',
+            loginError: error,
+            oldIdentifier: req.body?.identifier ?? req.body?.email ?? req.body?.username ?? '',
+        });
     }
 
-    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    const identifierValue = req.body?.identifier ?? req.body?.email ?? req.body?.username;
+    const identifier = typeof identifierValue === 'string' ? identifierValue.trim().toLowerCase() : '';
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
-    if (!email || !password) {
-        return sendLoginError(req, res, 400, 'Email and password are required');
+    if (!identifier || !password) {
+        return sendLoginError(req, res, 400, 'Username/email and password are required');
     }
 
     try {
-        const user = await getUserByEmail(email);
+        const user = identifier.includes('@')
+            ? await getUserByEmail(identifier)
+            : await getUserByUsername(identifier);
         const isPasswordValid = user && await verifyPassword(password, user.passwordHash);
         if (!isPasswordValid) {
             return sendLoginError(req, res, 401, 'Invalid email or password');

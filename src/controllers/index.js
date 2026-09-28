@@ -32,10 +32,11 @@ const adminDashboardPage = (req, res) => {
 };
 
 const adminUsersPage = (req, res) => {
+    const isAdmin = res.locals.isAdmin;
     res.render("users", {
-        title: "Admin Users",
-        usersEndpoint: "/api/users",
-        isAdmin: res.locals.isAdmin,
+        title: isAdmin ? "Admin Users" : "Your Account",
+        usersEndpoint: isAdmin ? "/api/users" : `/api/users/${req.user._id}`,
+        isAdmin,
     });
 };
 

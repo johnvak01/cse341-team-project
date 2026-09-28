@@ -1,5 +1,4 @@
 import {getAllTrips as findAllTrips, getTripById as findTripById} from "../models/trips.js";
-import { getTripFilters } from "../models/trips.js";
 
 //get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
 export async function getAllTrips(req, res) {
@@ -58,29 +57,15 @@ export async function getTripDetails (req, res) {
         });
 
     }catch(error){
-        return res.status(500).render("error/500", {
+        return res.status(500).render("errors/500", {
             title: "Server Error",
-            error: "An error occurred while fetching tri[ details"
+            error: "An error occurred while fetching trip details"
         });
     }
 };
 
-export async function getTripsList (req, res) {
-    try{
-        const { regions, seasons } = await getTripFilters();
-
-        res.render("trips/list", {
-            title:"Scenic Train Trips",
-            regions,
-            seasons,
-            query: req.query || {}
-            
-        });
-    }catch(error) {
-        console.error("Error setting up trips to list page:", error);
-        res.status(500).render(error/500, {
-            title: "server Error",
-            error: "Failed to load the page layout"
-        });
-    }
+export function getTripsList(req, res) {
+    return res.render("trips/list", {
+        title: "Scenic Train Trips",
+    });
 }

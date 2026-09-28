@@ -4,10 +4,11 @@ import {
     getAllUsers as findAllUsers,
     getUserById as findUserById,
     getUserByEmail,
+    getUserByUsername,
     updateUserById as updateStoredUser,
 } from "../models/users.js";
 import { deleteBookingsByUserId } from "../models/bookings.js";
-import { getRoleByName } from "../models/roles.js";
+import { getRoleByName as findRoleByName } from "../models/roles.js";
 import { hasRole } from "../middleware/authentication.js";
 
 export async function getUsers(req, res) {
@@ -45,26 +46,46 @@ export async function accountPage(req, res) {
 }
 
 export async function updateUser(req, res) {
-    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
-    const email =
-        typeof req.body?.email === "string" ? req.body.email.trim() : "";
-    if (!name || !email) {
-        return res.status(400).json({ error: "Name and email are required" });
-    }
-
     try {
-        const userData = { name, email };
+        const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+        const email =
+            typeof req.body?.email === "string"
+                ? req.body.email.trim().toLowerCase()
+                : "";
+        if (!name || !email) {
+            return res.status(400).json({ error: "Name and email are required" });
+        }
+
+        const existingUser = await findUserById(req.params.id);
+        if (!existingUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const emailChanged = email !== existingUser.email.trim().toLowerCase();
+        const userData = { name };
+        if (emailChanged) {
+            const emailOwner = await getUserByEmail(email);
+            if (emailOwner && String(emailOwner._id) !== String(existingUser._id)) {
+                return res.status(409).json({ error: "Email is already in use" });
+            }
+            userData.email = email;
+        }
+
         if (req.body?.role !== undefined) {
             if (!hasRole(req.user, "admin")) {
                 return res
                     .status(403)
                     .json({ error: "Only admins can change user roles" });
             }
-            if (!["admin", "customer"].includes(req.body.role)) {
+            const requestedRole =
+                typeof req.body.role === "string"
+                    ? req.body.role.trim().toLowerCase()
+                    : "";
+            if (!["admin", "customer"].includes(requestedRole)) {
                 return res.status(400).json({ error: "Invalid user role" });
             }
 
-            const role = await getRoleByName(req.body.role);
+            const role = await findRoleByName(requestedRole);
             if (!role) {
                 return res.status(400).json({ error: "Invalid user role" });
             }
@@ -128,6 +149,10 @@ export async function deleteUser(req, res) {
 export async function register(req, res) {
     const apiRequest = req.path.startsWith("/api/");
     const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const username =
+        typeof req.body?.username === "string"
+            ? req.body.username.trim().toLowerCase()
+            : "";
     const email =
         typeof req.body?.email === "string"
             ? req.body.email.trim().toLowerCase()
@@ -137,11 +162,9 @@ export async function register(req, res) {
     const confirmPassword =
         req.body?.["confirm-password"] ?? req.body?.confirmPassword;
 
-    if (!name || !email || !password || (!apiRequest && !confirmPassword)) {
+    if (!name || !username || !email || !password || (!apiRequest && !confirmPassword)) {
         if (apiRequest) {
-            return res
-                .status(400)
-                .json({ error: "Name, email, and password are required" });
+            return res.status(400).json({ error: "Name, username, email, and password are required",});
         }
         return res.redirect("/register");
     }
@@ -163,12 +186,32 @@ export async function register(req, res) {
             }
             return res.status(409).render("register", {
                 title: "Register",
-                registrationError: "Email is already in use. Try another email address.",
+                registrationError:
+                    "Email is already in use. Try another email address.",
                 oldName: name,
+                oldUsername: username,
                 oldEmail: email,
             });
         }
-        const userId = await createUser(name, email, password);
+
+        const existingUsername = await getUserByUsername(username);
+        if (existingUsername) {
+            if (apiRequest) {
+                return res
+                    .status(409)
+                    .json({ error: "Username is already in use" });
+            }
+            return res.status(409).render("register", {
+                title: "Register",
+                registrationError:
+                    "Username is already in use. Try another username.",
+                oldName: name,
+                oldUsername: username,
+                oldEmail: email,
+            });
+        }
+
+        const userId = await createUser(name, username, email, password);
 
         if (apiRequest) {
             return res
@@ -179,24 +222,31 @@ export async function register(req, res) {
     } catch (error) {
         console.error("Error registering user:", error);
         if (error.code === 11000) {
+            const isUsernameConflict = error.keyPattern?.username;
+            const registrationError = isUsernameConflict
+                ? "Username is already in use. Try another username."
+                : "Email is already in use. Try another email address.";
             if (apiRequest) {
                 return res
                     .status(409)
-                    .json({ error: "Email is already in use" });
+                    .json({
+                        error: isUsernameConflict
+                            ? "Username is already in use"
+                            : "Email is already in use",
+                    });
             }
             return res.status(409).render("register", {
                 title: "Register",
-                registrationError: "Email is already in use. Try another email address.",
+                registrationError,
                 oldName: name,
+                oldUsername: username,
                 oldEmail: email,
             });
         }
         if (apiRequest) {
-            return res
-                .status(500)
-                .json({
-                    error: "An error occurred during registration. Please try again.",
-                });
+            return res.status(500).json({
+                error: "An error occurred during registration. Please try again.",
+            });
         }
         return res.redirect("/register");
     }

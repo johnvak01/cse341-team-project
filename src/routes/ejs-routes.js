@@ -68,7 +68,7 @@ router.get("/account", requirePageLogin, accountPage);
 
 // Admin landing page and user list; the user list loads all users for admins.
 router.get("/admin", requirePageRole("admin"), adminDashboardPage);
-router.get("/admin/users", requirePageRole("admin"), adminUsersPage);
+router.get("/admin/users", requirePageLogin, adminUsersPage);
 
 // Booking administration is restricted to admins.
 router.get("/bookings-admin", requirePageRole("admin"), bookingsPage);

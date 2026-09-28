@@ -17,6 +17,17 @@
             />
         </div>
         <div class="form-group">
+            <label for="username">Username</label>
+            <input
+                type="text"
+                id="username"
+                name="username"
+                value="<%= typeof oldUsername === 'string' ? oldUsername : '' %>"
+                autocomplete="username"
+                required
+            />
+        </div>
+        <div class="form-group">
             <label for="email">Email</label>
             <input
                 type="email"

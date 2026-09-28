@@ -51,7 +51,7 @@ const tripSchema = new mongoose.Schema(
             required: false,
             trim: true,
         },
-        operationMonths: {
+        operatingMonths: {
             type: [Number]
         },
         imageUrl: {

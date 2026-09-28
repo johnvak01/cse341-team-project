@@ -7,8 +7,15 @@
 <section class="trains-catalog">
     <form id="login-form" class="auth-form" action="/login" method="POST">
         <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" required />
+            <label for="identifier">Email or username</label>
+            <input
+                type="text"
+                id="identifier"
+                name="identifier"
+                value="<%= typeof oldIdentifier === 'string' ? oldIdentifier : '' %>"
+                autocomplete="username"
+                required
+            />
         </div>
         <div class="form-group">
             <label for="password">Password</label>

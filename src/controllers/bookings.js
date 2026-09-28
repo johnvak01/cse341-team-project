@@ -7,6 +7,7 @@ import {
 import { getScheduleById as findScheduleById } from "../models/schedules.js";
 import { getTripById as findTripById } from "../models/trips.js";
 import { getAllTicketClasses } from "../models/ticket-classes.js";
+import { getUserById as findUserById } from "../models/users.js";
 import { generateConfirmationCode } from '../includes/helpers.js';
 
 const getAllBookings = async (req, res) =>{
@@ -25,10 +26,22 @@ const getAllBookings = async (req, res) =>{
 
 const getBookingsByUserId = async (req, res) => {
     try {
-        const bookings = await findBookingsByUserId(req.params.userId);
+        const { userId } = req.params;
+        const user = await findUserById(userId);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const bookings = await findBookingsByUserId(userId);
+        if (bookings.length === 0) {
+            return res.status(404).json({ error: "User has no bookings" });
+        }
 
         return res.status(200).json(bookings);
     } catch (error) {
+        if (error.name === "CastError") {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
         console.error("Error fetching bookings:", error);
 
         return res.status(500).json({

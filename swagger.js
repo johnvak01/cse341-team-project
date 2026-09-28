@@ -15,6 +15,16 @@ const options = {
                 description: "Current server",
             },
         ],
+        components: {
+            securitySchemes: {
+                SessionCookieAuth: {
+                    type: "apiKey",
+                    in: "cookie",
+                    name: "connect.sid",
+                    description: "Express session cookie set after login.",
+                },
+            },
+        },
     },
     apis: ["./src/routes/api-routes.js", "./app.js"],
 };

@@ -17,6 +17,12 @@ export const getUserByEmail = async (email) => {
     return User.findOne({ email }).populate("role");
 };
 
+export const getUserByUsername = async (username) => {
+    return User.findOne({ username: username.trim().toLowerCase() }).populate(
+        "role"
+    );
+};
+
 export async function updateUserById(_id, userData) {
     return User.findByIdAndUpdate(_id, userData, {
         returnDocument: "after",
@@ -31,13 +37,14 @@ export async function deleteUserById(_id) {
     return User.findByIdAndDelete(_id);
 }
 
-export const createUser = async (name, email, password) => {
+export const createUser = async (name, username, email, password) => {
     const customer = await Role.findOne({ name: "customer" });
     if (!customer) throw new Error("Default role not found");
 
     const passwordHash = await bcrypt.hash(password, 12);
     const user = await User.create({
         name,
+        username: username.trim().toLowerCase(),
         email,
         passwordHash,
         role: customer._id,
