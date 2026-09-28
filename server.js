@@ -1,8 +1,5 @@
 import app from './app.js';
 import { connectToDb } from './src/db/connect.js';
-import { setServers } from "node:dns/promises";
-
-setServers(["1.1.1.1", "8.8.8.8"]);
 
 const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
 const PORT = process.env.PORT || 3000;
