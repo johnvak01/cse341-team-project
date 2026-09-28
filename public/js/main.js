@@ -99,6 +99,69 @@ const hookBookingCatalog = async () => {
         return;
     }
 
+    listEl.addEventListener('click', async (e) => {
+        const article = e.target.closest('.train-card');
+        if (!article) return;
+        const id = article.dataset.id;
+        const editForm = article.querySelector('.booking-edit-form');
+        const viewActions = article.querySelector('.booking-view-actions');
+
+        if (e.target.matches('.btn-edit-booking')) {
+            editForm.hidden = false;
+            viewActions.hidden = true;
+            return;
+        }
+
+        if (e.target.matches('.btn-cancel-edit')) {
+            editForm.hidden = true;
+            viewActions.hidden = false;
+            return;
+        }
+
+        if (e.target.matches('.btn-delete-booking')) {
+            if (!confirm('Delete this booking?')) return;
+            try {
+                const response = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error('Delete failed');
+                article.remove();
+            } catch (error) {
+                console.error(error);
+                alert('Unable to delete this booking right now.');
+            }
+        }
+    });
+
+    listEl.addEventListener('submit', async (e) => {
+        if (!e.target.matches('.booking-edit-form')) return;
+        e.preventDefault();
+
+        const article = e.target.closest('.train-card');
+        const id = article.dataset.id;
+        const formData = new FormData(e.target);
+        const updates = {
+            selectedDay: formData.get('selectedDay'),
+            ticketClass: formData.get('ticketClass'),
+        };
+
+        try {
+            const response = await fetch(`/api/bookings/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            if (!response.ok) throw new Error('Update failed');
+
+            const updated = await response.json();
+            article.querySelector('[data-field="selectedDay"]').textContent = updated.selectedDay;
+            article.querySelector('[data-field="ticket"]').textContent = `Ticket: ${updated.ticketClass}`;
+            e.target.hidden = true;
+            article.querySelector('.booking-view-actions').hidden = false;
+        } catch (error) {
+            console.error(error);
+            alert('Unable to update this booking right now.');
+        }
+    });
+
     try {
         const response = await fetch('/api/bookings');
         if (!response.ok) {
@@ -111,6 +174,9 @@ const hookBookingCatalog = async () => {
 
         bookings.forEach((booking) => {
             const card = templateEl.content.cloneNode(true);
+            const article = card.querySelector('.train-card');
+            article.dataset.id = booking.id;
+
             const passengers = Array.isArray(booking.passengers)
                 ? booking.passengers
                 : booking.passenger
@@ -134,6 +200,9 @@ const hookBookingCatalog = async () => {
             card.querySelector('[data-field="bookingDate"]').textContent = bookedOn
                 ? new Date(bookedOn).toLocaleDateString()
                 : "Unknown";
+
+            card.querySelector('input[name="selectedDay"]').value = booking.selectedDay || '';
+            card.querySelector('input[name="ticketClass"]').value = booking.ticketClass || '';
 
             fragment.appendChild(card);
         });

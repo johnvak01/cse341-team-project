@@ -21,4 +21,15 @@ export async function createBooking(bookingData) {
     return Booking.create(bookingData);
 }
 
+export async function getBookingsByPassengerEmail(email) {
+    return Booking.find({ 'passengers.email': email });
+}
+
+export async function updateBooking(id, updates) {
+    return Booking.findOneAndUpdate({ id }, updates, { new: true });
+}
+
+export async function deleteBooking(id) {
+    return Booking.findOneAndDelete({ id });
+}
 
