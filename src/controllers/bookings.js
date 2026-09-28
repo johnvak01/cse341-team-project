@@ -1,5 +1,6 @@
 import {
     getAllBookings as findAllBookings,
+    getBookingsByUserId as findBookingsByUserId,
     createBooking as createNewBooking
 } from "../models/bookings.js";
 import { getScheduleById as findScheduleById } from "../models/schedules.js";
@@ -21,6 +22,20 @@ const getAllBookings = async (req, res) =>{
     }
 };
 
+const getMyBookings = async (req, res) => {
+    try {
+        const bookings = await findBookingsByUserId(req.user._id);
+
+        return res.status(200).json(bookings);
+    } catch (error) {
+        console.error("Error fetching bookings:", error);
+
+        return res.status(500).json({
+            error: "Failed to fetch bookings",
+        });
+    }
+};
+
 const processBookingRequest = async (req, res) => {
     const passengers = Array.isArray(req.body.passengers)
         ? req.body.passengers
@@ -32,6 +47,7 @@ const processBookingRequest = async (req, res) => {
         ticketClass: req.body.ticketClass,
         selectedDay: req.body.selectedDay,
         passengers,
+        ...(req.user ? { userId: req.user._id } : {}),
     };
 
     try {
@@ -86,7 +102,7 @@ const bookingsPage = (req, res) => {
     res.render("bookings", { title: "Bookings" });
 };
 
-export { getAllBookings, processBookingRequest, bookingPage, bookingsPage };
+export { getAllBookings, getMyBookings, processBookingRequest, bookingPage, bookingsPage };
 
 // export const bookingsPage = (req, res) => {
 //     res.render("bookings", { title: "Bookings" });

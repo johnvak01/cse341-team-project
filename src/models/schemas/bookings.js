@@ -9,6 +9,11 @@ const bookingSchema = new mongoose.Schema({
     unique: true,
     trim: true
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
   passengers: [{
     firstName: {
       type: String,
