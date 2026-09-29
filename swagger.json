@@ -767,7 +767,7 @@
             "description": "Bookings returned successfully."
           },
           "401": {
-            "description": "Missing or invalid session."
+            "description": "Authentication required."
           },
           "403": {
             "description": "Admin role required."
@@ -816,6 +816,84 @@
           },
           "500": {
             "description": "Unable to retrieve booking."
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a booking",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "selectedDay": {
+                    "type": "string"
+                  },
+                  "ticketClass": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Booking updated successfully"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized to edit this booking"
+          },
+          "404": {
+            "description": "Booking not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a booking",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking deleted successfully"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Not authorized to delete this booking"
+          },
+          "404": {
+            "description": "Booking not found"
           }
         }
       }

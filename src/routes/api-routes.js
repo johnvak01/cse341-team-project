@@ -12,6 +12,9 @@ import { getAllTrips, getTripById } from "../controllers/trips.js";
 import {
     getAllBookings,
     getBookingsByUserId,
+    getMyBookings,
+    updateBookingById,
+    deleteBookingById,
     getBookingById,
 } from "../controllers/bookings.js";
 import { getUserById as getUserById } from "../controllers/users.js";
@@ -606,13 +609,13 @@ router.get("/api/trips/:id", getTripById);
  *       '200':
  *         description: Bookings returned successfully.
  *       '401':
- *         description: Missing or invalid session.
+ *         description: Authentication required.
  *       '403':
  *         description: Admin role required.
  *       '500':
  *         description: Unable to retrieve bookings.
  */
-router.get("/api/bookings", requireApiRole("admin"), getAllBookings);
+router.get("/api/bookings", requireApiLogin, getAllBookings);
 
 /**
  * @openapi
@@ -681,6 +684,58 @@ router.get(
     requireApiSelfOrAdmin,
     getBookingsByUserId
 );
+
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   put:
+ *     summary: Update a booking
+ *     tags:
+ *       - Bookings
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               selectedDay: { type: string }
+ *               ticketClass: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking updated successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to edit this booking
+ *       404:
+ *         description: Booking not found
+ *   delete:
+ *     summary: Delete a booking
+ *     tags:
+ *       - Bookings
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking deleted successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to delete this booking
+ *       404:
+ *         description: Booking not found
+ */
+router.put('/api/bookings/:id', requireApiLogin, updateBookingById);
+router.delete('/api/bookings/:id', requireApiLogin, deleteBookingById);
 
 /**
  * @openapi

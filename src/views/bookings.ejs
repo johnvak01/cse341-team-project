@@ -33,6 +33,26 @@
                     <dd data-field="bookingDate"></dd>
                 </div>
             </dl>
+
+            <div class="booking-view-actions">
+                <button type="button" class="btn-edit-booking">Edit</button>
+                <button type="button" class="btn-delete-booking">Delete</button>
+            </div>
+
+            <form class="booking-edit-form" hidden>
+                <label>
+                    Travel Day
+                    <input type="text" name="selectedDay" required>
+                </label>
+                <label>
+                    Ticket Class
+                    <input type="text" name="ticketClass" required>
+                </label>
+                <div class="booking-edit-actions">
+                    <button type="submit" class="btn-save-booking">Save</button>
+                    <button type="button" class="btn-cancel-edit">Cancel</button>
+                </div>
+            </form>
         </article>
     </template>
 </section>
