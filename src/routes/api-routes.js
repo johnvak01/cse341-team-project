@@ -9,7 +9,7 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js";
-import { getAllBookings, getMyBookings } from "../controllers/bookings.js";
+import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById } from "../controllers/bookings.js";
 import { 
     getAllTicketClasses, 
     getTicketClassesForDay 
@@ -237,10 +237,12 @@ router.get("/api/trips/:id", getTripById);
  *     responses:
  *       200:
  *         description: Bookings returned successfully
+ *       401:
+ *         description: Authentication required
  *       500:
  *         description: Unable to retrieve bookings
  */
-router.get('/api/bookings', getAllBookings);
+router.get('/api/bookings', requireApiLogin, getAllBookings);
 
 /**
  * @openapi
@@ -258,6 +260,58 @@ router.get('/api/bookings', getAllBookings);
  *         description: Unable to retrieve bookings
  */
 router.get('/api/bookings/me', requireApiLogin, getMyBookings);
+
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   put:
+ *     summary: Update a booking
+ *     tags:
+ *       - Bookings
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               selectedDay: { type: string }
+ *               ticketClass: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking updated successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to edit this booking
+ *       404:
+ *         description: Booking not found
+ *   delete:
+ *     summary: Delete a booking
+ *     tags:
+ *       - Bookings
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking deleted successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to delete this booking
+ *       404:
+ *         description: Booking not found
+ */
+router.put('/api/bookings/:id', requireApiLogin, updateBookingById);
+router.delete('/api/bookings/:id', requireApiLogin, deleteBookingById);
 
 /**
  * @openapi
