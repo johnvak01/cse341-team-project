@@ -158,7 +158,7 @@ export async function updateTrip (req, res) {
     }
 }
 
-export async function deleteTrip (id) {
+export async function deleteTrip (req, res) {
     try{
 
         const {id} = req.params;
@@ -173,6 +173,6 @@ export async function deleteTrip (id) {
         return res.status(200).json({message:"Trip and associated schedule were successfuly deleted"});
 
     }catch(error){
-        return res.status(500).json({message:"Internal server error"})
+        return res.status(500).json({message: 'Internal server error'})
     }
 }

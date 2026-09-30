@@ -77,9 +77,8 @@ tripSchema.pre('deleteOne', {document:false, query:true}, async function(next){
     const tripId = query.id;
 
     if(tripId){
-        await mongoose.model('Schedule').deleteMany({tripId:tripId});
+        await mongoose.model('Schedule').deleteMany({tripId: tripId});
     }
-    next();
 });
 
 
