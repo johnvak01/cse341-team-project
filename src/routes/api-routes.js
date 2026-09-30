@@ -11,11 +11,12 @@ import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById } from "../controllers/trips.js";
 import {
     getAllBookings,
+    createBookingApi,
     getBookingsByUserId,
-    getMyBookings,
     updateBookingById,
     deleteBookingById,
     getBookingById,
+    getBookingUpgradeQuote,
 } from "../controllers/bookings.js";
 import { getUserById as getUserById } from "../controllers/users.js";
 import {
@@ -456,14 +457,14 @@ router.get("/api/schedules", getAllSchedules);
  *         required: true
  *         description: The ID of the schedule to retrieve, such as 1
  *         schema:
-    *           type: integer
-    *           format: int32
+ *           type: integer
+ *           format: int32
  *         example: 1
  *     responses:
  *       '200':
  *         description: Schedule retrieved successfully.
-    *       '400':
-    *         description: Schedule ID must be an integer.
+ *       '400':
+ *         description: Schedule ID must be an integer.
  *       '404':
  *         description: Schedule was not found.
  *       '500':
@@ -602,7 +603,7 @@ router.get("/api/trips/:id", getTripById);
  *     summary: Get all bookings
  *     tags:
  *       - Bookings
- *     description: Admin only. Returns all bookings.
+ *     description: Admins see all bookings. Other signed-in users see bookings they created or are listed as a passenger on.
  *     security:
  *       - SessionCookieAuth: []
  *     responses:
@@ -610,12 +611,126 @@ router.get("/api/trips/:id", getTripById);
  *         description: Bookings returned successfully.
  *       '401':
  *         description: Authentication required.
- *       '403':
- *         description: Admin role required.
  *       '500':
- *         description: Unable to retrieve bookings.
+ *         description: Failed to fetch bookings.
+ *   post:
+ *     tags: [Bookings]
+ *     summary: Create a booking
+ *     description: Creates a booking for the signed-in user. The caller becomes the booking creator.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [scheduleId, tripId, ticketClass, selectedDay, passengers]
+ *             properties:
+ *               scheduleId:
+ *                 type: integer
+ *                 example: 1
+ *               tripId:
+ *                 type: string
+ *                 example: alpine-panorama
+ *               ticketClass:
+ *                 type: string
+ *                 enum: [standard, premium, first]
+ *                 example: standard
+ *               selectedDay:
+ *                 type: string
+ *                 enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+ *                 example: monday
+ *               passengers:
+ *                 type: array
+ *                 minItems: 1
+ *                 maxItems: 8
+ *                 items:
+ *                   type: object
+ *                   required: [firstName, lastName, email, phone]
+ *                   properties:
+ *                     firstName:
+ *                       type: string
+ *                       example: Hector
+ *                     lastName:
+ *                       type: string
+ *                       example: Tanaka
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       example: hector@example.com
+ *                     phone:
+ *                       type: string
+ *                       example: +81 90-1234-5678
+ *           example:
+ *             scheduleId: 1
+ *             tripId: alpine-panorama
+ *             ticketClass: standard
+ *             selectedDay: monday
+ *             passengers:
+ *               - firstName: Hector
+ *                 lastName: Tanaka
+ *                 email: hector@example.com
+ *                 phone: +81 90-1234-5678
+ *     responses:
+ *       '201':
+ *         description: Booking created successfully.
+ *       '400':
+ *         description: Booking details are invalid or the schedule, day, or ticket class is unavailable.
+ *       '401':
+ *         description: Authentication required.
+ *       '404':
+ *         description: Schedule not found.
+ *       '409':
+ *         description: Booking confirmation ID already exists.
+ *       '500':
+ *         description: Failed to create booking.
  */
 router.get("/api/bookings", requireApiLogin, getAllBookings);
+router.post("/api/bookings", requireApiLogin, createBookingApi);
+
+/**
+ * @openapi
+ * /api/bookings/{id}/upgrade-quote:
+ *   get:
+ *     tags: [Bookings]
+ *     summary: Quote a booking ticket upgrade
+ *     description: Calculates the additional fare for every seat in a booking. No payment is processed.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: JRN69ZGP6Y
+ *       - name: ticketClass
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [premium, first]
+ *         example: premium
+ *     responses:
+ *       '200':
+ *         description: Upgrade quote returned.
+ *       '400':
+ *         description: Invalid ticket class or the selected class is not an upgrade.
+ *       '401':
+ *         description: Authentication required.
+ *       '403':
+ *         description: Only the booking creator or an admin may upgrade it.
+ *       '404':
+ *         description: Booking not found.
+ *       '500':
+ *         description: Failed to calculate upgrade price.
+ */
+router.get(
+    "/api/bookings/:id/upgrade-quote",
+    requireApiLogin,
+    getBookingUpgradeQuote
+);
 
 /**
  * @openapi
@@ -655,7 +770,7 @@ router.get("/api/bookings/:id", requireApiLogin, getBookingById);
  *     tags:
  *       - Bookings
  *     summary: Get bookings for a user
- *     description: A user may retrieve their own bookings; admins may retrieve any user's bookings.
+ *     description: Users may retrieve bookings they created or are listed as a passenger on; admins may retrieve any user's bookings.
  *     security:
  *       - SessionCookieAuth: []
  *     parameters:
@@ -692,6 +807,7 @@ router.get(
  *     summary: Update a booking
  *     tags:
  *       - Bookings
+ *     description: The booking creator or an admin may edit passenger details or upgrade every seat to a higher ticket class. No payment is processed.
  *     parameters:
  *       - name: id
  *         in: path
@@ -702,23 +818,42 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               selectedDay: { type: string }
- *               ticketClass: { type: string }
+ *             oneOf:
+ *               - type: object
+ *                 required: [passengers]
+ *                 properties:
+ *                   passengers:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       required: [firstName, lastName, email, phone]
+ *                       properties:
+ *                         firstName: { type: string }
+ *                         lastName: { type: string }
+ *                         email: { type: string, format: email }
+ *                         phone: { type: string }
+ *               - type: object
+ *                 required: [ticketClass]
+ *                 properties:
+ *                   ticketClass: { type: string, enum: [premium, first] }
  *     responses:
  *       200:
- *         description: Booking updated successfully
+ *         description: Booking upgraded successfully
+ *       400:
+ *         description: Invalid passenger details or a ticket class that is not an upgrade.
  *       401:
  *         description: Authentication required
  *       403:
  *         description: Not authorized to edit this booking
  *       404:
  *         description: Booking not found
+ *       500:
+ *         description: Failed to update booking.
  *   delete:
  *     summary: Delete a booking
  *     tags:
  *       - Bookings
+ *     description: The booking creator or an admin may delete the entire booking.
  *     parameters:
  *       - name: id
  *         in: path
@@ -733,9 +868,37 @@ router.get(
  *         description: Not authorized to delete this booking
  *       404:
  *         description: Booking not found
+ *       500:
+ *         description: Failed to delete booking.
  */
-router.put('/api/bookings/:id', requireApiLogin, updateBookingById);
-router.delete('/api/bookings/:id', requireApiLogin, deleteBookingById);
+router.put("/api/bookings/:id", requireApiLogin, updateBookingById);
+
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   delete:
+ *     summary: Delete a booking
+ *     tags:
+ *       - Bookings
+ *     description: The booking creator or an admin may delete the entire booking.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking deleted successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to delete this booking
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Failed to delete booking.
+ */
+router.delete("/api/bookings/:id", requireApiLogin, deleteBookingById);
 
 /**
  * @openapi
@@ -768,11 +931,5 @@ router.get("/api/ticket-classes", (req, res, next) => {
     }
     return getAllTicketClasses(req, res, next);
 });
-
-// API routes: send JSON errors that fetch() can inspect
-
-// router.get('/orders/me', requireApiLogin, getMyOrders);
-
-// router.delete('/projects/:id', requireApiRole('admin'), deleteProject);
 
 export default router;

@@ -5,6 +5,7 @@
         "ejs": "^6.0.1",
         "express": "^5.1.0",
         "express-session": "^1.19.0",
+        "libphonenumber-js": "^1.13.14",
         "mongodb": "^7.5.0",
         "mongoose": "^9.10.1",
         "swagger-ui-express": "^5.0.1"
