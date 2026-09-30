@@ -4,7 +4,7 @@ import {
     processBookingRequest,
     bookingsPage,
 } from "../controllers/bookings.js";
-import { homePage, aboutPage, testErrorPage, registerPage, loginPage } from "../controllers/index.js";
+import { homePage, aboutPage, testErrorPage, registerPage, loginPage, adminTripPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
 import confirmationPage from "./confirm.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
@@ -57,9 +57,11 @@ router.post("/register", register);
 // router.get('/account', requirePageLogin, accountPage);
 // router.get('/admin/users', requirePageRole('admin'), adminUsersPage);
 
-router.get("/dashboard", requirePageLogin, dashboardPage);
+//router.get("/dashboard", requirePageLogin, dashboardPage); never called when dashboard button is pressed
 
-router.get("/admin", requirePageRole("admin"), adminDashboardPage);
+router.get("/admin", requirePageLogin, requirePageRole("admin"), dashboardPage);
+
+router.get('/admin/trips', requirePageLogin,requirePageRole('admin'), adminTripPage);
 
 
 export default router;

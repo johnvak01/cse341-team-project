@@ -64,6 +64,25 @@ const tripSchema = new mongoose.Schema(
     }
 );
 
+/* 
+
+Add a middleware to cascade the data being deleted. When a trip is deleted, 
+the schedule that is referenced will automatically be deleted too so there is not
+orphan data in the database/API 
+
+*/
+
+tripSchema.pre('deleteOne', {document:false, query:true}, async function(next){
+    const query = this.getQuery(); //get the id from the function deleteTrip
+    const tripId = query.id;
+
+    if(tripId){
+        await mongoose.model('Schedule').deleteMany({tripId:tripId});
+    }
+    next();
+});
+
+
 const Trip = mongoose.model("Trip", tripSchema);
 
 export default Trip;
