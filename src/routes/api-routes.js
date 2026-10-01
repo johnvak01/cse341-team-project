@@ -8,7 +8,7 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById } from "../controllers/trips.js";
+import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
 import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById } from "../controllers/bookings.js";
 import { 
     getAllTicketClasses, 
@@ -226,6 +226,98 @@ router.get("/api/trips", getAllTrips);
  *         description: Internal server error
  */
 router.get("/api/trips/:id", getTripById);
+
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   put:
+ *     tags:
+ *       - Trips
+ *     summary: Update an existing trip (Admin Only)
+ *     description: Updates trip details. Validates that incoming start/end stations and schedule IDs already exist before saving.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The custom unique string identifier of the trip to update
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Scenic Alpine Express"
+ *               description:
+ *                 type: string
+ *                 example: "A beautiful train route through the mountain ranges."
+ *               startStation:
+ *                 type: string
+ *                 example: "Zermatt"
+ *               endStation:
+ *                 type: string
+ *                 example: "St. Moritz"
+ *               distance:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 291
+ *               scheduleIds:
+ *                 type: array
+ *                 description: Array of existing schedule custom IDs to link to this trip
+ *                 items:
+ *                   type: string
+ *                 example: ["SCHED-01", "SCHED-02"]
+ *     responses:
+ *       '200':
+ *         description: Trip and schedule associations updated successfully.
+ *       '400':
+ *         description: Bad Request. Selected stations or schedules do not exist in the database.
+ *       '401':
+ *         description: Unauthorized. User is not logged into the session.
+ *       '403':
+ *         description: Forbidden. Authenticated user does not have the admin role.
+ *       '404':
+ *         description: Trip was not found matching the custom ID.
+ *       '500':
+ *         description: Internal server error
+ */
+router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTrip);
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   delete:
+ *     tags:
+ *       - Trips
+ *     summary: Delete a trip (Admin Only)
+ *     description: Deletes a trip record by its custom ID. Automatically triggers a cascading deletion to remove all associated schedules.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The custom unique string identifier of the trip to delete
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     responses:
+ *       '200':
+ *         description: Trip and all of its cascading schedule dependencies deleted successfully.
+ *       '401':
+ *         description: Unauthorized. User is not logged into the session.
+ *       '403':
+ *         description: Forbidden. Authenticated user does not have the admin role.
+ *       '404':
+ *         description: Trip was not found matching the custom ID.
+ *       '500':
+ *         description: Internal server error
+ */
+router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
 
 /**
  * @openapi

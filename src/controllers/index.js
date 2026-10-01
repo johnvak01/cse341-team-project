@@ -20,4 +20,13 @@ const registerPage = (req, res) => {
     res.render('register', { title: 'Register' });
 };
 
-export { homePage, aboutPage, testErrorPage, loginPage, registerPage };
+const adminTripPage = (req,res) => {
+    res.render('trips/admin-trips', {
+        title: 'trips',
+        user: req.user,
+        regions: ['alpine', 'central', 'coastal'], // Add the missing arrays
+        seasons: ['summer', 'winter', 'spring', 'autumn']
+    });
+}
+
+export { homePage, aboutPage, testErrorPage, loginPage, registerPage, adminTripPage };

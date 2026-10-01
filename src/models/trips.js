@@ -16,3 +16,11 @@ export async function getTripFilters() {
 
     return { regions, seasons };
 }
+
+export async function updateTrip (id, updateData) {
+    return Trip.updateOne({id:id},{$set: updateData})
+}
+
+export async function deleteTrip (id) {
+    return Trip.deleteOne({id:id})
+}
