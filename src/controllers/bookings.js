@@ -1,6 +1,10 @@
 import {
     getAllBookings as findAllBookings,
     getBookingsByUserId as findBookingsByUserId,
+    getBookingsByPassengerEmail as findBookingsByPassengerEmail,
+    getBookingById as findBookingById,
+    updateBooking as updateBookingRecord,
+    deleteBooking as deleteBookingRecord,
     createBooking as createNewBooking
 } from "../models/bookings.js";
 import { getScheduleById as findScheduleById } from "../models/schedules.js";
@@ -8,31 +12,84 @@ import { getTripById as findTripById } from "../models/trips.js";
 import { getAllTicketClasses } from "../models/ticket-classes.js";
 import { generateConfirmationCode } from '../includes/helpers.js';
 
-const getAllBookings = async (req, res) =>{
+const getAllBookings = async (req, res) => {
     try {
-        const booking = await findAllBookings();
+        const isAdmin = req.user?.role?.name === 'admin';
+        const bookings = isAdmin
+            ? await findAllBookings()
+            : await findBookingsByPassengerEmail(req.user.email);
 
-        return res.status(200).json(booking);
+        return res.status(200).json(bookings);
     } catch (error) {
         console.error("Error fetching bookings:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch Bookings",
-        });
+        return res.status(500).json({ error: "Failed to fetch Bookings" });
     }
 };
 
 const getMyBookings = async (req, res) => {
     try {
         const bookings = await findBookingsByUserId(req.user._id);
-
         return res.status(200).json(bookings);
     } catch (error) {
         console.error("Error fetching bookings:", error);
+        return res.status(500).json({ error: "Failed to fetch bookings" });
+    }
+};
 
-        return res.status(500).json({
-            error: "Failed to fetch bookings",
-        });
+const ALLOWED_BOOKING_UPDATES = ['selectedDay', 'ticketClass'];
+
+const updateBookingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const booking = await findBookingById(id);
+
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        const isAdmin = req.user?.role?.name === 'admin';
+        const isPassenger = booking.passengers.some((p) => p.email === req.user.email);
+
+        if (!isAdmin && !isPassenger) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        const updates = {};
+        for (const field of ALLOWED_BOOKING_UPDATES) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        const updated = await updateBookingRecord(id, updates);
+        return res.status(200).json(updated);
+    } catch (error) {
+        console.error("Error updating booking:", error);
+        return res.status(500).json({ error: "Failed to update booking" });
+    }
+};
+
+const deleteBookingById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const booking = await findBookingById(id);
+
+        if (!booking) {
+            return res.status(404).json({ error: "Booking not found" });
+        }
+
+        const isAdmin = req.user?.role?.name === 'admin';
+        const isPassenger = booking.passengers.some((p) => p.email === req.user.email);
+
+        if (!isAdmin && !isPassenger) {
+            return res.status(403).json({ message: "Forbidden" });
+        }
+
+        await deleteBookingRecord(id);
+        return res.status(200).json({ message: "Booking deleted" });
+    } catch (error) {
+        console.error("Error deleting booking:", error);
+        return res.status(500).json({ error: "Failed to delete booking" });
     }
 };
 
@@ -98,45 +155,17 @@ const bookingPage = async (req, res) => {
         ticketOptions
     });
 };
+
 const bookingsPage = (req, res) => {
     res.render("bookings", { title: "Bookings" });
 };
 
-export { getAllBookings, getMyBookings, processBookingRequest, bookingPage, bookingsPage };
-
-// export const bookingsPage = (req, res) => {
-//     res.render("bookings", { title: "Bookings" });
-// };
-
-// export const bookingsApi = async (req, res, next) => {
-//     try {
-//         const bookings = await findAllBookings();
-//         return res.json({ bookings });
-//     } catch (error) {
-//         return next(error);
-//     }
-// };
-
-// export async function getBookingById(req, res) {
-//     try {
-//         const { id } = req.params;
-
-//         const booking = await findBookingById(id);
-
-//         if (!booking) {
-//             return res.status(404).json({
-//                 error: "Booking not found",
-//             });
-//         }
-
-//         return res.status(200).json(booking);
-//     } catch (error) {
-//         console.error("Error fetching booking:", error);
-
-//         return res.status(500).json({
-//             error: "Failed to fetch booking",
-//         });
-//     }
-// }
-
-
+export {
+    getAllBookings,
+    getMyBookings,
+    updateBookingById,
+    deleteBookingById,
+    processBookingRequest,
+    bookingPage,
+    bookingsPage
+};
