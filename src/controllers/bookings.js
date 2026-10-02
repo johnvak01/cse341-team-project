@@ -5,7 +5,8 @@ import {
     getBookingById as findBookingById,
     updateBooking as updateBookingRecord,
     deleteBooking as deleteBookingRecord,
-    createBooking as createNewBooking
+    createBooking as createNewBooking,
+    getPaginatedBookings as findPaginatedBookings
 } from "../models/bookings.js";
 import { getScheduleById as findScheduleById } from "../models/schedules.js";
 import { getTripById as findTripById } from "../models/trips.js";
@@ -160,6 +161,26 @@ const bookingsPage = (req, res) => {
     res.render("bookings", { title: "Bookings" });
 };
 
+//Update: Added getPaginatedBookings function to fetch bookings with pagination, sorting, and ordering.
+const getPaginatedBookings = async (req, res) => {
+    const { page = 1, limit = 10, sort = 'createdAt', order = 'desc' } = req.query;
+
+    try {
+        const bookingsData = await findPaginatedBookings({
+            filter: {},
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sort,
+            order
+        });
+
+        return res.status(200).json(bookingsData);
+    } catch (error) {
+        console.error("Error fetching paginated bookings:", error);
+        return res.status(500).json({ error: "Failed to fetch paginated bookings" });
+    }
+}
+
 export {
     getAllBookings,
     getMyBookings,
@@ -167,5 +188,6 @@ export {
     deleteBookingById,
     processBookingRequest,
     bookingPage,
-    bookingsPage
+    bookingsPage,
+    getPaginatedBookings
 };
