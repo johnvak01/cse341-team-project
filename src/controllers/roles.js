@@ -1,40 +1,33 @@
-import {
-    getAllStations as findAllStations,
-    getStationById as findStationById,
-} from "../models/stations.js";
+import { 
+    getAllRoles as findAllRoles,
+    getRoleByUserId as findRoleByUserId,
+} from "../models/roles.js";
 
-export async function getAllStations(req, res) {
+export async function getAllRoles(req, res) {
     try {
-        const stations = await findAllStations();
-
-        return res.status(200).json(stations);
+        const roles = await findAllRoles();
+        return res.status(200).json(roles);
     } catch (error) {
-        console.error("Error fetching stations:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch stations",
-        });
+        console.error("Error fetching roles:", error);
+        return res.status(500).json({ error: "Failed to fetch roles" });
     }
 }
 
-export async function getStationById(req, res) {
+
+
+export async function getRoleByUserId(req, res) {
     try {
-        const { id } = req.params;
-
-        const station = await findStationById(id);
-
-        if (!station) {
-            return res.status(404).json({
-                error: "Station not found",
-            });
+        const { userId } = req.params;
+        const role = await findRoleByUserId(userId);
+        if (!role) {
+            return res.status(404).json({ error: "User or role not found" });
         }
-
-        return res.status(200).json(station);
+        return res.status(200).json(role);
     } catch (error) {
-        console.error("Error fetching station:", error);
-
-        return res.status(500).json({
-            error: "Failed to fetch station",
-        });
+        if (error.name === 'CastError') {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+        console.error("Error fetching role:", error);
+        return res.status(500).json({ error: "Failed to fetch role" });
     }
 }

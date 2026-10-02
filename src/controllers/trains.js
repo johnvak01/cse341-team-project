@@ -11,7 +11,7 @@ export async function getAllTrains(req, res) {
     try {
         const trains = await findAllTrains();
 
-        return res.status(200).json(trains);
+        return res.status(200).json({ trains });
     } catch (error) {
         console.error("Error fetching trains:", error);
 
@@ -42,4 +42,3 @@ export async function getTrainById(req, res) {
         });
     }
 }
-

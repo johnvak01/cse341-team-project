@@ -4,8 +4,8 @@ export async function getAllTrips() {
     return Trip.find({}).lean();
 }
 
-export async function getTripById (id) {
-    return Trip.findOne({id}).lean();
+export async function getTripById(id) {
+    return Trip.findOne({ id }).lean();
 }
 
 export async function getTripFilters() {
@@ -17,8 +17,8 @@ export async function getTripFilters() {
     return { regions, seasons };
 }
 
-export async function updateTrip (id, updateData) {
-    return Trip.updateOne({id:id},{$set: updateData})
+export async function updateTrip(id, updateData) {
+    return Trip.updateOne({ id }, { $set: updateData }, { runValidators: true });
 }
 
 export async function deleteTrip (id) {
