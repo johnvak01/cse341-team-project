@@ -1,3 +1,5 @@
+import { getTripFilters } from "../models/trips.js";
+
 const homePage = (req, res) => {
     res.render("home", { title: "Kizuna Rail" });
 };
@@ -40,6 +42,23 @@ const adminUsersPage = (req, res) => {
     });
 };
 
+const adminTripPage = async (req, res) => {
+    try {
+        const { regions, seasons } = await getTripFilters();
+        res.render("trips/admin-trips", {
+            title: "Manage Trips",
+            regions,
+            seasons,
+        });
+    } catch (error) {
+        console.error("Error loading admin trips page:", error);
+        res.status(500).render("errors/500", {
+            title: "Server Error",
+            error: "Failed to load trip administration",
+        });
+    }
+};
+
 export {
     homePage,
     aboutPage,
@@ -49,4 +68,5 @@ export {
     registerPage,
     adminDashboardPage,
     adminUsersPage,
+    adminTripPage,
 };

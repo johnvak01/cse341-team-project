@@ -302,3 +302,7 @@
         }
     }
 }
+
+.routes-grid .route-card[hidden] {
+    display: none;
+}

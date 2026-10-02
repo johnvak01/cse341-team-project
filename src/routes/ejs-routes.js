@@ -8,6 +8,7 @@ import {
     dashboardPage,
     adminDashboardPage,
     adminUsersPage,
+    adminTripPage,
 } from "../controllers/index.js";
 import {
     bookingPage,
@@ -69,6 +70,7 @@ router.get("/account-user", requirePageLogin, accountPage);
 // Admin landing page and user list; the user list loads all users for admins.
 router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 router.get("/admin/users", requirePageLogin, adminUsersPage);
+router.get("/trips-admin", requirePageLogin, requirePageRole("admin"), adminTripPage);
 
 // Booking administration is restricted to logged-in users.
 router.get("/bookings-admin", requirePageLogin, bookingsPage);

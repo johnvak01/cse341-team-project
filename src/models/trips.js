@@ -7,3 +7,20 @@ export async function getAllTrips() {
 export async function getTripById(id) {
     return Trip.findOne({ id }).lean();
 }
+
+export async function getTripFilters() {
+    const [regions, seasons] = await Promise.all([
+        Trip.distinct("region"),
+        Trip.distinct("bestSeason"),
+    ]);
+
+    return { regions, seasons };
+}
+
+export async function updateTrip(id, updateData) {
+    return Trip.updateOne({ id }, { $set: updateData }, { runValidators: true });
+}
+
+export async function deleteTrip (id) {
+    return Trip.deleteOne({id:id})
+}

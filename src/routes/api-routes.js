@@ -8,7 +8,7 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById } from "../controllers/trips.js";
+import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -595,6 +595,110 @@ router.get("/api/trips", getAllTrips);
  *         description: Internal server error
  */
 router.get("/api/trips/:id", getTripById);
+
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   put:
+ *     tags:
+ *       - Trips
+ *     summary: Update an existing trip (Admin Only)
+ *     description: Updates trip details. Station values must match station names in the catalog; schedule IDs are numeric IDs from GET /api/schedules.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The custom unique string identifier of the trip to update
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Alpine Panorama Express"
+ *               description:
+ *                 type: string
+ *                 example: "Journey through the Japanese Alps with stunning mountain views and traditional villages."
+ *               startStation:
+ *                 type: string
+ *                 example: "Nagoya Station"
+ *               endStation:
+ *                 type: string
+ *                 example: "Toyama Station"
+ *               distance:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 180
+ *               scheduleIds:
+ *                 type: array
+ *                 description: Numeric IDs of existing schedules to associate with this trip
+ *                 items:
+ *                   type: integer
+ *                   format: int32
+ *                 example: [1, 2]
+ *             example:
+ *               name: Alpine Panorama Express
+ *               description: Journey through the Japanese Alps with stunning mountain views and traditional villages.
+ *               startStation: Nagoya Station
+ *               endStation: Toyama Station
+ *               distance: 180
+ *               scheduleIds: [1, 2]
+ *     responses:
+ *       '200':
+ *         description: Trip and schedule associations updated successfully.
+ *       '400':
+ *         description: Bad Request. Selected stations or schedules do not exist in the database.
+ *       '401':
+ *         description: Unauthorized. User is not logged into the session.
+ *       '403':
+ *         description: Forbidden. Authenticated user does not have the admin role.
+ *       '404':
+ *         description: Trip was not found matching the custom ID.
+ *       '500':
+ *         description: Internal server error
+ */
+router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTrip);
+
+/**
+ * @openapi
+ * /api/trips/{id}:
+ *   delete:
+ *     tags:
+ *       - Trips
+ *     summary: Delete a trip (Admin Only)
+ *     description: Deletes a trip record by its custom ID. Automatically triggers a cascading deletion to remove all associated schedules.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The custom unique string identifier of the trip to delete
+ *         schema:
+ *           type: string
+ *           example: alpine-panorama
+ *     responses:
+ *       '200':
+ *         description: Trip and all of its cascading schedule dependencies deleted successfully.
+ *       '401':
+ *         description: Unauthorized. User is not logged into the session.
+ *       '403':
+ *         description: Forbidden. Authenticated user does not have the admin role.
+ *       '404':
+ *         description: Trip was not found matching the custom ID.
+ *       '500':
+ *         description: Internal server error
+ */
+router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
 
 /**
  * @openapi

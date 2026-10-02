@@ -1,0 +1,379 @@
+<%- include('../partials/header') %>
+
+<div class="admin-trips">
+    <div class="admin-trips-heading">
+        <h1><%= title %></h1>
+    </div>
+
+    <section class="admin-trips-filters" aria-label="Filter trips">
+        <label for="region-filter">Search by Region:</label>
+        <select id="region-filter">
+            <option value="all">All Regions</option>
+            <% regions.forEach((region) => { %>
+                <option value="<%= region %>"><%= region.charAt(0).toUpperCase() + region.slice(1) %></option>
+            <% }); %>
+        </select>
+        <label for="season-filter">Search by Season:</label>
+        <select id="season-filter">
+            <option value="all">Any Season</option>
+            <% seasons.forEach((season) => { %>
+                <option value="<%= season %>"><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
+            <% }); %>
+        </select>
+    </section>
+    <p id="admin-trips-error" class="admin-trips-error" role="alert" hidden></p>
+
+<!-- Modal Overlay & Popup Editor (Uses clean IDs for target styling) -->
+<div id="modal-overlay" class="admin-trip-overlay" hidden></div>
+
+<section id="edit-modal" class="admin-trip-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" hidden>
+    <h2 id="edit-modal-title">Edit trip details</h2>
+    
+    <form id="admin-edit-form">
+        <input type="hidden" id="edit-trip-id">
+        
+        <label class="admin-trip-field"><span>Trip name</span><input type="text" id="edit-name" required></label>
+        <label class="admin-trip-field"><span>Description</span><textarea id="edit-description" required rows="3"></textarea></label>
+        <label class="admin-trip-field"><span>Distance (km)</span><input type="number" id="edit-distance" min="0" step="any" required></label>
+
+        <label class="admin-trip-field"><span>Start station</span>
+            <select id="edit-start" required>
+            <option value="">-- Select Start Station --</option>
+        </select>
+        </label>
+
+        <label class="admin-trip-field"><span>End station</span>
+            <select id="edit-end" required>
+            <option value="">-- Select End Station --</option>
+            </select>
+        </label>
+
+        <label class="admin-trip-field"><span>Associated schedules</span>
+            <select id="edit-schedules" multiple aria-describedby="schedule-help"></select>
+            <small id="schedule-help">Use Ctrl (Windows) or Cmd (Mac) to select multiple schedules.</small>
+        </label>
+        
+        <div class="admin-trip-actions">
+            <button type="button" class="admin-trip-cancel">Cancel</button>
+            <button type="submit" class="admin-trip-save">Save changes</button>
+        </div>
+    </form>
+
+</section>
+
+<!-- Reuses your exact public container classes -->
+<div id="trips-list" class="routes-grid">
+    <p role="status">Loading trips...</p>
+</div>
+
+<!-- Reuses your exact public card template setup structure -->
+<template id="trip-card-template">
+    <div class="route-card">
+        <div class="route-header">
+            <h2 class="route-name"></h2>
+            <span class="route-region"></span>
+        </div>
+
+        <div class="station-info">
+            <div class="station">
+                <div class="station-type">From:</div>
+                <div class="station-name start-station"></div>
+            </div>
+            <div class="route-arrow">→</div>
+            <div class="station">
+                <div class="station-type">To:</div>
+                <div class="station-name end-station"></div>
+            </div>
+        </div>
+
+        <div class="route-details">
+            <div class="detail-item">
+                <span class="detail-icon">🕑</span>
+                <span><span class="detail-label">Duration:</span> <span class="trip-duration"></span></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-icon">📍</span>
+                <span><span class="detail-label">Distance:</span> <span class="trip-distance"></span>km</span>
+            </div>
+            <div class="detail-item">
+                <span class="season-badge"></span>
+            </div>
+        </div>
+
+        <div class="route-description"></div>
+
+        <div class="highlights">
+            <div class="highlights-list">
+                <!-- Highlight tags will be dynamically injected here -->
+            </div>
+        </div>
+            
+        <!-- Modified to stack Admin action buttons instead of a public booking button -->
+        <div class="route-actions admin-trip-card-actions">
+            <button type="button" class="edit-action-btn">Edit</button>
+            <button type="button" class="delete-action-btn">Delete</button>
+        </div>
+    </div>
+</template>
+
+<script>
+    const openEditForm = async (trip) => {
+        document.getElementById('edit-trip-id').value = trip.id;
+        document.getElementById('edit-name').value = trip.name;
+        document.getElementById('edit-description').value = trip.description;
+        document.getElementById('edit-distance').value = trip.distance;
+        
+        //assign station select property
+        document.getElementById('edit-start').value = trip.startStation || '';
+        document.getElementById('edit-end').value = trip.endStation || '';
+        
+        //get linked schedule dynamically
+        const scheduleSelect = document.getElementById('edit-schedules');
+        Array.from(scheduleSelect.options).forEach((option) => {
+            option.selected = option.dataset.tripId === trip.id;
+        });
+        document.getElementById('admin-trips-error').hidden = true;
+        document.getElementById('modal-overlay').hidden = false;
+        document.getElementById('edit-modal').hidden = false;
+        document.getElementById('edit-name').focus();
+    };
+
+    const closeModal = () => {
+        document.getElementById('modal-overlay').hidden = true;
+        document.getElementById('edit-modal').hidden = true;
+    };
+
+    document.querySelector('.admin-trip-cancel').addEventListener('click', closeModal);
+    document.getElementById('modal-overlay').addEventListener('click', closeModal);
+
+    document.getElementById('admin-edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tripId = document.getElementById('edit-trip-id').value;
+        
+        const updatePayload = {
+            name: document.getElementById('edit-name').value.trim(),
+            description: document.getElementById('edit-description').value.trim(),
+            distance: Number(document.getElementById('edit-distance').value),
+            startStation: document.getElementById('edit-start').value,
+            endStation: document.getElementById('edit-end').value,
+            scheduleIds: Array.from(document.getElementById('edit-schedules').selectedOptions)
+                .map((option) => Number(option.value))
+        };
+
+        try {
+            const response = await fetch(`/api/trips/${tripId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatePayload)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || error.message || 'Unable to update trip.');
+            }
+
+            closeModal();
+            await loadTrips(); 
+            applyFilters();
+        } catch (error) {
+            const errorElement = document.getElementById('admin-trips-error');
+            errorElement.textContent = error.message;
+            errorElement.hidden = false;
+        }
+    });
+
+    const handleDeleteClick = async (tripId, name) => {
+        if (!confirm(`Permanently wipe out "${name}"? This cascades into the Schedule system.`)) return;
+
+        try {
+            const response = await fetch(`/api/trips/${tripId}`, { method: 'DELETE' });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || error.message || 'Unable to delete trip.');
+            }
+
+            await loadTrips(); 
+            applyFilters();
+        } catch (error) {
+            const errorElement = document.getElementById('admin-trips-error');
+            errorElement.textContent = error.message;
+            errorElement.hidden = false;
+        }
+    };
+
+    //loads stations in the backgrouns for the trips
+
+    const loadStationDropdowns = async () => {
+    const startSelect = document.getElementById('edit-start');
+    const endSelect = document.getElementById('edit-end');
+
+    try {
+        const response = await fetch('/api/stations');
+        if (!response.ok) throw new Error('Failed to fetch stations catalog.');
+        
+        const stations = await response.json();
+
+        stations.forEach(station => {
+            // Create selection option for Start
+            const optStart = document.createElement('option');
+            optStart.value = station.name; 
+            optStart.textContent = station.name;
+            startSelect.appendChild(optStart);
+
+            // Create selection option for End
+            const optEnd = document.createElement('option');
+            optEnd.value = station.name;
+            optEnd.textContent = station.name;
+            endSelect.appendChild(optEnd);
+        });
+    } catch (error) {
+        console.error('Error hydrating station dropdown elements:', error);
+    }
+};
+
+//loads the schedule in the background
+
+    const loadScheduleDropdown = async () => {
+    const scheduleSelect = document.getElementById('edit-schedules');
+
+    try {
+        const response = await fetch('/api/schedules'); // Reuses your existing schedules API endpoint
+        if (!response.ok) throw new Error('Failed to fetch schedules.');
+        
+        const schedules = await response.json();
+
+        schedules.forEach(schedule => {
+            const option = document.createElement('option');
+            option.value = schedule.id;
+            option.dataset.tripId = schedule.tripId || '';
+            option.textContent = `Schedule: ${schedule.id} (${schedule.departureTime || ''})`;
+            scheduleSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error hydrating schedule dropdown option items:', error);
+    }
+};
+
+//loads trips
+
+    const loadTrips = async () => {
+
+        const tripsCard = document.getElementById('trips-list');
+        const templateTrip = document.getElementById('trip-card-template');
+
+        try {
+            const response = await fetch('/api/trips');
+            if(!response.ok) throw new Error('Failed to retrieve Trips');
+
+            const trips = await response.json();
+            tripsCard.innerHTML = "";
+
+            if(trips.length === 0){
+                const emptyMessage = document.createElement('p');
+                emptyMessage.textContent = 'No trips found.';
+                tripsCard.replaceChildren(emptyMessage);
+                return;
+            }
+
+            trips.forEach(trip => {
+                const clone = templateTrip.content.cloneNode(true);
+                const cardWrapper = clone.querySelector('.route-card');
+                if(trip.region) cardWrapper.classList.add(trip.region);
+
+                clone.querySelector('.route-name').textContent = trip.name;
+                clone.querySelector('.route-region').textContent = trip.region || '';
+                clone.querySelector('.start-station').textContent = trip.startStation;
+                clone.querySelector('.end-station').textContent = trip.endStation;
+                clone.querySelector('.trip-duration').textContent = trip.duration;
+                clone.querySelector('.trip-distance').textContent = trip.distance;
+                clone.querySelector('.route-description').textContent = trip.description;
+
+                const seasonBadge = clone.querySelector('.season-badge');
+                seasonBadge.textContent = trip.bestSeason ? `Best in ${trip.bestSeason}` : '';
+                if (trip.bestSeason) seasonBadge.classList.add(`season-${trip.bestSeason}`);
+
+                const highlightsList = clone.querySelector('.highlights-list');
+                if (trip.highlights && Array.isArray(trip.highlights)) {
+                    trip.highlights.forEach(highlight => {
+                        const tag = document.createElement('span');
+                        tag.className = 'highlight-tag';
+                        tag.textContent = highlight;
+                        highlightsList.appendChild(tag);
+                    });
+                }
+
+                clone.querySelector('.edit-action-btn').addEventListener('click',() => openEditForm(trip));
+                clone.querySelector('.delete-action-btn').addEventListener('click', () => handleDeleteClick(trip.id, trip.name));
+
+                tripsCard.appendChild(clone);
+            });
+        }catch(error){
+            console.error('Error running trip hydration process:', error);
+            const errorMessage = document.createElement('p');
+            errorMessage.className = 'admin-trips-error';
+            errorMessage.textContent = 'Failed to load trips. Please try again.';
+            tripsCard.replaceChildren(errorMessage);
+
+        }
+    }
+
+    let applyFilters = () => {};
+
+    window.addEventListener('DOMContentLoaded', async () =>{
+
+        const regionFilter = document.getElementById('region-filter');
+        const seasonFilter = document.getElementById('season-filter');
+
+        applyFilters = () => {
+
+            const selectedRegion = regionFilter.value.toLowerCase();
+            const selectedSeason = seasonFilter.value.toLowerCase();
+            const cards = document.querySelectorAll('#trips-list .route-card');
+            const tripsList = document.getElementById('trips-list');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardRegion = card.querySelector('.route-region').textContent.trim().toLowerCase();
+                const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
+
+                const matchesRegion = (selectedRegion==='all' || cardRegion===selectedRegion);
+                const matchesSeason = (selectedSeason==='all' || badgeText.includes(selectedSeason));
+
+                if(matchesRegion && matchesSeason){
+                    card.hidden = false;
+                    visibleCount +=1;
+                }else{
+                    card.hidden = true;
+                }
+            });
+
+            let emptyState = document.getElementById('trips-empty');
+            if(visibleCount===0){
+                if(!emptyState){
+                    emptyState = document.createElement('p');
+                    emptyState.id = 'trips-empty';
+                    emptyState.className = 'trips-empty';
+                    tripsList.appendChild(emptyState);
+                }
+
+                emptyState.textContent = 'No trips match the selected filters.';
+            }else if(emptyState){
+                emptyState.remove();
+            }
+        };
+
+        await loadStationDropdowns();
+        await loadScheduleDropdown();
+
+        await loadTrips();
+        applyFilters();
+
+        regionFilter.addEventListener('change', applyFilters);
+        seasonFilter.addEventListener('change', applyFilters);
+    });
+
+</script>
+
+</div>
+
+<%- include('../partials/footer') %>
