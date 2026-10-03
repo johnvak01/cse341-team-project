@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
     bookingPage,
     processBookingRequest,
-    bookingsPage,
+    bookingsPage
 } from "../controllers/bookings.js";
 import { homePage, aboutPage, testErrorPage, registerPage, loginPage, adminTripPage } from "../controllers/index.js";
 import { trainsPage } from "../controllers/trains.js";
@@ -29,6 +29,7 @@ router.get("/trains", trainsPage);
 
 //bookings page
 router.get("/bookings-admin", requirePageLogin, bookingsPage);
+router.get("/bookings", requirePageLogin, bookingsPage);
 
 // Test 500 error page
 router.get("/500", testErrorPage);

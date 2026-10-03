@@ -10,7 +10,7 @@ const hookRegionSorter = () => {
             } else {
                 url.searchParams.delete('region');
             }
-            
+
             window.location.href = url.toString();
         });
     }
@@ -28,7 +28,7 @@ const hookSeasonSorter = () => {
             } else {
                 url.searchParams.delete('season');
             }
-            
+
             window.location.href = url.toString();
         });
     }
@@ -163,7 +163,16 @@ const hookBookingCatalog = async () => {
     });
 
     try {
-        const response = await fetch('/api/bookings');
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = urlParams.get('page') || 1;
+        const limit = urlParams.get('limit') || 10;
+        const sort = urlParams.get('sort') || 'createdAt';
+        const order = urlParams.get('order') || 'asc';
+        let filter = {};
+        let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+
+        const response = await fetch(ApiUrl);
+
         if (!response.ok) {
             throw new Error(`Failed to load bookings (${response.status})`);
         }
@@ -211,6 +220,71 @@ const hookBookingCatalog = async () => {
         if (loadingEl) {
             loadingEl.hidden = true;
         }
+
+        // add pagination controls based on response
+        const paginationControls = document.getElementById('pagination-controls');
+
+        if (paginationControls) {
+            const totalPages = Math.ceil(payload.total / payload.limit);
+            paginationControls.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const pageLink = document.createElement('a');
+                pageLink.href = `?page=${i}&limit=${payload.limit}&sort=${sort}&order=${order}`;
+                pageLink.textContent = i;
+                if (i === parseInt(page)) {
+                    pageLink.style.fontWeight = 'bold';
+                }
+                paginationControls.appendChild(pageLink);
+            }
+        }
+        // add sorting controls based on response
+        const sortCategory = document.getElementById('sort-by');
+        if (sortCategory) {
+            sortCategory.innerHTML = '';
+            const sortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId'];
+            sortFields.forEach(field => {
+                const sortOption = document.createElement('option');
+                sortOption.textContent = `${field}`;
+                sortOption.value = `${field}`;
+                if (field == sort) {
+                    sortOption.selected = true;
+                }
+                sortCategory.appendChild(sortOption);
+            });
+        }
+
+        sortCategory.addEventListener('change', (event) => {
+            const target = event.target.value;
+
+            // Check if the user selected a valid URL option (not the placeholder)
+            if (target) {
+                window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+            }
+        });
+        const sortOrder = document.getElementById('sort-order');
+        if (sortOrder) {
+            sortOrder.innerHTML = '';
+            const sortFields = ['asc', 'desc'];
+            sortFields.forEach(field => {
+                const sortOption = document.createElement('option');
+                sortOption.textContent = `${field}`;
+                sortOption.value = `${field}`;
+                if (field == sort) {
+                    sortOption.selected = true;
+                }
+                sortOrder.appendChild(sortOption);
+            });
+        }
+
+        sortOrder.addEventListener('change', (event) => {
+            const target = event.target.value;
+
+            // Check if the user selected a valid URL option (not the placeholder)
+            if (target) {
+                window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+            }
+        });
+
     } catch (error) {
         console.log("error: ", error);
         if (loadingEl) {
@@ -221,6 +295,9 @@ const hookBookingCatalog = async () => {
             errorEl.textContent = 'Unable to load bookings right now. Please try again in a moment.';
         }
     }
+
+
+
 };
 
 
