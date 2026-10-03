@@ -194,7 +194,9 @@ const getPaginatedBookings = async (req, res) => {
         });
     }
     const sort = req.query.sort || 'createdAt';
-    const order = req.query.order === 'desc' ? -1 : 1;
+    const order = req.query.order || 'asc';
+
+    console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
 
     try {
         const bookingsData = await findPaginatedBookings({

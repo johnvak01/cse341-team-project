@@ -447,9 +447,11 @@ router.get("/api/ticket-classes", (req, res, next) => {
 
 /**
  * @swagger
- * /bookings:
+ * /api/bookings_paginated:
  *   get:
  *     summary: Retrieve a paginated list of bookings
+ *     tags:
+ *       - Bookings
  *     parameters:
  *       - name: page
  *         in: query
@@ -552,7 +554,7 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *                   type: string
  *                   description: Error message
  */
-router.get("/api/bookings", requireApiLogin, getPaginatedBookings);
+router.get("/api/bookings_paginated", requireApiLogin, getPaginatedBookings);
 
 
 export default router;
