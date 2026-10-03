@@ -39,19 +39,18 @@ const hookTrainsCatalog = async () => {
     const templateEl = document.getElementById('train-card-template');
     const loadingEl = document.getElementById('trains-loading');
     const errorEl = document.getElementById('trains-error');
+    const paginationEl = document.getElementById('trains-pagination');
+    const prevBtn = document.getElementById('trains-prev-page');
+    const nextBtn = document.getElementById('trains-next-page');
+    const pageIndicatorEl = document.getElementById('trains-page-indicator');
 
     if (!listEl || !templateEl) {
         return;
     }
 
-    try {
-        const response = await fetch('/api/trains');
-        if (!response.ok) {
-            throw new Error(`Failed to load trains (${response.status})`);
-        }
+    let currentPage = 1;
 
-        const payload = await response.json();
-        const trains = Array.isArray(payload) ? payload : payload.trains || [];
+    const renderTrains = (trains) => {
         const fragment = document.createDocumentFragment();
 
         trains.forEach((train) => {
@@ -74,18 +73,64 @@ const hookTrainsCatalog = async () => {
         });
 
         listEl.replaceChildren(fragment);
-        if (loadingEl) {
-            loadingEl.hidden = true;
+    };
+
+    const loadTrains = async (page) => {
+        try {
+            const response = await fetch(`/api/trains?page=${page}&limit=10`, { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`Failed to load trains (${response.status})`);
+            }
+
+            const payload = await response.json();
+            const trains = Array.isArray(payload.data) ? payload.data : [];
+            const pagination = payload.pagination || {};
+
+            renderTrains(trains);
+            currentPage = pagination.page || page;
+
+            if (paginationEl) {
+                paginationEl.hidden = false;
+            }
+            if (pageIndicatorEl) {
+                pageIndicatorEl.textContent = `Page ${pagination.page} of ${pagination.totalPages || 1}`;
+            }
+            if (prevBtn) {
+                prevBtn.disabled = !pagination.hasPreviousPage;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = !pagination.hasNextPage;
+            }
+
+            if (loadingEl) {
+                loadingEl.hidden = true;
+            }
+        } catch (error) {
+            if (loadingEl) {
+                loadingEl.hidden = true;
+            }
+            if (errorEl) {
+                errorEl.hidden = false;
+                errorEl.textContent = 'Unable to load trains right now. Please try again in a moment.';
+            }
         }
-    } catch (error) {
-        if (loadingEl) {
-            loadingEl.hidden = true;
-        }
-        if (errorEl) {
-            errorEl.hidden = false;
-            errorEl.textContent = 'Unable to load trains right now. Please try again in a moment.';
-        }
+    };
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                loadTrains(currentPage - 1);
+            }
+        });
     }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            loadTrains(currentPage + 1);
+        });
+    }
+
+    loadTrains(currentPage);
 };
 
 const hookBookingCatalog = async () => {
