@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllTrains, getTrainById } from "../controllers/trains.js";
+import { getAllTrains, getTrainById, getTrainFilterOptions } from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
@@ -25,8 +25,8 @@ const router = Router();
  *   get:
  *     tags:
  *       - Trains
- *     summary: Get a paginated list of trains
- *     description: Returns trains from the trains collection, paginated and sorted.
+ *     summary: Get a paginated, searchable list of trains
+ *     description: Returns trains from the trains collection, paginated, sorted, and optionally filtered by search text, type, or power source.
  *     parameters:
  *       - name: page
  *         in: query
@@ -53,15 +53,46 @@ const router = Router();
  *           type: string
  *           default: asc
  *           enum: [asc, desc]
+ *       - name: q
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Searches name, operator, description, and bestFor.
+ *       - name: type
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Exact match against the train's type. See GET /api/trains/filters for current values.
+ *       - name: powerSource
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Exact match against the train's power source. See GET /api/trains/filters for current values.
  *     responses:
  *       '200':
  *         description: Trains retrieved successfully
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid pagination, sort, or filter parameter
  *       '500':
  *         description: Internal server error
  */
 router.get("/api/trains", getAllTrains);
+
+/**
+ * @openapi
+ * /api/trains/filters:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the current train filter options
+ *     description: Returns the distinct type and powerSource values currently present in the trains collection, for building filter dropdowns.
+ *     responses:
+ *       '200':
+ *         description: Filter options retrieved successfully
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/trains/filters", getTrainFilterOptions);
 
 /**
  * @openapi

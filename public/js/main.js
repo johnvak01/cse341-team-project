@@ -43,12 +43,16 @@ const hookTrainsCatalog = async () => {
     const prevBtn = document.getElementById('trains-prev-page');
     const nextBtn = document.getElementById('trains-next-page');
     const pageIndicatorEl = document.getElementById('trains-page-indicator');
+    const searchInput = document.getElementById('trains-search');
+    const typeSelect = document.getElementById('trains-type-filter');
+    const powerSelect = document.getElementById('trains-power-filter');
 
     if (!listEl || !templateEl) {
         return;
     }
 
     let currentPage = 1;
+    let searchDebounceTimer = null;
 
     const renderTrains = (trains) => {
         const fragment = document.createDocumentFragment();
@@ -75,9 +79,67 @@ const hookTrainsCatalog = async () => {
         listEl.replaceChildren(fragment);
     };
 
+    const populateFilterOptions = async () => {
+        if (!typeSelect && !powerSelect) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/trains/filters', { cache: 'no-store' });
+            if (!response.ok) {
+                return;
+            }
+
+            const options = await response.json();
+
+            if (typeSelect) {
+                (options.types || []).forEach((type) => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeSelect.appendChild(option);
+                });
+            }
+
+            if (powerSelect) {
+                (options.powerSources || []).forEach((power) => {
+                    const option = document.createElement('option');
+                    option.value = power;
+                    option.textContent = power;
+                    powerSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            // Dropdowns just stay at "All" if this fails, loadTrains still works.
+        }
+    };
+
+    const buildQueryString = (page) => {
+        const params = new URLSearchParams();
+        params.set('page', page);
+        params.set('limit', 10);
+
+        const q = searchInput ? searchInput.value.trim() : '';
+        if (q) {
+            params.set('q', q);
+        }
+
+        const type = typeSelect ? typeSelect.value : '';
+        if (type) {
+            params.set('type', type);
+        }
+
+        const powerSource = powerSelect ? powerSelect.value : '';
+        if (powerSource) {
+            params.set('powerSource', powerSource);
+        }
+
+        return params.toString();
+    };
+
     const loadTrains = async (page) => {
         try {
-            const response = await fetch(`/api/trains?page=${page}&limit=10`, { cache: 'no-store' });
+            const response = await fetch(`/api/trains?${buildQueryString(page)}`, { cache: 'no-store' });
             if (!response.ok) {
                 throw new Error(`Failed to load trains (${response.status})`);
             }
@@ -105,6 +167,9 @@ const hookTrainsCatalog = async () => {
             if (loadingEl) {
                 loadingEl.hidden = true;
             }
+            if (errorEl) {
+                errorEl.hidden = true;
+            }
         } catch (error) {
             if (loadingEl) {
                 loadingEl.hidden = true;
@@ -130,6 +195,22 @@ const hookTrainsCatalog = async () => {
         });
     }
 
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => loadTrains(1), 400);
+        });
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => loadTrains(1));
+    }
+
+    if (powerSelect) {
+        powerSelect.addEventListener('change', () => loadTrains(1));
+    }
+
+    await populateFilterOptions();
     loadTrains(currentPage);
 };
 

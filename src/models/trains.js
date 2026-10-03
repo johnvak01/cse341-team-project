@@ -19,3 +19,12 @@ export async function getPaginatedTrains({ filter = {}, page, limit, sort, order
 
     return { trains, totalItems };
 }
+
+export async function getTrainFilterOptions() {
+    const [types, powerSources] = await Promise.all([
+        Train.distinct('type'),
+        Train.distinct('powerSource')
+    ]);
+
+    return { types, powerSources };
+}
