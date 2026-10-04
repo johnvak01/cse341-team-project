@@ -216,6 +216,21 @@ router.post("/api/auth/register", requireApiGuestOrAdmin, register);
  *           default: 10
  *           minimum: 1
  *           maximum: 50
+ *       - name: q
+ *         in: query
+ *         required: false
+ *         description: Searches user names, usernames, and email addresses using MongoDB text search (1-100 characters).
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 100
+ *       - name: role
+ *         in: query
+ *         required: false
+ *         description: Filter to users with this role.
+ *         schema:
+ *           type: string
+ *           enum: [admin, customer]
  *       - name: sort
  *         in: query
  *         required: false
@@ -235,7 +250,7 @@ router.post("/api/auth/register", requireApiGuestOrAdmin, register);
  *         description: >
  *           Users returned successfully. If the requested page is beyond the last page,
  *           or no users match, the response remains 200 with an empty data array and
- *           pagination metadata.
+ *           pagination metadata. The response also echoes the applied q and role filters.
  *       '400':
  *         description: Invalid query parameters.
  *       '401':

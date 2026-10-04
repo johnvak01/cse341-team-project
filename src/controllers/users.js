@@ -13,6 +13,7 @@ import { getRoleByName as findRoleByName } from "../models/roles.js";
 import { hasRole } from "../middleware/authentication.js";
 
 const allowedSortFields = ["name", "username", "email", "role"];
+const allowedUserRoles = ["admin", "customer"];
 
 const normalizeName = (value) =>
     value
@@ -66,9 +67,52 @@ export const getPaginatedAllUsers = async (req, res) => {
 
         const sort = req.query.sort || "name";
         const order = req.query.order === "desc" ? -1 : 1;
+        const filter = {};
+        const appliedQuery = {};
+
+        if (req.query.q !== undefined) {
+            if (typeof req.query.q !== "string") {
+                return res.status(400).json({
+                    errors: [{ field: "q", message: "Search text must be a single string." }],
+                });
+            }
+
+            const searchText = req.query.q.trim();
+            if (!searchText || searchText.length > 100) {
+                return res.status(400).json({
+                    errors: [{ field: "q", message: "Search text must be between 1 and 100 characters." }],
+                });
+            }
+            filter.$text = { $search: searchText };
+            appliedQuery.q = searchText;
+        }
+
+        if (req.query.role !== undefined) {
+            if (typeof req.query.role !== "string") {
+                return res.status(400).json({
+                    errors: [{ field: "role", message: "Role must be a single value." }],
+                });
+            }
+
+            const roleName = req.query.role.trim().toLowerCase();
+            if (!allowedUserRoles.includes(roleName)) {
+                return res.status(400).json({
+                    errors: [{ field: "role", message: "Role must be admin or customer." }],
+                });
+            }
+
+            const role = await findRoleByName(roleName);
+            if (!role) {
+                return res.status(400).json({
+                    errors: [{ field: "role", message: "Role is not available." }],
+                });
+            }
+            filter.role = role._id;
+            appliedQuery.role = roleName;
+        }
 
         const { users, totalUsers } = await findPaginatedAllUsers(
-            {},
+            filter,
             page,
             limit,
             sort,
@@ -77,6 +121,7 @@ export const getPaginatedAllUsers = async (req, res) => {
 
         return res.status(200).json({
             data: users,
+            query: appliedQuery,
             pagination: {
                 page,
                 limit,

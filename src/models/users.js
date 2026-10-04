@@ -40,10 +40,11 @@ export async function getPaginatedAllUsers(
                   .skip(skip)
                   .limit(limit)
                   .lean();
-    const [users, totalUsers] = await Promise.all([
+    const [users, countResult] = await Promise.all([
         userQuery,
-        User.countDocuments(filter),
+        User.aggregate([{ $match: filter }, { $count: "totalUsers" }]),
     ]);
+    const totalUsers = countResult[0]?.totalUsers ?? 0;
     return { users, totalUsers };
 }
 
