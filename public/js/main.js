@@ -180,7 +180,12 @@ const hookBookingCatalog = async () => {
         const payload = await response.json();
         const bookings = Array.isArray(payload) ? payload : payload.bookings || [];
         const fragment = document.createDocumentFragment();
+        if(bookings.length === 0){
+            const noBookingsEl = document.createElement('p');
+            noBookingsEl.textContent = 'No bookings found.';
+            fragment.appendChild(noBookingsEl);
 
+        }
         bookings.forEach((booking) => {
             const card = templateEl.content.cloneNode(true);
             const article = card.querySelector('.train-card');
