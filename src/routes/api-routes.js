@@ -8,7 +8,12 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
+import {
+    getAllTrips,
+    getTripById,
+    updateTrip,
+    deleteTrip,
+} from "../controllers/trips.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -31,7 +36,8 @@ import {
 } from "../middleware/authentication.js";
 import {
     deleteUser,
-    getUsers,
+    // getUsers,
+    getPaginatedAllUsers,
     updateUser,
     register,
 } from "../controllers/users.js";
@@ -121,7 +127,7 @@ router.post("/api/auth/logout", logout);
  *     tags:
  *       - Authentication
  *     summary: Register a new user
- *     description: Guests and admins may create a customer account. Signed-in customers are not allowed to register another account.
+ *     description: Guests and admins may create a customer account. Names are title-cased and usernames are stored lowercase. Signed-in customers are not allowed to register another account.
  *     security:
  *       - {}
  *       - SessionCookieAuth: []
@@ -163,24 +169,83 @@ router.post("/api/auth/logout", logout);
  */
 router.post("/api/auth/register", requireApiGuestOrAdmin, register);
 
+// /** NON-PAGINATED VERSION OF GET ALL USERS */
+//  * @openapi
+//  * /api/users:
+//  *   get:
+//  *     tags: [Users]
+//  *     summary: List all users
+//  *     description: Admin only. Password hashes are never returned.
+//  *     security:
+//  *       - SessionCookieAuth: []
+//  *     responses:
+//  *       '200':
+//  *         description: Users returned successfully.
+//  *       '401':
+//  *         description: Missing or invalid session.
+//  *       '403':
+//  *         description: Admin role required.
+//  */
+// router.get("/api/users", requireApiRole("admin"), getUsers);
+
+// PAGINATED VERSION OF GET ALL USERS
 /**
  * @openapi
  * /api/users:
  *   get:
  *     tags: [Users]
- *     summary: List all users
+ *     summary: List all users (paginated)
  *     description: Admin only. Password hashes are never returned.
  *     security:
  *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         required: false
+ *         description: Page number (default is 1)
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *       - name: limit
+ *         in: query
+ *         required: false
+ *         description: Number of users per page (default is 10, maximum is 50)
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           minimum: 1
+ *           maximum: 50
+ *       - name: sort
+ *         in: query
+ *         required: false
+ *         description: Field to sort by (name, username, email, or role name)
+ *         schema:
+ *           type: string
+ *           enum: [name, username, email, role]
+ *       - name: order
+ *         in: query
+ *         required: false
+ *         description: Sort order (asc or desc)
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
  *     responses:
  *       '200':
- *         description: Users returned successfully.
+ *         description: >
+ *           Users returned successfully. If the requested page is beyond the last page,
+ *           or no users match, the response remains 200 with an empty data array and
+ *           pagination metadata.
+ *       '400':
+ *         description: Invalid query parameters.
  *       '401':
  *         description: Missing or invalid session.
  *       '403':
  *         description: Admin role required.
+ *       '500':
+ *         description: Internal server error.
  */
-router.get("/api/users", requireApiRole("admin"), getUsers);
+router.get("/api/users", requireApiRole("admin"), getPaginatedAllUsers);
 
 /**
  * @openapi
@@ -219,7 +284,7 @@ router.get("/api/users/:id", requireApiSelfOrAdmin, getUserById);
  *   put:
  *     tags: [Users]
  *     summary: Update a user
- *     description: Users may update their own name and email. Admins may update any user and may also set role.
+ *     description: Users may update their own name, username, and email. Names are title-cased and usernames are stored lowercase. Admins may update any user and may also set role.
  *     security:
  *       - SessionCookieAuth: []
  *     parameters:
@@ -244,6 +309,10 @@ router.get("/api/users/:id", requireApiSelfOrAdmin, getUserById);
  *                 type: string
  *                 format: email
  *                 example: hector@example.com
+ *               username:
+ *                 type: string
+ *                 description: Stored lowercase; must be unique.
+ *                 example: hector
  *               role:
  *                 type: string
  *                 enum: [customer, admin]
@@ -261,7 +330,7 @@ router.get("/api/users/:id", requireApiSelfOrAdmin, getUserById);
  *       '404':
  *         description: User not found.
  *       '409':
- *         description: Email is already in use.
+ *         description: Email or username is already in use.
  */
 router.put("/api/users/:id", requireApiSelfOrAdmin, updateUser);
 
@@ -596,7 +665,6 @@ router.get("/api/trips", getAllTrips);
  */
 router.get("/api/trips/:id", getTripById);
 
-
 /**
  * @openapi
  * /api/trips/{id}:
@@ -666,7 +734,12 @@ router.get("/api/trips/:id", getTripById);
  *       '500':
  *         description: Internal server error
  */
-router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTrip);
+router.put(
+    "/api/trips/:id",
+    requireApiLogin,
+    requireApiRole("admin"),
+    updateTrip
+);
 
 /**
  * @openapi
@@ -698,7 +771,12 @@ router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTri
  *       '500':
  *         description: Internal server error
  */
-router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
+router.delete(
+    "/api/trips/:id",
+    requireApiLogin,
+    requireApiRole("admin"),
+    deleteTrip
+);
 
 /**
  * @openapi

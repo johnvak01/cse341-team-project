@@ -2,6 +2,7 @@ import {
     createUser,
     deleteUserById,
     getAllUsers as findAllUsers,
+    getPaginatedAllUsers as findPaginatedAllUsers,
     getUserById as findUserById,
     getUserByEmail,
     getUserByUsername,
@@ -10,6 +11,88 @@ import {
 import { deleteBookingsByUserId } from "../models/bookings.js";
 import { getRoleByName as findRoleByName } from "../models/roles.js";
 import { hasRole } from "../middleware/authentication.js";
+
+const allowedSortFields = ["name", "username", "email", "role"];
+
+const normalizeName = (value) =>
+    value
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase()
+        .replace(/(^|[\s-])(\p{L})/gu, (_, separator, letter) =>
+            `${separator}${letter.toUpperCase()}`
+        );
+const normalizeUsername = (value) => value.trim().toLowerCase();
+
+const parsePositiveInt = (value, defaultValue) => {
+    if (value === undefined || value === null) {
+        return defaultValue;
+    }
+    if (typeof value !== "string" || !/^\d+$/.test(value)) {
+        return null;
+    }
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+export const getPaginatedAllUsers = async (req, res) => {
+    try {
+        const page = parsePositiveInt(req.query.page, 1);
+        const requestedLimit = parsePositiveInt(req.query.limit, 10);
+
+        if (!page || !requestedLimit || requestedLimit > 50) {
+            return res.status(400).json({
+                errors: [
+                    {
+                        field: "pagination",
+                        message:
+                            "page and limit must be positive integers, and limit cannot exceed 50",
+                    },
+                ],
+            });
+        }
+
+        const limit = requestedLimit;
+        if (req.query.sort && !allowedSortFields.includes(req.query.sort)) {
+            return res.status(400).json({
+                errors: [
+                    {
+                        field: "sort",
+                        message: `Sort must be one of: ${allowedSortFields.join(", ")}`,
+                    },
+                ],
+            });
+        }
+
+        const sort = req.query.sort || "name";
+        const order = req.query.order === "desc" ? -1 : 1;
+
+        const { users, totalUsers } = await findPaginatedAllUsers(
+            {},
+            page,
+            limit,
+            sort,
+            order
+        );
+
+        return res.status(200).json({
+            data: users,
+            pagination: {
+                page,
+                limit,
+                totalUsers,
+                totalPages: Math.ceil(totalUsers / limit),
+                hasNextPage: page * limit < totalUsers,
+                hasPreviousPage: page > 1,
+            },
+        });
+    } catch (error) {
+        console.error("Error fetching paginated users:", error);
+        return res
+            .status(500)
+            .json({ error: "Failed to fetch paginated users" });
+    }
+};
 
 export async function getUsers(req, res) {
     try {
@@ -47,13 +130,21 @@ export async function accountPage(req, res) {
 
 export async function updateUser(req, res) {
     try {
-        const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+        const name =
+            typeof req.body?.name === "string" ? normalizeName(req.body.name) : "";
+        const hasUsername = req.body?.username !== undefined;
+        const username =
+            typeof req.body?.username === "string"
+                ? normalizeUsername(req.body.username)
+                : "";
         const email =
             typeof req.body?.email === "string"
                 ? req.body.email.trim().toLowerCase()
                 : "";
         if (!name || !email) {
-            return res.status(400).json({ error: "Name and email are required" });
+            return res
+                .status(400)
+                .json({ error: "Name and email are required" });
         }
 
         const existingUser = await findUserById(req.params.id);
@@ -65,10 +156,33 @@ export async function updateUser(req, res) {
         const userData = { name };
         if (emailChanged) {
             const emailOwner = await getUserByEmail(email);
-            if (emailOwner && String(emailOwner._id) !== String(existingUser._id)) {
-                return res.status(409).json({ error: "Email is already in use" });
+            if (
+                emailOwner &&
+                String(emailOwner._id) !== String(existingUser._id)
+            ) {
+                return res
+                    .status(409)
+                    .json({ error: "Email is already in use" });
             }
             userData.email = email;
+        }
+
+        if (hasUsername) {
+            if (!username) {
+                return res.status(400).json({ error: "Username is required" });
+            }
+            if (username !== existingUser.username) {
+                const usernameOwner = await getUserByUsername(username);
+                if (
+                    usernameOwner &&
+                    String(usernameOwner._id) !== String(existingUser._id)
+                ) {
+                    return res
+                        .status(409)
+                        .json({ error: "Username is already in use" });
+                }
+                userData.username = username;
+            }
         }
 
         if (req.body?.role !== undefined) {
@@ -108,7 +222,11 @@ export async function updateUser(req, res) {
         return res.status(200).json(user);
     } catch (error) {
         if (error.code === 11000) {
-            return res.status(409).json({ error: "Email is already in use" });
+            return res.status(409).json({
+                error: error.keyPattern?.username
+                    ? "Username is already in use"
+                    : "Email is already in use",
+            });
         }
         if (error.name === "ValidationError" || error.name === "CastError") {
             return res.status(400).json({ error: "Invalid user information" });
@@ -148,10 +266,11 @@ export async function deleteUser(req, res) {
 
 export async function register(req, res) {
     const apiRequest = req.path.startsWith("/api/");
-    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const name =
+        typeof req.body?.name === "string" ? normalizeName(req.body.name) : "";
     const username =
         typeof req.body?.username === "string"
-            ? req.body.username.trim().toLowerCase()
+            ? normalizeUsername(req.body.username)
             : "";
     const email =
         typeof req.body?.email === "string"
@@ -162,9 +281,19 @@ export async function register(req, res) {
     const confirmPassword =
         req.body?.["confirm-password"] ?? req.body?.confirmPassword;
 
-    if (!name || !username || !email || !password || (!apiRequest && !confirmPassword)) {
+    if (
+        !name ||
+        !username ||
+        !email ||
+        !password ||
+        (!apiRequest && !confirmPassword)
+    ) {
         if (apiRequest) {
-            return res.status(400).json({ error: "Name, username, email, and password are required",});
+            return res
+                .status(400)
+                .json({
+                    error: "Name, username, email, and password are required",
+                });
         }
         return res.redirect("/register");
     }
@@ -227,13 +356,11 @@ export async function register(req, res) {
                 ? "Username is already in use. Try another username."
                 : "Email is already in use. Try another email address.";
             if (apiRequest) {
-                return res
-                    .status(409)
-                    .json({
-                        error: isUsernameConflict
-                            ? "Username is already in use"
-                            : "Email is already in use",
-                    });
+                return res.status(409).json({
+                    error: isUsernameConflict
+                        ? "Username is already in use"
+                        : "Email is already in use",
+                });
             }
             return res.status(409).render("register", {
                 title: "Register",
