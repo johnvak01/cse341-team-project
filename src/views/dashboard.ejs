@@ -4,9 +4,11 @@
     <h1>Welcome, <%= user.name %></h1>
 </section>
 
-<a href="/account-user">Update Your Account</a>
-<a href="/bookings-admin">View Your Bookings</a>
-<a href="/trips">View Trips</a>
+<nav class="dashboard-actions" aria-label="Dashboard links">
+    <a href="/account-user">Update Your Account</a>
+    <a href="/bookings-admin">View Your Bookings</a>
+    <a href="/trips">View Trips</a>
+</nav>
 
 <section
     class="trains-catalog"

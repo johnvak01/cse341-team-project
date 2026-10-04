@@ -170,6 +170,7 @@ export async function accountPage(req, res) {
         title: "Your Account",
         usersEndpoint: `/api/users/${req.user._id}`,
         isAdmin: res.locals.isAdmin,
+        isAdminList: false,
     });
 }
 
