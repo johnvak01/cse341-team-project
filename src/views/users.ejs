@@ -1,0 +1,58 @@
+<%- include('./partials/header') %>
+<section class="trains-hero users-hero">
+    <h1><%= title %></h1>
+</section>
+
+<section
+    class="users-admin"
+    id="users-admin"
+    data-users-endpoint="<%= usersEndpoint %>"
+>
+    <p id="users-loading" role="status">Loading users...</p>
+    <p id="users-error" class="users-error" role="alert" hidden></p>
+    <p id="users-empty" hidden>No users found.</p>
+    <div class="users-list" id="users-list" aria-live="polite"></div>
+
+    <template id="user-row-template">
+        <article class="user-card">
+            <div class="user-details">
+                <h2 data-field="name"></h2>
+                <p data-field="email"></p>
+                <p class="user-role" data-field="role"></p>
+            </div>
+            <button type="button" class="user-edit" aria-label="Edit user" title="Edit user">&#9998;</button>
+        </article>
+    </template>
+
+    <template id="user-edit-template">
+        <form class="user-card user-edit-form">
+            <label>
+                <span>Name</span>
+                <input name="name" autocomplete="name" required>
+            </label>
+            <label>
+                <span>Email</span>
+                <input name="email" type="email" autocomplete="email" required>
+            </label>
+            <% if (isAdmin) { %>
+                <label class="user-role-select">
+                    <span>Role</span>
+                    <select name="role">
+                        <option value="customer">Customer</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </label>
+            <% } else { %>
+                <p class="user-role" data-field="role"></p>
+            <% } %>
+            <div class="user-actions">
+                <button type="submit" class="user-save">Save</button>
+                <button type="button" class="user-cancel">Cancel</button>
+                <button type="button" class="user-delete">Delete</button>
+            </div>
+        </form>
+    </template>
+</section>
+
+<script src="/js/users.js" defer></script>
+<%- include('./partials/footer') %>

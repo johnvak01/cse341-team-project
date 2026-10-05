@@ -1,8 +1,19 @@
 <%- include('./partials/header') %>
-
-    <section class="trains-catalog">
-        <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
-        <div class="trains-state trains-error" id="bookings-error" hidden></div>
+<section class="trains-hero">
+    <h1>Bookings</h1>
+</section>
+<section
+    class="trains-catalog"
+    id="bookings-admin"
+    data-is-admin="<%= isAdmin %>"
+    data-current-user-id="<%= currentUserId %>"
+    data-current-user-email="<%= currentUserEmail %>"
+>
+    <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
+    <div class="trains-state trains-error" id="bookings-error" hidden></div>
+    <div class="trains-state" id="bookings-empty" hidden>
+        No bookings found.
+    </div>
 
         <div class="trains-grid" id="bookings-list"></div>
         
@@ -29,46 +40,119 @@
 
                 <p class="train-description" data-field="ticket"></p>
 
-                <dl class="train-specs">
-                    <div class="spec-item">
-                        <dt>Trip</dt>
-                        <dd data-field="tripId"></dd>
-                    </div>
-                    <div class="spec-item">
-                        <dt>Travel Day</dt>
-                        <dd data-field="selectedDay"></dd>
-                    </div>
-                    <div class="spec-item">
-                        <dt>Passengers</dt>
-                        <dd data-field="passengers"></dd>
-                    </div>
-                    <div class="spec-item">
-                        <dt>Booked On</dt>
-                        <dd data-field="bookingDate"></dd>
-                    </div>
-                </dl>
-
-                <div class="booking-view-actions">
-                    <button type="button" class="btn-edit-booking">Edit</button>
-                    <button type="button" class="btn-delete-booking">Delete</button>
+            <dl class="train-specs">
+                <div class="spec-item">
+                    <dt>Trip</dt>
+                    <dd data-field="tripId"></dd>
                 </div>
+                <div class="spec-item">
+                    <dt>Travel Day</dt>
+                    <dd data-field="selectedDay"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Passengers</dt>
+                    <dd data-field="passengers"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Confirmation</dt>
+                    <dd data-field="confirmationId"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Booked By</dt>
+                    <dd data-field="owner"></dd>
+                </div>
+                <div class="spec-item">
+                    <dt>Booked On</dt>
+                    <dd data-field="bookingDate"></dd>
+                </div>
+            </dl>
 
-                <form class="booking-edit-form" hidden>
-                    <label>
-                        Travel Day
-                        <input type="text" name="selectedDay" required>
-                    </label>
-                    <label>
-                        Ticket Class
-                        <input type="text" name="ticketClass" required>
-                    </label>
-                    <div class="booking-edit-actions">
-                        <button type="submit" class="btn-save-booking">Save</button>
-                        <button type="button" class="btn-cancel-edit">Cancel</button>
+            <div class="booking-view-actions">
+                <button type="button" class="btn-edit-passengers">Edit</button>
+                <button type="button" class="btn-upgrade-booking">
+                    Upgrade
+                </button>
+                <button type="button" class="btn-delete-booking">Delete</button>
+            </div>
+            <p class="booking-owner-message" hidden></p>
+
+            <dialog
+                class="booking-flow-dialog booking-passenger-dialog"
+                aria-label="Edit passenger details"
+            >
+                <form class="booking-passengers-form">
+                    <header class="booking-dialog-header">
+                        <h2>Edit passenger details</h2>
+                        <p>Update the traveler information for this booking.</p>
+                    </header>
+                    <div class="booking-passenger-fields"></div>
+                    <p class="booking-passenger-error" role="alert" hidden></p>
+                    <div class="booking-dialog-actions">
+                        <button type="button" class="btn-cancel-passenger-edit">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-save-passengers">
+                            Save changes
+                        </button>
                     </div>
                 </form>
-            </article>
-        </template>
-    </section>
+            </dialog>
 
-    <%- include('./partials/footer') %>
+            <dialog
+                class="booking-flow-dialog booking-upgrade-dialog"
+                aria-label="Upgrade booking"
+            >
+                <form class="booking-upgrade-form">
+                    <header class="booking-dialog-header">
+                        <h2>Upgrade all seats</h2>
+                        <p>
+                            Choose a higher class. The price difference updates
+                            before you confirm.
+                        </p>
+                    </header>
+                    <label class="booking-upgrade-select">
+                        New ticket class
+                        <select name="ticketClass" required></select>
+                    </label>
+                    <p
+                        class="booking-upgrade-quote"
+                        aria-live="polite"
+                        hidden
+                    ></p>
+                    <div class="booking-dialog-actions">
+                        <button type="button" class="btn-cancel-upgrade">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn-save-booking" hidden>
+                            Confirm upgrade
+                        </button>
+                    </div>
+                </form>
+            </dialog>
+
+            <dialog
+                class="booking-flow-dialog booking-delete-dialog"
+                aria-label="Delete booking"
+            >
+                <div class="booking-dialog-header">
+                    <h2>Delete booking?</h2>
+                    <p>
+                        This permanently deletes the booking and its passenger
+                        details.
+                    </p>
+                </div>
+                <p class="booking-delete-error" role="alert" hidden></p>
+                <div class="booking-dialog-actions">
+                    <button type="button" class="btn-cancel-delete">
+                        Keep booking
+                    </button>
+                    <button type="button" class="btn-delete-confirm">
+                        Delete booking
+                    </button>
+                </div>
+            </dialog>
+        </article>
+    </template>
+</section>
+
+<%- include('./partials/footer') %>
