@@ -62,6 +62,15 @@ describe('GET /api/trains', () => {
     });
   });
 
+  test('keeps a stable order across pages when sort values tie', async () => {
+    const page1 = await request(app).get('/api/trains?sort=maxSpeedKmh&limit=2&page=1');
+    const page2 = await request(app).get('/api/trains?sort=maxSpeedKmh&limit=2&page=2');
+
+    const ids = [...page1.body.data, ...page2.body.data].map((train) => train.id);
+
+    expect(new Set(ids).size).toBe(4);
+  });
+
   test('rejects an invalid page value', async () => {
     const response = await request(app).get('/api/trains?page=abc');
 

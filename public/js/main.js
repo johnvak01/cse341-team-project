@@ -49,6 +49,7 @@ const hookTrainsCatalog = async () => {
     }
 
     let currentPage = 1;
+    let activeRequest = null;
 
     const renderTrains = (trains) => {
         const fragment = document.createDocumentFragment();
@@ -76,8 +77,14 @@ const hookTrainsCatalog = async () => {
     };
 
     const loadTrains = async (page) => {
+        if (activeRequest) {
+            activeRequest.abort();
+        }
+        activeRequest = new AbortController();
+        const { signal } = activeRequest;
+
         try {
-            const response = await fetch(`/api/trains?page=${page}&limit=10`, { cache: 'no-store' });
+            const response = await fetch(`/api/trains?page=${page}&limit=10`, { cache: 'no-store', signal });
             if (!response.ok) {
                 throw new Error(`Failed to load trains (${response.status})`);
             }
@@ -105,7 +112,18 @@ const hookTrainsCatalog = async () => {
             if (loadingEl) {
                 loadingEl.hidden = true;
             }
+            if (errorEl) {
+                errorEl.hidden = true;
+            }
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            listEl.replaceChildren();
+            if (paginationEl) {
+                paginationEl.hidden = true;
+            }
             if (loadingEl) {
                 loadingEl.hidden = true;
             }
