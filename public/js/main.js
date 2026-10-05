@@ -53,6 +53,7 @@ const hookTrainsCatalog = async () => {
 
     let currentPage = 1;
     let searchDebounceTimer = null;
+    let activeRequest = null;
 
     const renderTrains = (trains) => {
         const fragment = document.createDocumentFragment();
@@ -138,6 +139,12 @@ const hookTrainsCatalog = async () => {
     };
 
     const loadTrains = async (page) => {
+        if (activeRequest) {
+            activeRequest.abort();
+        }
+        activeRequest = new AbortController();
+        const { signal } = activeRequest;
+
         try {
             const response = await fetch(`/api/trains?${buildQueryString(page)}`, { cache: 'no-store' });
             if (!response.ok) {
@@ -171,6 +178,14 @@ const hookTrainsCatalog = async () => {
                 errorEl.hidden = true;
             }
         } catch (error) {
+            if (error.name === 'AbortError') {
+                return;
+            }
+
+            listEl.replaceChildren();
+            if (paginationEl) {
+                paginationEl.hidden = true;
+            }
             if (loadingEl) {
                 loadingEl.hidden = true;
             }
