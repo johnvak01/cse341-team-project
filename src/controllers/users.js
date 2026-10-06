@@ -20,8 +20,9 @@ const normalizeName = (value) =>
         .trim()
         .replace(/\s+/g, " ")
         .toLowerCase()
-        .replace(/(^|[\s-])(\p{L})/gu, (_, separator, letter) =>
-            `${separator}${letter.toUpperCase()}`
+        .replace(
+            /(^|[\s-])(\p{L})/gu,
+            (_, separator, letter) => `${separator}${letter.toUpperCase()}`
         );
 const normalizeUsername = (value) => value.trim().toLowerCase();
 
@@ -65,7 +66,7 @@ export const getPaginatedAllUsers = async (req, res) => {
             });
         }
 
-        const sort = req.query.sort || "name";
+        const sort = req.query.sort || "username";
         const order = req.query.order === "desc" ? -1 : 1;
         const filter = {};
         const appliedQuery = {};
@@ -73,14 +74,25 @@ export const getPaginatedAllUsers = async (req, res) => {
         if (req.query.q !== undefined) {
             if (typeof req.query.q !== "string") {
                 return res.status(400).json({
-                    errors: [{ field: "q", message: "Search text must be a single string." }],
+                    errors: [
+                        {
+                            field: "q",
+                            message: "Search text must be a single string.",
+                        },
+                    ],
                 });
             }
 
             const searchText = req.query.q.trim();
             if (!searchText || searchText.length > 100) {
                 return res.status(400).json({
-                    errors: [{ field: "q", message: "Search text must be between 1 and 100 characters." }],
+                    errors: [
+                        {
+                            field: "q",
+                            message:
+                                "Search text must be between 1 and 100 characters.",
+                        },
+                    ],
                 });
             }
             filter.$text = { $search: searchText };
@@ -90,21 +102,33 @@ export const getPaginatedAllUsers = async (req, res) => {
         if (req.query.role !== undefined) {
             if (typeof req.query.role !== "string") {
                 return res.status(400).json({
-                    errors: [{ field: "role", message: "Role must be a single value." }],
+                    errors: [
+                        {
+                            field: "role",
+                            message: "Role must be a single value.",
+                        },
+                    ],
                 });
             }
 
             const roleName = req.query.role.trim().toLowerCase();
             if (!allowedUserRoles.includes(roleName)) {
                 return res.status(400).json({
-                    errors: [{ field: "role", message: "Role must be admin or customer." }],
+                    errors: [
+                        {
+                            field: "role",
+                            message: "Role must be admin or customer.",
+                        },
+                    ],
                 });
             }
 
             const role = await findRoleByName(roleName);
             if (!role) {
                 return res.status(400).json({
-                    errors: [{ field: "role", message: "Role is not available." }],
+                    errors: [
+                        { field: "role", message: "Role is not available." },
+                    ],
                 });
             }
             filter.role = role._id;
@@ -177,7 +201,9 @@ export async function accountPage(req, res) {
 export async function updateUser(req, res) {
     try {
         const name =
-            typeof req.body?.name === "string" ? normalizeName(req.body.name) : "";
+            typeof req.body?.name === "string"
+                ? normalizeName(req.body.name)
+                : "";
         const hasUsername = req.body?.username !== undefined;
         const username =
             typeof req.body?.username === "string"
@@ -335,11 +361,9 @@ export async function register(req, res) {
         (!apiRequest && !confirmPassword)
     ) {
         if (apiRequest) {
-            return res
-                .status(400)
-                .json({
-                    error: "Name, username, email, and password are required",
-                });
+            return res.status(400).json({
+                error: "Name, username, email, and password are required",
+            });
         }
         return res.redirect("/register");
     }

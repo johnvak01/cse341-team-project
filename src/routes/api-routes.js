@@ -234,17 +234,19 @@ router.post("/api/auth/register", requireApiGuestOrAdmin, register);
  *       - name: sort
  *         in: query
  *         required: false
- *         description: Field to sort by (name, username, email, or role name)
+ *         description: Field to sort by (default username; name, username, email, or role name)
  *         schema:
  *           type: string
  *           enum: [name, username, email, role]
+ *           default: username
  *       - name: order
  *         in: query
  *         required: false
- *         description: Sort order (asc or desc)
+ *         description: Sort order (default asc; asc or desc)
  *         schema:
  *           type: string
  *           enum: [asc, desc]
+ *           default: asc
  *     responses:
  *       '200':
  *         description: >
