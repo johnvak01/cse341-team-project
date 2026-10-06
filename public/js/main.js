@@ -146,7 +146,7 @@ const hookTrainsCatalog = async () => {
         const { signal } = activeRequest;
 
         try {
-            const response = await fetch(`/api/trains?${buildQueryString(page)}`, { cache: 'no-store' });
+            const response = await fetch(`/api/trains?${buildQueryString(page)}`, { cache: 'no-store', signal });
             if (!response.ok) {
                 throw new Error(`Failed to load trains (${response.status})`);
             }
