@@ -8,7 +8,7 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
+import { getAllTrips, getTripById, updateTrip, deleteTrip, getPaginatedtripsList } from "../controllers/trips.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -560,6 +560,140 @@ router.get("/api/stations/:id", getStationById);
  *   get:
  *     tags:
  *       - Trips
+ *     summary: Get a paginated list of trips
+ *     description: >
+ *       Returns trips one page at a time, sorted by the chosen field.
+ *       A page beyond the last one returns an empty data array with a 200.
+ *       Invalid page, limit, or sort values return 400.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         description: Page number, starting at 1
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *       - name: limit
+ *         in: query
+ *         description: Trips per page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           minimum: 1
+ *           maximum: 50
+ *       - name: sort
+ *         in: query
+ *         description: Field to sort by
+ *         schema:
+ *           type: string
+ *           default: name
+ *           enum:
+ *             - name
+ *             - region
+ *             - startStation
+ *             - endStation
+ *             - distance
+ *             - bestSeason
+ *       - name: order
+ *         in: query
+ *         description: Sort direction
+ *         schema:
+ *           type: string
+ *           default: asc
+ *           enum:
+ *             - asc
+ *             - desc
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       region:
+ *                         type: string
+ *                       startStation:
+ *                         type: string
+ *                       endStation:
+ *                         type: string
+ *                       duration:
+ *                         type: string
+ *                       distance:
+ *                         type: number
+ *                       highlights:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       bestSeason:
+ *                         type: string
+ *                       operatingMonths:
+ *                         type: array
+ *                         items:
+ *                           type: integer
+ *                       imageUrl:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalTrips:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPrevPage:
+ *                       type: boolean
+ *       '400':
+ *         description: Invalid page, limit, or sort value
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       field:
+ *                         type: string
+ *                       message:
+ *                         type: string
+ *       '500':
+ *         description: Internal error
+ */
+router.get("/api/trips", getPaginatedtripsList);
+
+/**
+ * @openapi
+ * /api/trips/all:
+ *   get:
+ *     tags:
+ *       - Trips
  *     summary: Get all trips
  *     description: Returns every trip in the trips collection
  *     responses:
@@ -568,7 +702,9 @@ router.get("/api/stations/:id", getStationById);
  *       '500':
  *         description: Internal error
  */
-router.get("/api/trips", getAllTrips);
+router.get("/api/trips/all", getAllTrips);
+
+
 
 /**
  * @openapi
