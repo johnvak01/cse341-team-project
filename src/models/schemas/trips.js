@@ -33,6 +33,11 @@ const tripSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        trainId: {
+            type: String,
+            required: true,
+            trim: true,
+        },
         duration: {
             type: String,
             required: true,

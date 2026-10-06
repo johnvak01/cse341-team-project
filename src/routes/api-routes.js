@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllTrains, getTrainById } from "../controllers/trains.js";
+import { getAllTrains, getTrainById, getTripsByTrain } from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
@@ -426,6 +426,32 @@ router.get("/api/trains", getAllTrains);
  *         description: Internal server error.
  */
 router.get("/api/trains/:id", getTrainById);
+
+/**
+ * @openapi
+ * /api/trains/{id}/trips:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the trips a train runs
+ *     description: Returns every trip whose trainId matches the requested train.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the train to look up trips for, such as kiha-261
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully.
+ *       '404':
+ *         description: Train was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.get("/api/trains/:id/trips", getTripsByTrain);
 
 /**
  * @openapi

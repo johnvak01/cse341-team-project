@@ -43,6 +43,13 @@
         <span class="info-label">Best Season</span>
         <span class="info-value season-<%= details.bestSeason %>"><%= details.bestSeason.charAt(0).toUpperCase() + details.bestSeason.slice(1) %></span>
       </div>
+
+      <% if (train) { %>
+      <div class="info-item">
+        <span class="info-label">Your Train</span>
+        <span class="info-value"><a href="/trains/<%= train.id %>"><%= train.name %></a></span>
+      </div>
+      <% } %>
     </div>
 
     <div class="route-stations">

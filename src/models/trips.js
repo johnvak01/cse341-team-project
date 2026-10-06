@@ -8,6 +8,10 @@ export async function getTripById(id) {
     return Trip.findOne({ id }).lean();
 }
 
+export async function getTripsByTrainId(trainId) {
+    return Trip.find({ trainId }).lean();
+}
+
 export async function getTripFilters() {
     const [regions, seasons] = await Promise.all([
         Trip.distinct("region"),
