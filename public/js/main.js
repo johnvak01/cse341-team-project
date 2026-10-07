@@ -405,7 +405,7 @@ const hookBookingCatalog = async () => {
         const payload = await response.json();
         const bookings = Array.isArray(payload) ? payload : payload.bookings || [];
         const fragment = document.createDocumentFragment();
-        if (bookings.length === 0) {
+        if(bookings.length === 0){
             const noBookingsEl = document.createElement('p');
             noBookingsEl.textContent = 'No bookings found.';
             fragment.appendChild(noBookingsEl);
@@ -499,7 +499,7 @@ const hookBookingCatalog = async () => {
                 const sortOption = document.createElement('option');
                 sortOption.textContent = `${field}`;
                 sortOption.value = `${field}`;
-                if (field == order) {
+                if (field == sort) {
                     sortOption.selected = true;
                 }
                 sortOrder.appendChild(sortOption);
@@ -508,7 +508,7 @@ const hookBookingCatalog = async () => {
 
         sortOrder.addEventListener('change', (event) => {
             const target = event.target.value;
-            console.log("target: ", target);
+
             // Check if the user selected a valid URL option (not the placeholder)
             if (target) {
                 window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
