@@ -530,63 +530,63 @@ const hookBookingCatalog = async () => {
 
 };
 
-    listEl.addEventListener("submit", async (event) => {
-        if (
-            !event.target.matches(".booking-passengers-form") &&
-            !event.target.matches(".booking-upgrade-form")
-        )
-            return;
-        event.preventDefault();
+//     listEl.addEventListener("submit", async (event) => {
+//         if (
+//             !event.target.matches(".booking-passengers-form") &&
+//             !event.target.matches(".booking-upgrade-form")
+//         )
+//             return;
+//         event.preventDefault();
 
-        const form = event.target;
-        const bookingUrl = `/api/bookings/${encodeURIComponent(form.closest(".train-card").dataset.id)}`;
-        if (form.matches(".booking-passengers-form")) {
-            const passengers = Array.from(
-                form.querySelectorAll(".booking-passenger-fields fieldset"),
-                (fieldset) =>
-                    Object.fromEntries(
-                        Array.from(
-                            fieldset.querySelectorAll("input"),
-                            (input) => [input.name, input.value]
-                        )
-                    )
-            );
-            const errorElement = form.querySelector(".booking-passenger-error");
-            try {
-                await requestJson(bookingUrl, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ passengers }),
-                });
-                form.closest(".booking-passenger-dialog").close();
-                await loadBookings();
-            } catch (error) {
-                errorElement.textContent = error.message;
-                errorElement.hidden = false;
-            }
-            return;
-        }
+//         const form = event.target;
+//         const bookingUrl = `/api/bookings/${encodeURIComponent(form.closest(".train-card").dataset.id)}`;
+//         if (form.matches(".booking-passengers-form")) {
+//             const passengers = Array.from(
+//                 form.querySelectorAll(".booking-passenger-fields fieldset"),
+//                 (fieldset) =>
+//                     Object.fromEntries(
+//                         Array.from(
+//                             fieldset.querySelectorAll("input"),
+//                             (input) => [input.name, input.value]
+//                         )
+//                     )
+//             );
+//             const errorElement = form.querySelector(".booking-passenger-error");
+//             try {
+//                 await requestJson(bookingUrl, {
+//                     method: "PUT",
+//                     headers: { "Content-Type": "application/json" },
+//                     body: JSON.stringify({ passengers }),
+//                 });
+//                 form.closest(".booking-passenger-dialog").close();
+//                 await loadBookings();
+//             } catch (error) {
+//                 errorElement.textContent = error.message;
+//                 errorElement.hidden = false;
+//             }
+//             return;
+//         }
 
-        const ticketClass = form.elements.namedItem("ticketClass").value;
-        if (!ticketClass || form.dataset.quotedClass !== ticketClass) return;
+//         const ticketClass = form.elements.namedItem("ticketClass").value;
+//         if (!ticketClass || form.dataset.quotedClass !== ticketClass) return;
 
-        try {
-            await requestJson(bookingUrl, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ticketClass }),
-            });
-            form.closest(".booking-upgrade-dialog").close();
-            await loadBookings();
-        } catch (error) {
-            const quoteElement = form.querySelector(".booking-upgrade-quote");
-            quoteElement.textContent = error.message;
-            quoteElement.hidden = false;
-        }
-    });
+//         try {
+//             await requestJson(bookingUrl, {
+//                 method: "PUT",
+//                 headers: { "Content-Type": "application/json" },
+//                 body: JSON.stringify({ ticketClass }),
+//             });
+//             form.closest(".booking-upgrade-dialog").close();
+//             await loadBookings();
+//         } catch (error) {
+//             const quoteElement = form.querySelector(".booking-upgrade-quote");
+//             quoteElement.textContent = error.message;
+//             quoteElement.hidden = false;
+//         }
+//     });
 
-    await loadBookings();
-};
+//     await loadBookings();
+// };
 
 document.addEventListener("DOMContentLoaded", () => {
     hookTrainsCatalog();

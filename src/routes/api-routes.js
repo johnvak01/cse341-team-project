@@ -9,10 +9,7 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
-import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
-import { 
-    getAllTicketClasses, 
-    getTicketClassesForDay 
+// import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -20,7 +17,7 @@ import {
     updateBookingById,
     deleteBookingById,
     getBookingById,
-    getBookingUpgradeQuote,
+    getBookingUpgradeQuote, getPaginatedBookings
 } from "../controllers/bookings.js";
 import { getUserById as getUserById } from "../controllers/users.js";
 import {
@@ -702,7 +699,7 @@ router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTri
  *       '500':
  *         description: Internal server error
  */
-router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
+router.delete("/api/trips/:id", requireApiLogin, requireApiRole('admin'), deleteTrip);
 
 /**
  * @openapi
@@ -1157,7 +1154,7 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *                   type: string
  *                   description: Error message
  */
-router.get("/api/bookings_paginated", requireApiLogin, getPaginatedBookings);
+router.get("/api/bookings_paginated", requireApiLogin, requireApiRole('admin'), getPaginatedBookings);
 
 
 export default router;

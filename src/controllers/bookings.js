@@ -520,6 +520,5 @@ export {
     processBookingRequest,
     bookingPage,
     bookingsPage,
-    getPaginatedBookings
-    confirmationPage,
+    getPaginatedBookings, confirmationPage
 };
