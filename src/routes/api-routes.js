@@ -9,6 +9,7 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
+// import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -16,7 +17,7 @@ import {
     updateBookingById,
     deleteBookingById,
     getBookingById,
-    getBookingUpgradeQuote,
+    getBookingUpgradeQuote, getPaginatedBookings
 } from "../controllers/bookings.js";
 import { getUserById as getUserById } from "../controllers/users.js";
 import {
@@ -698,7 +699,7 @@ router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTri
  *       '500':
  *         description: Internal server error
  */
-router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
+router.delete("/api/trips/:id", requireApiLogin, requireApiRole('admin'), deleteTrip);
 
 /**
  * @openapi
@@ -1035,5 +1036,125 @@ router.get("/api/ticket-classes", (req, res, next) => {
     }
     return getAllTicketClasses(req, res, next);
 });
+
+// API routes: send JSON errors that fetch() can inspect
+
+
+// router.get('/orders/me', requireApiLogin, getMyOrders);
+
+// router.delete('/projects/:id', requireApiRole('admin'), deleteProject);
+
+
+/**
+ * @swagger
+ * /api/bookings_paginated:
+ *   get:
+ *     summary: Retrieve a paginated list of bookings
+ *     tags:
+ *       - Bookings
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         description: The page number to retrieve (default is 1)
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *       - name: limit
+ *         in: query
+ *         description: The number of bookings to retrieve per page (default is 10, maximum is 50)
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *       - name: sort
+ *         in: query
+ *         description: The field to sort by (default is 'createdAt'). Allowed values are 'createdAt', 'selectedDay', 'ticketClass', 'tripId', 'scheduleId'.
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: order
+ *         in: query
+ *         description: The order of sorting (default is 'asc'). Use 'desc' for descending order.
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *     responses:
+ *       200:
+ *         description: A paginated list of bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of bookings
+ *                 page:
+ *                   type: integer
+ *                   description: Current page number
+ *                 limit:
+ *                   type: integer
+ *                   description: Number of bookings per page
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         description: The booking ID
+ *                       userId:
+ *                         type: string
+ *                         description: The ID of the user who made the booking
+ *                       scheduleId:
+ *                         type: integer
+ *                         description: The schedule ID associated with the booking
+ *                       tripId:
+ *                         type: string
+ *                         description: The trip ID associated with the booking
+ *                       ticketClass:
+ *                         type: string
+ *                         description: The class of the ticket booked
+ *                       selectedDay:
+ *                         type: string
+ *                         description: The selected day for the booking
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         description: The date and time when the booking was created
+ *       400:
+ *         description: Invalid pagination or sorting parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       field:
+ *                         type: string
+ *                         description: The field that caused the error
+ *                       message:
+ *                         type: string
+ *                         description: The error message
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ */
+router.get("/api/bookings_paginated", requireApiLogin, requireApiRole('admin'), getPaginatedBookings);
+
 
 export default router;

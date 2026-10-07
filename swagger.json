@@ -1352,6 +1352,166 @@
           }
         }
       }
+    },
+    "/api/bookings_paginated": {
+      "get": {
+        "summary": "Retrieve a paginated list of bookings",
+        "tags": [
+          "Bookings"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "The page number to retrieve (default is 1)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of bookings to retrieve per page (default is 10, maximum is 50)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "The field to sort by (default is 'createdAt'). Allowed values are 'createdAt', 'selectedDay', 'ticketClass', 'tripId', 'scheduleId'.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "The order of sorting (default is 'asc'). Use 'desc' for descending order.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A paginated list of bookings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "description": "Total number of bookings"
+                    },
+                    "page": {
+                      "type": "integer",
+                      "description": "Current page number"
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "description": "Number of bookings per page"
+                    },
+                    "bookings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The booking ID"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "description": "The ID of the user who made the booking"
+                          },
+                          "scheduleId": {
+                            "type": "integer",
+                            "description": "The schedule ID associated with the booking"
+                          },
+                          "tripId": {
+                            "type": "string",
+                            "description": "The trip ID associated with the booking"
+                          },
+                          "ticketClass": {
+                            "type": "string",
+                            "description": "The class of the ticket booked"
+                          },
+                          "selectedDay": {
+                            "type": "string",
+                            "description": "The selected day for the booking"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "The date and time when the booking was created"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid pagination or sorting parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": {
+                            "type": "string",
+                            "description": "The field that caused the error"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "The error message"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "tags": []

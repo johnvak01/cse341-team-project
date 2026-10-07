@@ -1,3 +1,39 @@
+const hookRegionSorter = () => {
+    const regionSelect = document.getElementById('region-filter');
+    if (regionSelect) {
+        regionSelect.addEventListener('change', () => {
+            const selectedRegion = regionSelect.value;
+            const url = new URL(window.location.href);
+
+            if (selectedRegion && selectedRegion !== 'all') {
+                url.searchParams.set('region', selectedRegion);
+            } else {
+                url.searchParams.delete('region');
+            }
+
+            window.location.href = url.toString();
+        });
+    }
+};
+
+const hookSeasonSorter = () => {
+    const seasonSelect = document.getElementById('season-filter');
+    if (seasonSelect) {
+        seasonSelect.addEventListener('change', () => {
+            const selectedSeason = seasonSelect.value;
+            const url = new URL(window.location.href);
+
+            if (selectedSeason && selectedSeason !== 'all') {
+                url.searchParams.set('season', selectedSeason);
+            } else {
+                url.searchParams.delete('season');
+            }
+
+            window.location.href = url.toString();
+        });
+    }
+};
+
 const hookTrainsCatalog = async () => {
     const listEl = document.getElementById("trains-list");
     const templateEl = document.getElementById("train-card-template");
@@ -88,8 +124,16 @@ const hookBookingCatalog = async () => {
         if (emptyEl) emptyEl.hidden = true;
 
         try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 1;
+            const limit = urlParams.get('limit') || 10;
+            const sort = urlParams.get('sort') || 'createdAt';
+            const order = urlParams.get('order') || 'asc';
+            let filter = {};
+            let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+
             const [bookings, ticketClasses] = await Promise.all([
-                requestJson("/api/bookings"),
+                requestJson(ApiUrl),
                 requestJson("/api/ticket-classes"),
             ]);
             const fragment = document.createDocumentFragment();
@@ -98,8 +142,15 @@ const hookBookingCatalog = async () => {
             const currentUserEmail = pageEl?.dataset.currentUserEmail
                 ?.trim()
                 .toLowerCase();
+            console.log("bookings: ", bookings);
+            if (bookings.length === 0) {
+                const noBookingsEl = document.createElement('p');
+                noBookingsEl.textContent = 'No bookings found.';
+                fragment.appendChild(noBookingsEl);
 
-            bookings.forEach((booking) => {
+            }
+            const bookingsArray = Array.isArray(bookings) ? bookings : bookings.bookings || [];
+            bookingsArray.forEach((booking) => {
                 const card = templateEl.content.cloneNode(true);
                 const article = card.querySelector(".train-card");
                 const passengers = Array.isArray(booking.passengers)
@@ -259,6 +310,70 @@ const hookBookingCatalog = async () => {
 
             listEl.replaceChildren(fragment);
             if (emptyEl) emptyEl.hidden = bookings.length !== 0;
+            // add pagination controls based on response
+            const paginationControls = document.getElementById('pagination-controls');
+
+            if (paginationControls) {
+                const totalPages = Math.ceil(bookings.total / bookings.limit);
+                console.log("totalPages: ", totalPages);
+                paginationControls.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageLink = document.createElement('a');
+                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}`;
+                    pageLink.textContent = i;
+                    if (i === parseInt(page)) {
+                        pageLink.style.fontWeight = 'bold';
+                    }
+                    paginationControls.appendChild(pageLink);
+                }
+            }
+            // add sorting controls based on response
+            const sortCategory = document.getElementById('sort-by');
+            if (sortCategory) {
+                sortCategory.innerHTML = '';
+                const sortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId'];
+                sortFields.forEach(field => {
+                    const sortOption = document.createElement('option');
+                    sortOption.textContent = `${field}`;
+                    sortOption.value = `${field}`;
+                    if (field == sort) {
+                        sortOption.selected = true;
+                    }
+                    sortCategory.appendChild(sortOption);
+                });
+            }
+
+            sortCategory.addEventListener('change', (event) => {
+                const target = event.target.value;
+
+                // Check if the user selected a valid URL option (not the placeholder)
+                if (target) {
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+                }
+            });
+            const sortOrder = document.getElementById('sort-order');
+            if (sortOrder) {
+                sortOrder.innerHTML = '';
+                const sortFields = ['asc', 'desc'];
+                sortFields.forEach(field => {
+                    const sortOption = document.createElement('option');
+                    sortOption.textContent = `${field}`;
+                    sortOption.value = `${field}`;
+                    if (field == order) {
+                        sortOption.selected = true;
+                    }
+                    sortOrder.appendChild(sortOption);
+                });
+            }
+
+            sortOrder.addEventListener('change', (event) => {
+                const target = event.target.value;
+
+                // Check if the user selected a valid URL option (not the placeholder)
+                if (target) {
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+                }
+            });
         } catch (error) {
             if (errorEl) {
                 errorEl.hidden = false;
@@ -269,6 +384,7 @@ const hookBookingCatalog = async () => {
             if (loadingEl) loadingEl.hidden = true;
         }
     };
+
 
     listEl.addEventListener("click", async (event) => {
         const button = event.target.closest("button");
@@ -350,6 +466,88 @@ const hookBookingCatalog = async () => {
             quoteElement.textContent = error.message;
         }
     });
+
+    //     try {
+    //      
+
+    //         // add pagination controls based on response
+    //         const paginationControls = document.getElementById('pagination-controls');
+
+    //         if (paginationControls) {
+    //             const totalPages = Math.ceil(payload.total / payload.limit);
+    //             paginationControls.innerHTML = '';
+    //             for (let i = 1; i <= totalPages; i++) {
+    //                 const pageLink = document.createElement('a');
+    //                 pageLink.href = `?page=${i}&limit=${payload.limit}&sort=${sort}&order=${order}`;
+    //                 pageLink.textContent = i;
+    //                 if (i === parseInt(page)) {
+    //                     pageLink.style.fontWeight = 'bold';
+    //                 }
+    //                 paginationControls.appendChild(pageLink);
+    //             }
+    //         }
+    //         // add sorting controls based on response
+    //         const sortCategory = document.getElementById('sort-by');
+    //         if (sortCategory) {
+    //             sortCategory.innerHTML = '';
+    //             const sortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId'];
+    //             sortFields.forEach(field => {
+    //                 const sortOption = document.createElement('option');
+    //                 sortOption.textContent = `${field}`;
+    //                 sortOption.value = `${field}`;
+    //                 if (field == sort) {
+    //                     sortOption.selected = true;
+    //                 }
+    //                 sortCategory.appendChild(sortOption);
+    //             });
+    //         }
+
+    //         sortCategory.addEventListener('change', (event) => {
+    //             const target = event.target.value;
+
+    //             // Check if the user selected a valid URL option (not the placeholder)
+    //             if (target) {
+    //                 window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+    //             }
+    //         });
+    //         const sortOrder = document.getElementById('sort-order');
+    //         if (sortOrder) {
+    //             sortOrder.innerHTML = '';
+    //             const sortFields = ['asc', 'desc'];
+    //             sortFields.forEach(field => {
+    //                 const sortOption = document.createElement('option');
+    //                 sortOption.textContent = `${field}`;
+    //                 sortOption.value = `${field}`;
+    //                 if (field == sort) {
+    //                     sortOption.selected = true;
+    //                 }
+    //                 sortOrder.appendChild(sortOption);
+    //             });
+    //         }
+
+    //         sortOrder.addEventListener('change', (event) => {
+    //             const target = event.target.value;
+
+    //             // Check if the user selected a valid URL option (not the placeholder)
+    //             if (target) {
+    //                 window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+    //             }
+    //         });
+
+    //     } catch (error) {
+    //         console.log("error: ", error);
+    //         if (loadingEl) {
+    //             loadingEl.hidden = true;
+    //         }
+    //         if (errorEl) {
+    //             errorEl.hidden = false;
+    //             errorEl.textContent = 'Unable to load bookings right now. Please try again in a moment.';
+    //         }
+    //     }
+
+
+
+    // };
 
     listEl.addEventListener("submit", async (event) => {
         if (
