@@ -9,15 +9,382 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
-import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
-import { 
-    getAllTicketClasses, 
-    getTicketClassesForDay 
+// import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
+import {
+    getAllBookings,
+    createBookingApi,
+    getBookingsByUserId,
+    updateBookingById,
+    deleteBookingById,
+    getBookingById,
+    getBookingUpgradeQuote, getPaginatedBookings
+} from "../controllers/bookings.js";
+import { getUserById as getUserById } from "../controllers/users.js";
+import {
+    getAllTicketClasses,
+    getTicketClassesForDay,
 } from "../controllers/ticket-classes.js";
-
-import { requireApiLogin, requireApiRole } from "../middleware/authentication.js";
-
+import {
+    requireApiGuestOrAdmin,
+    requireApiLogin,
+    requireApiRole,
+    requireApiSelfOrAdmin,
+} from "../middleware/authentication.js";
+import {
+    deleteUser,
+    getUsers,
+    updateUser,
+    register,
+} from "../controllers/users.js";
+import { getAllRoles, getRoleByUserId } from "../controllers/roles.js";
+import { login, logout } from "../controllers/login.js";
 const router = Router();
+
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Log in a user
+ *     description: Authenticates a guest. Requests with an active session are rejected; log out before switching accounts.
+ *     security:
+ *       - {}
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             oneOf:
+ *               - type: object
+ *                 properties:
+ *                   email:
+ *                     type: string
+ *                     format: email
+ *                     example: hector@example.com
+ *                   password:
+ *                     type: string
+ *                     format: password
+ *                     example: mysecurepassword
+ *                 required: [email, password]
+ *               - type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     example: hector
+ *                   password:
+ *                     type: string
+ *                     format: password
+ *                     example: mysecurepassword
+ *                 required: [username, password]
+ *     responses:
+ *       '200':
+ *         description: User logged in successfully.
+ *       '400':
+ *         description: Invalid input data.
+ *       '401':
+ *         description: Invalid email or password.
+ *       '409':
+ *         description: A user is already logged in in this session.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.post("/api/auth/login", login);
+
+/**
+ * @openapi
+ * /api/auth/logout:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Log out a user
+ *     description: Logs out the currently authenticated user.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: User logged out successfully.
+ *       '400':
+ *         description: No user is currently logged in.
+ *       '401':
+ *         description: Unauthorized.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.post("/api/auth/logout", logout);
+
+// Register page
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Register a new user
+ *     description: Guests and admins may create a customer account. Signed-in customers are not allowed to register another account.
+ *     security:
+ *       - {}
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Hector
+ *               username:
+ *                 type: string
+ *                 example: hector
+ *               email:
+ *                 type: string
+ *                 example: hector@example.com
+ *               password:
+ *                 type: string
+ *                 example: mysecurepassword
+ *             required:
+ *               - name
+ *               - username
+ *               - email
+ *               - password
+ *     responses:
+ *       '201':
+ *         description: User registered successfully.
+ *       '400':
+ *         description: Invalid input data.
+ *       '403':
+ *         description: Signed-in customer cannot register another account.
+ *       '409':
+ *         description: Email is already in use.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.post("/api/auth/register", requireApiGuestOrAdmin, register);
+
+/**
+ * @openapi
+ * /api/users:
+ *   get:
+ *     tags: [Users]
+ *     summary: List all users
+ *     description: Admin only. Password hashes are never returned.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: Users returned successfully.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Admin role required.
+ */
+router.get("/api/users", requireApiRole("admin"), getUsers);
+
+/**
+ * @openapi
+ * /api/users/{id}:
+ *   get:
+ *     tags: [Users]
+ *     summary: Get a user by ID
+ *     description: The user may retrieve their own record; admins may retrieve any user.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: MongoDB user ID.
+ *         schema:
+ *           type: string
+ *         example: 6ab9358a87b7afeb8a3794b1
+ *     responses:
+ *       '200':
+ *         description: User returned successfully.
+ *       '400':
+ *         description: Invalid user ID.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: The caller is neither this user nor an admin.
+ *       '404':
+ *         description: User not found.
+ */
+router.get("/api/users/:id", requireApiSelfOrAdmin, getUserById);
+
+/**
+ * @openapi
+ * /api/users/{id}:
+ *   put:
+ *     tags: [Users]
+ *     summary: Update a user
+ *     description: Users may update their own name and email. Admins may update any user and may also set role.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 6ab9358a87b7afeb8a3794b1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Hector
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: hector@example.com
+ *               role:
+ *                 type: string
+ *                 enum: [customer, admin]
+ *                 description: Admin only.
+ *                 example: customer
+ *     responses:
+ *       '200':
+ *         description: User updated successfully.
+ *       '400':
+ *         description: Invalid ID or user information.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Caller is not authorized or cannot change roles.
+ *       '404':
+ *         description: User not found.
+ *       '409':
+ *         description: Email is already in use.
+ */
+router.put("/api/users/:id", requireApiSelfOrAdmin, updateUser);
+
+/**
+ * @openapi
+ * /api/users/{id}:
+ *   delete:
+ *     tags: [Users]
+ *     summary: Delete a user
+ *     description: Users may delete their own account; admins may delete any account. Associated bookings are deleted too.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 6ab9358a87b7afeb8a3794b1
+ *     responses:
+ *       '200':
+ *         description: User deleted successfully.
+ *       '400':
+ *         description: Invalid user ID.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Caller is neither this user nor an admin.
+ *       '404':
+ *         description: User not found.
+ */
+router.delete("/api/users/:id", requireApiSelfOrAdmin, deleteUser);
+
+/**
+ * @openapi
+ * /api/users:
+ *   post:
+ *     tags: [Users]
+ *     summary: Register a user
+ *     description: Guests and admins may create customer accounts. Signed-in customers are forbidden.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, username, email, password]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Hector
+ *               username:
+ *                 type: string
+ *                 example: hector
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: hector@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: mysecurepassword
+ *     responses:
+ *       '201':
+ *         description: User registered successfully.
+ *       '400':
+ *         description: Required registration data is missing or invalid.
+ *       '403':
+ *         description: Signed-in customers cannot create accounts.
+ *       '409':
+ *         description: Email is already in use.
+ */
+router.post("/api/users", requireApiGuestOrAdmin, register);
+
+/**
+ * @openapi
+ * /api/roles:
+ *   get:
+ *     tags: [Roles]
+ *     summary: List roles
+ *     description: Admin only.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     responses:
+ *       '200':
+ *         description: Roles returned successfully.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Admin role required.
+ */
+router.get("/api/roles", requireApiRole("admin"), getAllRoles);
+
+/**
+ * @openapi
+ * /api/roles/user/{userId}:
+ *   get:
+ *     tags: [Roles]
+ *     summary: Get a role by user ID
+ *     description: Admin only.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 64b8f0c2e1b2a3d4f5678901
+ *     responses:
+ *       '200':
+ *         description: Role returned successfully.
+ *       '404':
+ *         description: User or role not found.
+ *       '400':
+ *         description: Invalid user ID.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Admin role required.
+ */
+router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
 
 /**
  * @openapi
@@ -91,11 +458,14 @@ router.get("/api/schedules", getAllSchedules);
  *         required: true
  *         description: The ID of the schedule to retrieve, such as 1
  *         schema:
- *           type: string
+ *           type: integer
+ *           format: int32
  *         example: 1
  *     responses:
  *       '200':
  *         description: Schedule retrieved successfully.
+ *       '400':
+ *         description: Schedule ID must be an integer.
  *       '404':
  *         description: Schedule was not found.
  *       '500':
@@ -235,7 +605,9 @@ router.get("/api/trips/:id", getTripById);
  *     tags:
  *       - Trips
  *     summary: Update an existing trip (Admin Only)
- *     description: Updates trip details. Validates that incoming start/end stations and schedule IDs already exist before saving.
+ *     description: Updates trip details. Station values must match station names in the catalog; schedule IDs are numeric IDs from GET /api/schedules.
+ *     security:
+ *       - SessionCookieAuth: []
  *     parameters:
  *       - name: id
  *         in: path
@@ -253,26 +625,34 @@ router.get("/api/trips/:id", getTripById);
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Scenic Alpine Express"
+ *                 example: "Alpine Panorama Express"
  *               description:
  *                 type: string
- *                 example: "A beautiful train route through the mountain ranges."
+ *                 example: "Journey through the Japanese Alps with stunning mountain views and traditional villages."
  *               startStation:
  *                 type: string
- *                 example: "Zermatt"
+ *                 example: "Nagoya Station"
  *               endStation:
  *                 type: string
- *                 example: "St. Moritz"
+ *                 example: "Toyama Station"
  *               distance:
  *                 type: number
  *                 minimum: 0
- *                 example: 291
+ *                 example: 180
  *               scheduleIds:
  *                 type: array
- *                 description: Array of existing schedule custom IDs to link to this trip
+ *                 description: Numeric IDs of existing schedules to associate with this trip
  *                 items:
- *                   type: string
- *                 example: ["SCHED-01", "SCHED-02"]
+ *                   type: integer
+ *                   format: int32
+ *                 example: [1, 2]
+ *             example:
+ *               name: Alpine Panorama Express
+ *               description: Journey through the Japanese Alps with stunning mountain views and traditional villages.
+ *               startStation: Nagoya Station
+ *               endStation: Toyama Station
+ *               distance: 180
+ *               scheduleIds: [1, 2]
  *     responses:
  *       '200':
  *         description: Trip and schedule associations updated successfully.
@@ -297,6 +677,8 @@ router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTri
  *       - Trips
  *     summary: Delete a trip (Admin Only)
  *     description: Deletes a trip record by its custom ID. Automatically triggers a cascading deletion to remove all associated schedules.
+ *     security:
+ *       - SessionCookieAuth: []
  *     parameters:
  *       - name: id
  *         in: path
@@ -317,7 +699,7 @@ router.put("/api/trips/:id", requireApiLogin, requireApiRole('admin'), updateTri
  *       '500':
  *         description: Internal server error
  */
-router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteTrip);
+router.delete("/api/trips/:id", requireApiLogin, requireApiRole('admin'), deleteTrip);
 
 /**
  * @openapi
@@ -326,32 +708,202 @@ router.delete("/api/trips/:id", requireApiLogin,requireApiRole('admin'), deleteT
  *     summary: Get all bookings
  *     tags:
  *       - Bookings
+ *     description: Admins see all bookings. Other signed-in users see bookings they created or are listed as a passenger on.
+ *     security:
+ *       - SessionCookieAuth: []
  *     responses:
- *       200:
- *         description: Bookings returned successfully
- *       401:
- *         description: Authentication required
- *       500:
- *         description: Unable to retrieve bookings
+ *       '200':
+ *         description: Bookings returned successfully.
+ *       '401':
+ *         description: Authentication required.
+ *       '500':
+ *         description: Failed to fetch bookings.
+ *   post:
+ *     tags: [Bookings]
+ *     summary: Create a booking
+ *     description: Creates a booking for the signed-in user. The caller becomes the booking creator.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [scheduleId, tripId, ticketClass, selectedDay, passengers]
+ *             properties:
+ *               scheduleId:
+ *                 type: integer
+ *                 example: 1
+ *               tripId:
+ *                 type: string
+ *                 example: alpine-panorama
+ *               ticketClass:
+ *                 type: string
+ *                 enum: [standard, premium, first]
+ *                 example: standard
+ *               selectedDay:
+ *                 type: string
+ *                 enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+ *                 example: monday
+ *               passengers:
+ *                 type: array
+ *                 minItems: 1
+ *                 maxItems: 8
+ *                 items:
+ *                   type: object
+ *                   required: [firstName, lastName, email, phone]
+ *                   properties:
+ *                     firstName:
+ *                       type: string
+ *                       example: Hector
+ *                     lastName:
+ *                       type: string
+ *                       example: Tanaka
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       example: hector@example.com
+ *                     phone:
+ *                       type: string
+ *                       example: +81 90-1234-5678
+ *           example:
+ *             scheduleId: 1
+ *             tripId: alpine-panorama
+ *             ticketClass: standard
+ *             selectedDay: monday
+ *             passengers:
+ *               - firstName: Hector
+ *                 lastName: Tanaka
+ *                 email: hector@example.com
+ *                 phone: +81 90-1234-5678
+ *     responses:
+ *       '201':
+ *         description: Booking created successfully.
+ *       '400':
+ *         description: Booking details are invalid or the schedule, day, or ticket class is unavailable.
+ *       '401':
+ *         description: Authentication required.
+ *       '404':
+ *         description: Schedule not found.
+ *       '409':
+ *         description: Booking confirmation ID already exists.
+ *       '500':
+ *         description: Failed to create booking.
  */
-router.get('/api/bookings', requireApiLogin, getAllBookings);
+router.get("/api/bookings", requireApiLogin, getAllBookings);
+router.post("/api/bookings", requireApiLogin, createBookingApi);
 
 /**
  * @openapi
- * /api/bookings/me:
+ * /api/bookings/{id}/upgrade-quote:
  *   get:
- *     summary: Get the logged-in user's bookings
+ *     tags: [Bookings]
+ *     summary: Quote a booking ticket upgrade
+ *     description: Calculates the additional fare for every seat in a booking. No payment is processed.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: JRN69ZGP6Y
+ *       - name: ticketClass
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [premium, first]
+ *         example: premium
+ *     responses:
+ *       '200':
+ *         description: Upgrade quote returned.
+ *       '400':
+ *         description: Invalid ticket class or the selected class is not an upgrade.
+ *       '401':
+ *         description: Authentication required.
+ *       '403':
+ *         description: Only the booking creator or an admin may upgrade it.
+ *       '404':
+ *         description: Booking not found.
+ *       '500':
+ *         description: Failed to calculate upgrade price.
+ */
+router.get(
+    "/api/bookings/:id/upgrade-quote",
+    requireApiLogin,
+    getBookingUpgradeQuote
+);
+
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   get:
  *     tags:
  *       - Bookings
+ *     summary: Get a booking by ID
+ *     description: Returns one booking to its owner or an admin.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: JRN69ZGP6Y
  *     responses:
- *       200:
- *         description: Bookings returned successfully
- *       401:
- *         description: Authentication required
- *       500:
- *         description: Unable to retrieve bookings
+ *       '200':
+ *         description: Booking returned successfully.
+ *       '401':
+ *         description: Missing or invalid session.
+ *       '403':
+ *         description: Forbidden.
+ *       '404':
+ *         description: Booking not found.
+ *       '500':
+ *         description: Unable to retrieve booking.
  */
-router.get('/api/bookings/me', requireApiLogin, getMyBookings);
+router.get("/api/bookings/:id", requireApiLogin, getBookingById);
+
+/**
+ * @openapi
+ * /api/users/{userId}/bookings:
+ *   get:
+ *     tags:
+ *       - Bookings
+ *     summary: Get bookings for a user
+ *     description: Users may retrieve bookings they created or are listed as a passenger on; admins may retrieve any user's bookings.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: userId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 6ab9358a87b7afeb8a3794b1
+ *     responses:
+ *       '200':
+ *         description: User bookings returned successfully.
+ *       '400':
+ *         description: Invalid user ID.
+ *       '401':
+ *         description: Authentication required.
+ *       '403':
+ *         description: Forbidden for other users.
+ *       '404':
+ *         description: User not found or user has no bookings.
+ *       '500':
+ *         description: Failed to fetch bookings.
+ */
+router.get(
+    "/api/users/:userId/bookings",
+    requireApiSelfOrAdmin,
+    getBookingsByUserId
+);
 
 /**
  * @openapi
@@ -360,6 +912,7 @@ router.get('/api/bookings/me', requireApiLogin, getMyBookings);
  *     summary: Update a booking
  *     tags:
  *       - Bookings
+ *     description: The booking creator or an admin may edit passenger details or upgrade every seat to a higher ticket class. No payment is processed.
  *     parameters:
  *       - name: id
  *         in: path
@@ -370,23 +923,42 @@ router.get('/api/bookings/me', requireApiLogin, getMyBookings);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               selectedDay: { type: string }
- *               ticketClass: { type: string }
+ *             oneOf:
+ *               - type: object
+ *                 required: [passengers]
+ *                 properties:
+ *                   passengers:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       required: [firstName, lastName, email, phone]
+ *                       properties:
+ *                         firstName: { type: string }
+ *                         lastName: { type: string }
+ *                         email: { type: string, format: email }
+ *                         phone: { type: string }
+ *               - type: object
+ *                 required: [ticketClass]
+ *                 properties:
+ *                   ticketClass: { type: string, enum: [premium, first] }
  *     responses:
  *       200:
- *         description: Booking updated successfully
+ *         description: Booking upgraded successfully
+ *       400:
+ *         description: Invalid passenger details or a ticket class that is not an upgrade.
  *       401:
  *         description: Authentication required
  *       403:
  *         description: Not authorized to edit this booking
  *       404:
  *         description: Booking not found
+ *       500:
+ *         description: Failed to update booking.
  *   delete:
  *     summary: Delete a booking
  *     tags:
  *       - Bookings
+ *     description: The booking creator or an admin may delete the entire booking.
  *     parameters:
  *       - name: id
  *         in: path
@@ -401,9 +973,37 @@ router.get('/api/bookings/me', requireApiLogin, getMyBookings);
  *         description: Not authorized to delete this booking
  *       404:
  *         description: Booking not found
+ *       500:
+ *         description: Failed to delete booking.
  */
-router.put('/api/bookings/:id', requireApiLogin, updateBookingById);
-router.delete('/api/bookings/:id', requireApiLogin, deleteBookingById);
+router.put("/api/bookings/:id", requireApiLogin, updateBookingById);
+
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   delete:
+ *     summary: Delete a booking
+ *     tags:
+ *       - Bookings
+ *     description: The booking creator or an admin may delete the entire booking.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Booking deleted successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Not authorized to delete this booking
+ *       404:
+ *         description: Booking not found
+ *       500:
+ *         description: Failed to delete booking.
+ */
+router.delete("/api/bookings/:id", requireApiLogin, deleteBookingById);
 
 /**
  * @openapi

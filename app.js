@@ -55,6 +55,21 @@ app.use((req, res, next) => {
 // Render the appropriate error page.
 app.use((err, req, res, next) => {
     const status = err.status || 500;
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    if (req.path.startsWith("/api/")) {
+        const message = err.type === "entity.parse.failed"
+            ? "Invalid JSON request body"
+            : status === 404
+                ? "API endpoint not found"
+                : status >= 500
+                    ? "Internal server error"
+                    : err.message;
+        return res.status(status).json({ error: message });
+    }
+
     const template = status === 404 ? "404" : "500";
     const context = {
         title: status === 404 ? "Page Not Found" : "Server Error",

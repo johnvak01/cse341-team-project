@@ -2,6 +2,104 @@ article.booking-page {
     max-width: var(--content-max-width);
     margin: 0 auto;
 
+    .account-required-dialog {
+        position: fixed;
+        inset: 0;
+        width: min(30rem, calc(100vw - 2rem));
+        max-width: none;
+        max-height: calc(100vh - 2rem);
+        margin: auto;
+        overflow: auto;
+        padding: 0;
+        border: 1px solid var(--clr-border);
+        border-radius: var(--radius-lg);
+        background: var(--clr-surface);
+        color: var(--clr-text-primary);
+        box-shadow: var(--shadow-lg);
+
+        &::backdrop {
+            background: rgb(16 30 24 / 58%);
+            backdrop-filter: blur(2px);
+        }
+
+        .account-required-content {
+            position: relative;
+            padding: var(--space-2xl);
+
+            h2 {
+                margin: 0 2rem var(--space-md) 0;
+                color: var(--clr-text-primary);
+                font-size: var(--font-size-xl);
+            }
+
+            p {
+                margin: 0 0 var(--space-xl);
+                color: var(--clr-text-secondary);
+                line-height: var(--line-height-lg);
+            }
+        }
+
+        .account-required-close {
+            position: absolute;
+            top: var(--space-md);
+            right: var(--space-md);
+            display: grid;
+            place-items: center;
+            width: 2.5rem;
+            aspect-ratio: 1;
+            padding: 0;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--clr-text-primary);
+            font-size: var(--font-size-xl);
+            line-height: 1;
+            box-shadow: none;
+            cursor: pointer;
+
+            &:hover {
+                background: transparent;
+                box-shadow: none;
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--clr-primary);
+                outline-offset: 2px;
+            }
+        }
+
+        .account-required-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: var(--space-md);
+
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 2.75rem;
+                padding: var(--space-sm) var(--space-lg);
+                border-radius: var(--radius-md);
+                font: inherit;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+            .btn-primary {
+                border: 1px solid var(--clr-primary);
+                background: var(--clr-primary);
+                color: var(--clr-text-alt-primary);
+            }
+
+            .btn-secondary {
+                border: 1px solid var(--clr-border);
+                background: var(--clr-surface);
+                color: var(--clr-text-primary);
+            }
+        }
+    }
+
     .route-header {
         display: flex;
         flex-direction: column;

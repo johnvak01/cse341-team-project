@@ -48,7 +48,12 @@ export async function getAllSchedules(req, res) {
 export async function getScheduleById(req, res) {
     try {
         const { id } = req.params;
-        const schedule = await findScheduleById(id);
+        const scheduleId = Number(id);
+        if (!Number.isSafeInteger(scheduleId)) {
+            return res.status(400).json({ error: "Schedule ID must be an integer" });
+        }
+
+        const schedule = await findScheduleById(scheduleId);
 
         if (!schedule) {
             return res.status(404).json({ error: "Schedule not found" });
