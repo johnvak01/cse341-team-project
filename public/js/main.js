@@ -387,206 +387,206 @@ const hookBookingCatalog = async () => {
         }
     });
 
-    try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const page = urlParams.get('page') || 1;
-        const limit = urlParams.get('limit') || 10;
-        const sort = urlParams.get('sort') || 'createdAt';
-        const order = urlParams.get('order') || 'asc';
-        let filter = {};
-        let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+//     try {
+//         const urlParams = new URLSearchParams(window.location.search);
+//         const page = urlParams.get('page') || 1;
+//         const limit = urlParams.get('limit') || 10;
+//         const sort = urlParams.get('sort') || 'createdAt';
+//         const order = urlParams.get('order') || 'asc';
+//         let filter = {};
+//         let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
 
-        const response = await fetch(ApiUrl);
+//         const response = await fetch(ApiUrl);
 
-        if (!response.ok) {
-            throw new Error(`Failed to load bookings (${response.status})`);
-        }
+//         if (!response.ok) {
+//             throw new Error(`Failed to load bookings (${response.status})`);
+//         }
 
-        const payload = await response.json();
-        const bookings = Array.isArray(payload) ? payload : payload.bookings || [];
-        const fragment = document.createDocumentFragment();
-        if(bookings.length === 0){
-            const noBookingsEl = document.createElement('p');
-            noBookingsEl.textContent = 'No bookings found.';
-            fragment.appendChild(noBookingsEl);
+//         const payload = await response.json();
+//         const bookings = Array.isArray(payload) ? payload : payload.bookings || [];
+//         const fragment = document.createDocumentFragment();
+//         if(bookings.length === 0){
+//             const noBookingsEl = document.createElement('p');
+//             noBookingsEl.textContent = 'No bookings found.';
+//             fragment.appendChild(noBookingsEl);
 
-        }
-        bookings.forEach((booking) => {
-            const card = templateEl.content.cloneNode(true);
-            const article = card.querySelector('.train-card');
-            article.dataset.id = booking.id;
+//         }
+//         bookings.forEach((booking) => {
+//             const card = templateEl.content.cloneNode(true);
+//             const article = card.querySelector('.train-card');
+//             article.dataset.id = booking.id;
 
-            const passengers = Array.isArray(booking.passengers)
-                ? booking.passengers
-                : booking.passenger
-                    ? [booking.passenger]
-                    : [];
-            const primaryPassenger = passengers[0] || {};
-            const bookedOn = booking.createdAt || booking.bookingDate;
+//             const passengers = Array.isArray(booking.passengers)
+//                 ? booking.passengers
+//                 : booking.passenger
+//                     ? [booking.passenger]
+//                     : [];
+//             const primaryPassenger = passengers[0] || {};
+//             const bookedOn = booking.createdAt || booking.bookingDate;
 
-            card.querySelector('[data-field="name"]').textContent =
-                `${primaryPassenger.firstName || "Unknown"} ${primaryPassenger.lastName || "Passenger"}`;
-            card.querySelector('[data-field="email"]').textContent =
-                primaryPassenger.email || "No email provided";
-            card.querySelector('[data-field="ticket"]').textContent =
-                `Ticket: ${booking.ticketClass || "Unknown"}`;
-            card.querySelector('[data-field="tripId"]').textContent =
-                booking.tripId || booking.trainId || "Unknown";
-            card.querySelector('[data-field="selectedDay"]').textContent =
-                booking.selectedDay || "Unknown";
-            card.querySelector('[data-field="passengers"]').textContent =
-                passengers.length;
-            card.querySelector('[data-field="bookingDate"]').textContent = bookedOn
-                ? new Date(bookedOn).toLocaleDateString()
-                : "Unknown";
+//             card.querySelector('[data-field="name"]').textContent =
+//                 `${primaryPassenger.firstName || "Unknown"} ${primaryPassenger.lastName || "Passenger"}`;
+//             card.querySelector('[data-field="email"]').textContent =
+//                 primaryPassenger.email || "No email provided";
+//             card.querySelector('[data-field="ticket"]').textContent =
+//                 `Ticket: ${booking.ticketClass || "Unknown"}`;
+//             card.querySelector('[data-field="tripId"]').textContent =
+//                 booking.tripId || booking.trainId || "Unknown";
+//             card.querySelector('[data-field="selectedDay"]').textContent =
+//                 booking.selectedDay || "Unknown";
+//             card.querySelector('[data-field="passengers"]').textContent =
+//                 passengers.length;
+//             card.querySelector('[data-field="bookingDate"]').textContent = bookedOn
+//                 ? new Date(bookedOn).toLocaleDateString()
+//                 : "Unknown";
 
-            card.querySelector('input[name="selectedDay"]').value = booking.selectedDay || '';
-            card.querySelector('input[name="ticketClass"]').value = booking.ticketClass || '';
+//             card.querySelector('input[name="selectedDay"]').value = booking.selectedDay || '';
+//             card.querySelector('input[name="ticketClass"]').value = booking.ticketClass || '';
 
-            fragment.appendChild(card);
-        });
+//             fragment.appendChild(card);
+//         });
 
-        listEl.replaceChildren(fragment);
-        if (loadingEl) {
-            loadingEl.hidden = true;
-        }
+//         listEl.replaceChildren(fragment);
+//         if (loadingEl) {
+//             loadingEl.hidden = true;
+//         }
 
-        // add pagination controls based on response
-        const paginationControls = document.getElementById('pagination-controls');
+//         // add pagination controls based on response
+//         const paginationControls = document.getElementById('pagination-controls');
 
-        if (paginationControls) {
-            const totalPages = Math.ceil(payload.total / payload.limit);
-            paginationControls.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                const pageLink = document.createElement('a');
-                pageLink.href = `?page=${i}&limit=${payload.limit}&sort=${sort}&order=${order}`;
-                pageLink.textContent = i;
-                if (i === parseInt(page)) {
-                    pageLink.style.fontWeight = 'bold';
-                }
-                paginationControls.appendChild(pageLink);
-            }
-        }
-        // add sorting controls based on response
-        const sortCategory = document.getElementById('sort-by');
-        if (sortCategory) {
-            sortCategory.innerHTML = '';
-            const sortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId'];
-            sortFields.forEach(field => {
-                const sortOption = document.createElement('option');
-                sortOption.textContent = `${field}`;
-                sortOption.value = `${field}`;
-                if (field == sort) {
-                    sortOption.selected = true;
-                }
-                sortCategory.appendChild(sortOption);
-            });
-        }
-
-        sortCategory.addEventListener('change', (event) => {
-            const target = event.target.value;
-
-            // Check if the user selected a valid URL option (not the placeholder)
-            if (target) {
-                window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
-            }
-        });
-        const sortOrder = document.getElementById('sort-order');
-        if (sortOrder) {
-            sortOrder.innerHTML = '';
-            const sortFields = ['asc', 'desc'];
-            sortFields.forEach(field => {
-                const sortOption = document.createElement('option');
-                sortOption.textContent = `${field}`;
-                sortOption.value = `${field}`;
-                if (field == sort) {
-                    sortOption.selected = true;
-                }
-                sortOrder.appendChild(sortOption);
-            });
-        }
-
-        sortOrder.addEventListener('change', (event) => {
-            const target = event.target.value;
-
-            // Check if the user selected a valid URL option (not the placeholder)
-            if (target) {
-                window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
-            }
-        });
-
-    } catch (error) {
-        console.log("error: ", error);
-        if (loadingEl) {
-            loadingEl.hidden = true;
-        }
-        if (errorEl) {
-            errorEl.hidden = false;
-            errorEl.textContent = 'Unable to load bookings right now. Please try again in a moment.';
-        }
-    }
-
-
-
-};
-
-//     listEl.addEventListener("submit", async (event) => {
-//         if (
-//             !event.target.matches(".booking-passengers-form") &&
-//             !event.target.matches(".booking-upgrade-form")
-//         )
-//             return;
-//         event.preventDefault();
-
-//         const form = event.target;
-//         const bookingUrl = `/api/bookings/${encodeURIComponent(form.closest(".train-card").dataset.id)}`;
-//         if (form.matches(".booking-passengers-form")) {
-//             const passengers = Array.from(
-//                 form.querySelectorAll(".booking-passenger-fields fieldset"),
-//                 (fieldset) =>
-//                     Object.fromEntries(
-//                         Array.from(
-//                             fieldset.querySelectorAll("input"),
-//                             (input) => [input.name, input.value]
-//                         )
-//                     )
-//             );
-//             const errorElement = form.querySelector(".booking-passenger-error");
-//             try {
-//                 await requestJson(bookingUrl, {
-//                     method: "PUT",
-//                     headers: { "Content-Type": "application/json" },
-//                     body: JSON.stringify({ passengers }),
-//                 });
-//                 form.closest(".booking-passenger-dialog").close();
-//                 await loadBookings();
-//             } catch (error) {
-//                 errorElement.textContent = error.message;
-//                 errorElement.hidden = false;
+//         if (paginationControls) {
+//             const totalPages = Math.ceil(payload.total / payload.limit);
+//             paginationControls.innerHTML = '';
+//             for (let i = 1; i <= totalPages; i++) {
+//                 const pageLink = document.createElement('a');
+//                 pageLink.href = `?page=${i}&limit=${payload.limit}&sort=${sort}&order=${order}`;
+//                 pageLink.textContent = i;
+//                 if (i === parseInt(page)) {
+//                     pageLink.style.fontWeight = 'bold';
+//                 }
+//                 paginationControls.appendChild(pageLink);
 //             }
-//             return;
 //         }
-
-//         const ticketClass = form.elements.namedItem("ticketClass").value;
-//         if (!ticketClass || form.dataset.quotedClass !== ticketClass) return;
-
-//         try {
-//             await requestJson(bookingUrl, {
-//                 method: "PUT",
-//                 headers: { "Content-Type": "application/json" },
-//                 body: JSON.stringify({ ticketClass }),
+//         // add sorting controls based on response
+//         const sortCategory = document.getElementById('sort-by');
+//         if (sortCategory) {
+//             sortCategory.innerHTML = '';
+//             const sortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId'];
+//             sortFields.forEach(field => {
+//                 const sortOption = document.createElement('option');
+//                 sortOption.textContent = `${field}`;
+//                 sortOption.value = `${field}`;
+//                 if (field == sort) {
+//                     sortOption.selected = true;
+//                 }
+//                 sortCategory.appendChild(sortOption);
 //             });
-//             form.closest(".booking-upgrade-dialog").close();
-//             await loadBookings();
-//         } catch (error) {
-//             const quoteElement = form.querySelector(".booking-upgrade-quote");
-//             quoteElement.textContent = error.message;
-//             quoteElement.hidden = false;
 //         }
-//     });
 
-//     await loadBookings();
+//         sortCategory.addEventListener('change', (event) => {
+//             const target = event.target.value;
+
+//             // Check if the user selected a valid URL option (not the placeholder)
+//             if (target) {
+//                 window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+//             }
+//         });
+//         const sortOrder = document.getElementById('sort-order');
+//         if (sortOrder) {
+//             sortOrder.innerHTML = '';
+//             const sortFields = ['asc', 'desc'];
+//             sortFields.forEach(field => {
+//                 const sortOption = document.createElement('option');
+//                 sortOption.textContent = `${field}`;
+//                 sortOption.value = `${field}`;
+//                 if (field == sort) {
+//                     sortOption.selected = true;
+//                 }
+//                 sortOrder.appendChild(sortOption);
+//             });
+//         }
+
+//         sortOrder.addEventListener('change', (event) => {
+//             const target = event.target.value;
+
+//             // Check if the user selected a valid URL option (not the placeholder)
+//             if (target) {
+//                 window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+//             }
+//         });
+
+//     } catch (error) {
+//         console.log("error: ", error);
+//         if (loadingEl) {
+//             loadingEl.hidden = true;
+//         }
+//         if (errorEl) {
+//             errorEl.hidden = false;
+//             errorEl.textContent = 'Unable to load bookings right now. Please try again in a moment.';
+//         }
+//     }
+
+
+
 // };
+
+    listEl.addEventListener("submit", async (event) => {
+        if (
+            !event.target.matches(".booking-passengers-form") &&
+            !event.target.matches(".booking-upgrade-form")
+        )
+            return;
+        event.preventDefault();
+
+        const form = event.target;
+        const bookingUrl = `/api/bookings/${encodeURIComponent(form.closest(".train-card").dataset.id)}`;
+        if (form.matches(".booking-passengers-form")) {
+            const passengers = Array.from(
+                form.querySelectorAll(".booking-passenger-fields fieldset"),
+                (fieldset) =>
+                    Object.fromEntries(
+                        Array.from(
+                            fieldset.querySelectorAll("input"),
+                            (input) => [input.name, input.value]
+                        )
+                    )
+            );
+            const errorElement = form.querySelector(".booking-passenger-error");
+            try {
+                await requestJson(bookingUrl, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ passengers }),
+                });
+                form.closest(".booking-passenger-dialog").close();
+                await loadBookings();
+            } catch (error) {
+                errorElement.textContent = error.message;
+                errorElement.hidden = false;
+            }
+            return;
+        }
+
+        const ticketClass = form.elements.namedItem("ticketClass").value;
+        if (!ticketClass || form.dataset.quotedClass !== ticketClass) return;
+
+        try {
+            await requestJson(bookingUrl, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ticketClass }),
+            });
+            form.closest(".booking-upgrade-dialog").close();
+            await loadBookings();
+        } catch (error) {
+            const quoteElement = form.querySelector(".booking-upgrade-quote");
+            quoteElement.textContent = error.message;
+            quoteElement.hidden = false;
+        }
+    });
+
+    await loadBookings();
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     hookTrainsCatalog();
