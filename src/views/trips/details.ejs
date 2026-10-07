@@ -47,7 +47,12 @@
       <% if (train) { %>
       <div class="info-item">
         <span class="info-label">Your Train</span>
-        <span class="info-value"><a href="/trains/<%= train.id %>"><%= train.name %></a></span>
+        <a class="info-value" href="/trains/<%= train.id %>">
+          <% if (train.imageUrl) { %>
+          <img src="<%= train.imageUrl %>" alt="<%= train.imageAlt || train.name %>">
+          <% } %>
+          <%= train.name %>
+        </a>
       </div>
       <% } %>
     </div>

@@ -8,20 +8,47 @@ const loadTrainInfo = async () => {
 
     try {
         const response = await fetch(`/api/trains/${encodeURIComponent(trainId)}`);
+
+        // A 404 means this train doesn't exist, which is different from the server failing
+        if (response.status === 404) {
+            loadingEl.hidden = true;
+            errorEl.hidden = false;
+            errorEl.textContent = "We couldn't find a train with that ID.";
+            return false;
+        }
+
         if (!response.ok) throw new Error(`Train request failed (${response.status})`);
 
         const train = await response.json();
+        const field = (name) => contentEl.querySelector(`[data-field="${name}"]`);
 
-        contentEl.querySelector('[data-field="name"]').textContent = train.name;
-        contentEl.querySelector('[data-field="description"]').textContent = train.description;
+        // Hide the image area instead of showing a broken image when a train has no photo
+        if (train.imageUrl) {
+            field('image').src = train.imageUrl;
+            field('image').alt = train.imageAlt || `${train.name} train`;
+        } else {
+            field('image-wrap').hidden = true;
+        }
+
+        // Same fields and formats as the cards on the /trains page
+        field('name').textContent = train.name;
+        field('operator').textContent = train.operator;
+        field('description').textContent = train.description;
+        field('type').textContent = train.type;
+        field('speed').textContent = `${train.maxSpeedKmh} km/h`;
+        field('seats').textContent = `${train.capacity} seats`;
+        field('power').textContent = train.powerSource;
+        field('best-for').textContent = train.bestFor;
 
         loadingEl.hidden = true;
         contentEl.hidden = false;
+        return true;
     } catch (error) {
         console.error('Unable to load train:', error);
         loadingEl.hidden = true;
         errorEl.hidden = false;
         errorEl.textContent = 'Unable to load this train right now. Please try again in a moment.';
+        return false;
     }
 };
 
@@ -82,5 +109,16 @@ const loadTrainTrips = async () => {
     }
 };
 
-loadTrainInfo();
-loadTrainTrips();
+// Only look up trips for a train that exists, so an unknown train shows one clear message
+const initializeTrainDetails = async () => {
+    const trainFound = await loadTrainInfo();
+
+    if (trainFound) {
+        loadTrainTrips();
+    } else {
+        // trains.css sets .trains-catalog to display: block, which overrides the hidden attribute
+        document.getElementById('train-trips').style.display = 'none';
+    }
+};
+
+initializeTrainDetails();
