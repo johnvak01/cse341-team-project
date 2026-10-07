@@ -554,7 +554,7 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *                   type: string
  *                   description: Error message
  */
-router.get("/api/bookings_paginated", requireApiLogin, getPaginatedBookings);
+router.get("/api/bookings_paginated", requireApiLogin, requireApiRole('admin'), getPaginatedBookings);
 
 
 export default router;
