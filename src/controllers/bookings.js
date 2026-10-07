@@ -6,6 +6,7 @@ import {
     updateBooking as updateBookingRecord,
     deleteBooking as deleteBookingRecord,
     createBooking as createNewBooking,
+    getPaginatedBookings as findPaginatedBookings
 } from "../models/bookings.js";
 import { getScheduleById as findScheduleById } from "../models/schedules.js";
 import { getTripById as findTripById } from "../models/trips.js";
@@ -456,6 +457,58 @@ const confirmationPage = async (req, res) => {
     });
 };
 
+//Update: Added getPaginatedBookings function to fetch bookings with pagination, sorting, and ordering.
+
+const parsePositiveInteger = (value, defaultValue) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return parsed;
+};
+
+
+const getPaginatedBookings = async (req, res) => {
+
+    const page = parsePositiveInteger(req.query.page, 1);
+    const limit = parsePositiveInteger(req.query.limit, 10);
+    if (!page || !limit || limit > 50) {
+        return res.status(400).json({
+            errors: [{ field: 'pagination', message: 'page and limit must be valid positive numbers. Maximum limit is 50.' }]
+        });
+    }
+
+    const allowedSortFields = ['createdAt', 'selectedDay', 'ticketClass', 'tripId', 'scheduleId'];
+    if (req.query.sort && !allowedSortFields.includes(req.query.sort)) {
+        return res.status(400).json({
+            errors: [{ field: 'sort', message: 'sort is not supported.' }]
+        });
+    }
+    const sort = req.query.sort || 'createdAt';
+    const order = req.query.order || 'asc';
+
+    console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
+
+    try {
+        const bookingsData = await findPaginatedBookings({
+            filter: {},
+            page: parseInt(page),
+            limit: parseInt(limit),
+            sort,
+            order
+        });
+        return res.status(200).json(bookingsData);
+    } catch (error) {
+        console.error("Error fetching paginated bookings:", error);
+        return res.status(500).json({ error: "Failed to fetch paginated bookings" });
+    }
+}
+
 export {
     getAllBookings,
     createBookingApi,
@@ -467,5 +520,5 @@ export {
     processBookingRequest,
     bookingPage,
     bookingsPage,
-    confirmationPage,
+    getPaginatedBookings, confirmationPage
 };

@@ -52,3 +52,22 @@ export async function deleteBooking(id) {
     return Booking.findOneAndDelete({ id });
 }
 
+export async function getPaginatedBookings({ filter = {}, page, limit, sort, order }) {
+    const skip = (page - 1) * limit;
+    const sortOrder = order === 'desc' ? -1 : 1;
+    const sortOptions = {[sort]: sortOrder};
+
+    const bookings = await Booking.find(filter)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit);
+    const totalBookings = await Booking.countDocuments(filter);
+
+    return {
+        bookings,
+        total: totalBookings,
+        page,
+        limit
+    };
+
+}
