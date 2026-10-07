@@ -510,11 +510,61 @@
         "tags": [
           "Trains"
         ],
-        "summary": "Get all trains",
-        "description": "Returns every train in the trains collection",
+        "summary": "Get a paginated list of trains",
+        "description": "Returns trains from the trains collection, paginated and sorted.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "name",
+              "enum": [
+                "name",
+                "operator",
+                "maxSpeedKmh",
+                "capacity"
+              ]
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "asc",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Trains retrieved successfully"
+          },
+          "400": {
+            "description": "Invalid pagination or sort parameter"
           },
           "500": {
             "description": "Internal server error"
