@@ -1,6 +1,6 @@
 <%- include('./partials/header') %>
 
-<section class="trains-catalog" id="train-info" data-train-id="<%= trainId %>">
+<section class="trains-catalog train-page" id="train-info" data-train-id="<%= trainId %>">
     <div class="trains-state" id="train-info-loading">Loading train...</div>
     <div class="trains-state trains-error" id="train-info-error" hidden></div>
 
@@ -10,10 +10,10 @@
             <img data-field="image" decoding="async">
         </div>
 
-        <header class="train-card-header">
+        <div class="train-card-header">
             <h1 data-field="name"></h1>
             <span class="train-operator" data-field="operator"></span>
-        </header>
+        </div>
 
         <p class="train-description" data-field="description"></p>
 

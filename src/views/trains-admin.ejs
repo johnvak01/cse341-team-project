@@ -1,6 +1,6 @@
 <%- include('./partials/header') %>
 
-<section class="trains-catalog admin-trips">
+<section class="trains-catalog admin-trips admin-trains train-page">
     <div class="admin-trips-heading">
         <h1>Manage Trains</h1>
         <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
@@ -40,11 +40,11 @@
                 <img data-field="image" loading="lazy" decoding="async">
             </div>
 
-            <header class="train-card-header">
+            <div class="train-card-header">
                 <h2><a data-field="name"></a></h2>
                 <span class="train-operator" data-field="operator"></span>
                 <small>ID: <code data-field="id"></code></small>
-            </header>
+            </div>
 
             <dl class="train-specs">
                 <div class="spec-item">
