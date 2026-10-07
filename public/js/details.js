@@ -2,25 +2,45 @@ const createScheduleCard = (schedule) => {
     const card = document.createElement("div");
     card.className = "schedule-card";
 
-    const days = (schedule.daysOfWeek || [])
-        .map((day) => `<span class="day-badge">${day.substring(0, 3)}</span>`)
-        .join("");
+    const times = document.createElement("div");
+    times.className = "schedule-times";
 
-    card.innerHTML = `
-		<div class="schedule-times">
-			<div class="time-block">
-				<span class="time-label">Departs</span>
-				<span class="time-value">${schedule.departureTime}</span>
-			</div>
-			<span class="time-arrow">→</span>
-			<div class="time-block">
-				<span class="time-label">Arrives</span>
-				<span class="time-value">${schedule.arrivalTime}</span>
-			</div>
-		</div>
-		<div class="schedule-days">${days}</div>
-		<a href="/trips/booking/${schedule.id}" class="book-btn">Book Now</a>
-	`;
+    const createTimeBlock = (label, value) => {
+        const block = document.createElement("div");
+        block.className = "time-block";
+        const timeLabel = document.createElement("span");
+        timeLabel.className = "time-label";
+        timeLabel.textContent = label;
+        const timeValue = document.createElement("span");
+        timeValue.className = "time-value";
+        timeValue.textContent = value ?? "";
+        block.append(timeLabel, timeValue);
+        return block;
+    };
+
+    const arrow = document.createElement("span");
+    arrow.className = "time-arrow";
+    arrow.textContent = "→";
+    times.append(
+        createTimeBlock("Departs", schedule.departureTime),
+        arrow,
+        createTimeBlock("Arrives", schedule.arrivalTime)
+    );
+
+    const days = document.createElement("div");
+    days.className = "schedule-days";
+    (schedule.daysOfWeek || []).forEach((day) => {
+        const badge = document.createElement("span");
+        badge.className = "day-badge";
+        badge.textContent = String(day).slice(0, 3);
+        days.appendChild(badge);
+    });
+
+    const bookingLink = document.createElement("a");
+    bookingLink.href = `/trips/booking/${encodeURIComponent(schedule.id)}`;
+    bookingLink.className = "book-btn";
+    bookingLink.textContent = "Book Now";
+    card.append(times, days, bookingLink);
 
     return card;
 };
@@ -87,35 +107,60 @@ const initializeScheduleList = () => {
     loadSchedules(tripId, monthSelect, scheduleGrid, scheduleStatus);
 };
 
-const renderStationInfo = (station) => {
-    const facilities = (station.facilities || [])
-        .map((facility) => `<span class="facility-badge">${facility.replace(/_/g, " ")}</span>`)
-        .join("");
+const renderStationInfo = (station, popupBody) => {
+    popupBody.replaceChildren();
 
-    return `
-		<h2 id="stationPopupName" class="station-popup-name">${station.name}</h2>
-		${station.prefecture ? `<p class="station-popup-meta">${station.prefecture}</p>` : ""}
-		${station.description ? `<p class="station-popup-description">${station.description}</p>` : ""}
-		${facilities ? `<div class="station-popup-facilities">${facilities}</div>` : ""}
-	`;
+    const name = document.createElement("h2");
+    name.id = "stationPopupName";
+    name.className = "station-popup-name";
+    name.textContent = station.name || "Station information";
+    popupBody.appendChild(name);
+
+    if (station.prefecture) {
+        const prefecture = document.createElement("p");
+        prefecture.className = "station-popup-meta";
+        prefecture.textContent = station.prefecture;
+        popupBody.appendChild(prefecture);
+    }
+
+    if (station.description) {
+        const description = document.createElement("p");
+        description.className = "station-popup-description";
+        description.textContent = station.description;
+        popupBody.appendChild(description);
+    }
+
+    if (Array.isArray(station.facilities) && station.facilities.length > 0) {
+        const facilities = document.createElement("div");
+        facilities.className = "station-popup-facilities";
+        station.facilities.forEach((facility) => {
+            const badge = document.createElement("span");
+            badge.className = "facility-badge";
+            badge.textContent = String(facility).replace(/_/g, " ");
+            facilities.appendChild(badge);
+        });
+        popupBody.appendChild(facilities);
+    }
 };
 
 const openStationPopup = async (stationId, popup, popupBody) => {
-    popupBody.innerHTML = "<p>Loading station information...</p>";
+    popupBody.textContent = "Loading station information...";
     popup.hidden = false;
 
     try {
-        const response = await fetch(`/api/stations/${stationId}`);
+        const response = await fetch(
+            `/api/stations/${encodeURIComponent(stationId)}`
+        );
 
         if (!response.ok) {
             throw new Error(`Request failed with status ${response.status}`);
         }
 
         const station = await response.json();
-        popupBody.innerHTML = renderStationInfo(station);
+        renderStationInfo(station, popupBody);
     } catch (error) {
         console.error("Failed to load station information:", error);
-        popupBody.innerHTML = "<p>Unable to load station information right now.</p>";
+        popupBody.textContent = "Unable to load station information right now.";
     }
 };
 

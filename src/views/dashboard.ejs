@@ -4,24 +4,33 @@
     <h1>Welcome, <%= user.name %></h1>
 </section>
 
-<% if (user.role.name === 'admin') { %>
-    <a href="/admin">Admin Panel</a>
-    <a href="/bookings-admin">Manage Bookings</a>
-    <a href="/admin/trips">Manage Trips</a>
-<% } %>
+<a href="/account-user">Update Your Account</a>
+<a href="/bookings-admin">View Your Bookings</a>
+<a href="/trips">View Trips</a>
 
-<section class="trains-catalog">
-    <div class="trains-state" id="dashboard-loading">Loading your bookings...</div>
+<section
+    class="trains-catalog"
+    id="dashboard-bookings"
+    data-user-id="<%= user._id %>"
+>
+    <div class="trains-state" id="dashboard-loading">
+        Loading your bookings...
+    </div>
     <div class="trains-state trains-error" id="dashboard-error" hidden></div>
-    <p id="dashboard-empty" hidden>You don't have any bookings yet. <a href="/trips">Browse trips</a> to book your first trip.</p>
+    <p id="dashboard-empty" hidden>
+        You don't have any bookings yet. <a href="/trips">Browse trips</a> to
+        book your first trip.
+    </p>
 
     <div class="trains-grid" id="dashboard-bookings-list"></div>
 
     <template id="dashboard-booking-card-template">
         <article class="train-card">
             <header class="train-card-header">
-                <h2 data-field="tripId"></h2>
-                <span class="train-operator" data-field="ticket"></span>
+                <a class="booking-confirmation-link">
+                    <h2 data-field="tripId"></h2>
+                    <span class="train-operator" data-field="ticket"></span>
+                </a>
             </header>
 
             <dl class="train-specs">
