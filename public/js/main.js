@@ -185,8 +185,11 @@ const hookBookingCatalog = async () => {
             const limit = urlParams.get('limit') || 10;
             const sort = urlParams.get('sort') || 'createdAt';
             const order = urlParams.get('order') || 'asc';
-            let filter = {};
-            let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+            let startDate = urlParams.get('startDate') || '';
+            let endDate = urlParams.get('endDate') || '';
+            let ticketClass = urlParams.get('ticketClass') || '';
+            let filter = { startDate, endDate, ticketClass };
+            let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
 
             const [bookings, ticketClasses] = await Promise.all([
                 requestJson(ApiUrl),
@@ -375,7 +378,7 @@ const hookBookingCatalog = async () => {
                 paginationControls.innerHTML = '';
                 for (let i = 1; i <= totalPages; i++) {
                     const pageLink = document.createElement('a');
-                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}`;
+                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
                     pageLink.textContent = i;
                     if (i === parseInt(page)) {
                         pageLink.style.fontWeight = 'bold';
@@ -404,7 +407,7 @@ const hookBookingCatalog = async () => {
 
                 // Check if the user selected a valid URL option (not the placeholder)
                 if (target) {
-                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
                 }
             });
             const sortOrder = document.getElementById('sort-order');
@@ -430,6 +433,37 @@ const hookBookingCatalog = async () => {
                     window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
                 }
             });
+            // add date range and ticket class filters controls based on response
+
+            const bookingFilterForm = document.getElementById("ticket-class");
+            if (bookingFilterForm) {
+                try {
+                    const ticketClassesUrl = "/api/ticket-classes";
+                    const response = await fetch(ticketClassesUrl, { cache: 'no-store' });
+
+                    // Check if the response status is 200-299
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    // Parse the response body as JSON
+                    const data = await response.json();
+                    console.log(data);
+                    for (const item of data) {
+                        const option = document.createElement('option');
+                        option.value = item.class;
+                        option.textContent = item.name;
+                        if (item.class === ticketClass) {
+                            option.selected = true;
+                        }
+                        bookingFilterForm.appendChild(option);
+                    }
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                }
+            }
+
+
         } catch (error) {
             if (errorEl) {
                 errorEl.hidden = false;
