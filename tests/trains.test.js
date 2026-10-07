@@ -9,16 +9,17 @@ describe('GET /api/trains', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('application/json');
-    expect(response.body).toHaveProperty('trains');
-    expect(response.body.trains).toBeInstanceOf(Array);
+    expect(response.body).toHaveProperty('data');
+    expect(response.body.data).toBeInstanceOf(Array);
+    expect(response.body).toHaveProperty('pagination');
   });
 
   test('returns the trains from the starter data', async () => {
     const response = await request(app).get('/api/trains');
 
     expect(response.status).toBe(200);
-    expect(response.body.trains).toHaveLength(4);
-    expect(response.body.trains).toEqual(
+    expect(response.body.data).toHaveLength(4);
+    expect(response.body.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: 'series-e353',
@@ -39,7 +40,7 @@ describe('GET /api/trains', () => {
     const response = await request(app).get('/api/trains');
 
     expect(response.status).toBe(200);
-    expect(response.body.trains).toEqual(
+    expect(response.body.data).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: 'test-express',
@@ -47,6 +48,45 @@ describe('GET /api/trains', () => {
         })
       ])
     );
+  });
+
+  test('paginates results', async () => {
+    const response = await request(app).get('/api/trains?limit=2&page=1');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(2);
+    expect(response.body.pagination).toMatchObject({
+      page: 1,
+      limit: 2,
+      hasPreviousPage: false
+    });
+  });
+
+  test('keeps a stable order across pages when sort values tie', async () => {
+    const page1 = await request(app).get('/api/trains?sort=maxSpeedKmh&limit=2&page=1');
+    const page2 = await request(app).get('/api/trains?sort=maxSpeedKmh&limit=2&page=2');
+
+    const ids = [...page1.body.data, ...page2.body.data].map((train) => train.id);
+
+    expect(new Set(ids).size).toBe(4);
+  });
+
+  test('rejects an invalid page value', async () => {
+    const response = await request(app).get('/api/trains?page=abc');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('rejects a limit above the maximum', async () => {
+    const response = await request(app).get('/api/trains?limit=1000');
+
+    expect(response.status).toBe(400);
+  });
+
+  test('rejects an unsupported sort field', async () => {
+    const response = await request(app).get('/api/trains?sort=password');
+
+    expect(response.status).toBe(400);
   });
 });
 

@@ -41,6 +41,10 @@ router.get("/about", aboutPage);
 router.get("/trains", trainsPage);
 router.get("/trains/:id", trainDetailsPage);
 
+//bookings page
+router.get("/bookings-admin", requirePageLogin, bookingsPage);
+router.get("/bookings", requirePageLogin, bookingsPage);
+
 // Test 500 error page
 router.get("/500", testErrorPage);
 
