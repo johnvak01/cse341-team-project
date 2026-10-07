@@ -16,7 +16,7 @@ import {
     bookingsPage,
     confirmationPage,
 } from "../controllers/bookings.js";
-import { trainsPage, trainDetailsPage } from "../controllers/trains.js";
+import { trainsPage, trainDetailsPage, trainsAdminPage } from "../controllers/trains.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
 import { accountPage, register } from "../controllers/users.js";
@@ -76,6 +76,7 @@ router.get("/account-user", requirePageLogin, accountPage);
 router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 router.get("/admin/users", requirePageLogin, adminUsersPage);
 router.get("/trips-admin", requirePageLogin, requirePageRole("admin"), adminTripPage);
+router.get("/trains-admin", requirePageLogin, requirePageRole("admin"), trainsAdminPage);
 
 // Booking administration is restricted to logged-in users.
 router.get("/bookings-admin", requirePageLogin, bookingsPage);
