@@ -37,6 +37,32 @@ const newTrain = {
 };
 
 describe('train admin access', () => {
+  test('/trains-admin redirects to login when logged out', async () => {
+    const response = await request(app).get('/trains-admin');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/login');
+  });
+
+  test('/trains-admin shows the 403 page for a customer', async () => {
+    const customer = await loginAs('customer');
+
+    const response = await customer.get('/trains-admin');
+
+    expect(response.status).toBe(403);
+  });
+
+  test('/trains-admin loads for an admin, and the dashboard links to it', async () => {
+    const admin = await loginAs('admin');
+
+    const page = await admin.get('/trains-admin');
+    expect(page.status).toBe(200);
+    expect(page.text).toContain('Manage Trains');
+
+    const dashboard = await admin.get('/admin');
+    expect(dashboard.text).toContain('href="/trains-admin"');
+  });
+
   test('API routes return 401 when logged out', async () => {
     expect((await request(app).post('/api/trains').send(newTrain)).status).toBe(401);
     expect((await request(app).put('/api/trains/kiha-261').send({ capacity: 1 })).status).toBe(401);
