@@ -499,8 +499,6 @@ const getPaginatedBookings = async (req, res) => {
     const startDate = req.query.startDate || '';
     const endDate = req.query.endDate || '';
 
-    console.log(`Filtering bookings with ticketClass=${ticketClass} type: ${typeof ticketClass}, startDate=${startDate} type: ${typeof ticketClass}, endDate=${endDate} type: ${typeof endDate}`);
-
     if (ticketClass != '') {
         filter.ticketClass = ticketClass;
     }
@@ -532,7 +530,6 @@ const getPaginatedBookings = async (req, res) => {
             });
         }
         filter.createdAt = filter.createdAt || {}
-        console.log(`Filtering bookings from ${start}`);
         filter.createdAt.$gte = start;
     }
     if (endDate != '') {
@@ -543,7 +540,6 @@ const getPaginatedBookings = async (req, res) => {
                 errors: [{ field: 'endDate', message: 'endDate must be a valid date.' }]
             });
         }
-        console.log(`Filtering bookings up to ${end}`);
         filter.createdAt = filter.createdAt || {}
         filter.createdAt.$lte = end;
     }
