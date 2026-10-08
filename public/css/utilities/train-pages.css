@@ -1,0 +1,23 @@
+/*
+Styles for the train details page (/trains/:id).
+Builds on trains.css (cards).
+*/
+
+/* Readability fixes for the train card */
+.train-page {
+    /* The site's default link color is too light to read on the light cards */
+    .train-card a {
+        color: var(--clr-link-dark);
+
+        &:hover,
+        &:focus {
+            color: var(--clr-link-dark-hover);
+        }
+    }
+
+    /* A darker version of the trains.css green, so the operator name is readable.
+       As specific as the trains.css rule it replaces, so this one wins by loading later. */
+    .train-card .train-card-header .train-operator {
+        color: #3d6b51;
+    }
+}

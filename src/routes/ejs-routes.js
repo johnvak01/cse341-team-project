@@ -16,7 +16,7 @@ import {
     bookingsPage,
     confirmationPage,
 } from "../controllers/bookings.js";
-import { trainsPage } from "../controllers/trains.js";
+import { trainsPage, trainDetailsPage } from "../controllers/trains.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
 import { accountPage, register } from "../controllers/users.js";
@@ -39,6 +39,7 @@ router.get("/about", aboutPage);
 
 // Trains page
 router.get("/trains", trainsPage);
+router.get("/trains/:id", trainDetailsPage);
 
 //bookings page
 router.get("/bookings-admin", requirePageLogin, bookingsPage);
