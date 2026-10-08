@@ -1109,6 +1109,27 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [asc, desc]
+ *       - name: startDate
+ *         in: query
+ *         description: "The date the booking was created on or after (format: YYYY-MM-DD)"
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: endDate
+ *         in: query
+ *         description: "The date the booking was created on or before (format: YYYY-MM-DD)"
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: ticketClass
+ *         in: query
+ *         description: Filter bookings by ticket class (e.g., 'standard', 'premium', 'first')
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [standard, premium, first]
+ * 
+ * 
  *     responses:
  *       200:
  *         description: A paginated list of bookings

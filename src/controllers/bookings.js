@@ -104,7 +104,7 @@ const createUpgradeQuote = async (booking, targetClassName) => {
 
     const priceDifferencePerSeat = Math.round(
         trip.distance *
-            (targetClass.priceMultiplier - currentClass.priceMultiplier)
+        (targetClass.priceMultiplier - currentClass.priceMultiplier)
     );
     return {
         quote: {
@@ -494,9 +494,63 @@ const getPaginatedBookings = async (req, res) => {
 
     console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
 
+    let filter = {};
+    const ticketClass = req.query.ticketClass || '';
+    const startDate = req.query.startDate || '';
+    const endDate = req.query.endDate || '';
+
+    if (ticketClass != '') {
+        filter.ticketClass = ticketClass;
+    }
+
+    // figure out how to check they aren;t overlapping and be able to create a filter for the date ranges independently
+    // if (startDate != '' && endDate != '') {
+    //     const start = new Date(startDate);
+    //     const end = new Date(endDate);
+    //     console.log(`Filtering bookings from ${start} to ${end}`);
+    //     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    //         return res.status(400).json({
+    //             errors: [{ field: 'dateRange', message: 'startDate and endDate must be valid dates.' }]
+    //         });
+    //     }
+    //     filter.createdAt.$gte = start.toISOString();
+    //     filter.createdAt.$lte= end.toISOString();
+    // }
+    if(endDate < startDate){
+        return res.status(400).json({
+            errors: [{ field: 'dateRange', message: 'endDate cannot be earlier than startDate.' }]
+        });
+    }
+    if (startDate != '') {
+        const start = new Date(startDate);
+        if (isNaN(start.getTime())) {
+            return res.status(400).json({
+                errors: [{ field: 'startDate', message: 'startDate must be a valid date.' }]
+            });
+        }
+        filter.createdAt = filter.createdAt || {}
+        console.log(`Filtering bookings from ${start}`);
+        filter.createdAt.$gte = start;
+    }
+    if (endDate != '') {
+        const end = new Date(endDate);
+        if (isNaN(end.getTime())) {
+            return res.status(400).json({
+                errors: [{ field: 'endDate', message: 'endDate must be a valid date.' }]
+            });
+        }
+        console.log(`Filtering bookings up to ${end}`);
+        filter.createdAt = filter.createdAt || {}
+        filter.createdAt.$lte = end;
+    }
+    
+
+
+    console.log(`Filter applied: ${JSON.stringify(filter)}`);
+
     try {
         const bookingsData = await findPaginatedBookings({
-            filter: {},
+            filter: filter,
             page: parseInt(page),
             limit: parseInt(limit),
             sort,
@@ -507,6 +561,7 @@ const getPaginatedBookings = async (req, res) => {
         console.error("Error fetching paginated bookings:", error);
         return res.status(500).json({ error: "Failed to fetch paginated bookings" });
     }
+
 }
 
 export {
