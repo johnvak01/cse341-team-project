@@ -523,7 +523,7 @@ const getPaginatedBookings = async (req, res) => {
     }
     if (startDate != '') {
         console.log("valid start date provided, checking if it's a valid date...");
-        const start = new Date(startDate);
+        const start = new Date(`${startDate}T23:59:59.999Z`);
         if (isNaN(start.getTime())) {
             return res.status(400).json({
                 errors: [{ field: 'startDate', message: 'startDate must be a valid date.' }]
@@ -534,7 +534,7 @@ const getPaginatedBookings = async (req, res) => {
     }
     if (endDate != '') {
         console.log("valid end date provided, checking if it's a valid date...");
-        const end = new Date(endDate);
+        const end = new Date(`${endDate}T23:59:59.999Z`);
         if (isNaN(end.getTime())) {
             return res.status(400).json({
                 errors: [{ field: 'endDate', message: 'endDate must be a valid date.' }]
