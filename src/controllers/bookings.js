@@ -499,6 +499,8 @@ const getPaginatedBookings = async (req, res) => {
     const startDate = req.query.startDate || '';
     const endDate = req.query.endDate || '';
 
+    console.log(`Filtering bookings with ticketClass=${ticketClass} type: ${typeof ticketClass}, startDate=${startDate} type: ${typeof ticketClass}, endDate=${endDate} type: ${typeof endDate}`);
+
     if (ticketClass != '') {
         filter.ticketClass = ticketClass;
     }
@@ -516,12 +518,13 @@ const getPaginatedBookings = async (req, res) => {
     //     filter.createdAt.$gte = start.toISOString();
     //     filter.createdAt.$lte= end.toISOString();
     // }
-    if(endDate < startDate){
+    if(endDate !='' && startDate != '' && endDate < startDate){
         return res.status(400).json({
             errors: [{ field: 'dateRange', message: 'endDate cannot be earlier than startDate.' }]
         });
     }
     if (startDate != '') {
+        console.log("valid start date provided, checking if it's a valid date...");
         const start = new Date(startDate);
         if (isNaN(start.getTime())) {
             return res.status(400).json({
@@ -533,6 +536,7 @@ const getPaginatedBookings = async (req, res) => {
         filter.createdAt.$gte = start;
     }
     if (endDate != '') {
+        console.log("valid end date provided, checking if it's a valid date...");
         const end = new Date(endDate);
         if (isNaN(end.getTime())) {
             return res.status(400).json({
