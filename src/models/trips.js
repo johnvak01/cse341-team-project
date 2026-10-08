@@ -17,6 +17,18 @@ export async function getTripFilters() {
     return { regions, seasons };
 }
 
+export async function getPaginatedTrips({ filter = {}, page, limit, sort, order }) {
+    const skip = (page - 1) * limit;
+    const sortOptions = { [sort]: order, id: 1 };
+
+    const [trips, totalItems] = await Promise.all([
+        Trip.find(filter).sort(sortOptions).skip(skip).limit(limit).lean(),
+        Trip.countDocuments(filter),
+    ]);
+
+    return { trips, totalItems };
+}
+
 export async function updateTrip(id, updateData) {
     return Trip.updateOne({ id }, { $set: updateData }, { runValidators: true });
 }

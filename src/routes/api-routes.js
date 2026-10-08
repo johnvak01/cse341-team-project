@@ -589,11 +589,39 @@ router.get("/api/stations/:id", getStationById);
  *   get:
  *     tags:
  *       - Trips
- *     summary: Get all trips
- *     description: Returns every trip in the trips collection
+ *     summary: Get a paginated list of trips
+ *     description: Returns trips from the trips collection, paginated and sorted.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *       - name: limit
+ *         in: query
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           minimum: 1
+ *           maximum: 50
+ *       - name: sort
+ *         in: query
+ *         schema:
+ *           type: string
+ *           default: name
+ *           enum: [name, region, bestSeason, distance]
+ *       - name: order
+ *         in: query
+ *         schema:
+ *           type: string
+ *           default: asc
+ *           enum: [asc, desc]
  *     responses:
  *       '200':
  *         description: Trips retrieved successfully
+ *       '400':
+ *         description: Invalid pagination or sort parameter
  *       '500':
  *         description: Internal error
  */

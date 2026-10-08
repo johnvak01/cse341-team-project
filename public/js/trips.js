@@ -81,11 +81,14 @@ const applyFilters = () => {
 const loadTrips = async () => {
     const tripsList = document.getElementById('trips-list');
     try {
-        const response = await fetch('/api/trips');
+        // NOTE: /api/trips now paginates (Feature Set 5). Feature Set 1 owns this
+        // page's real pagination UI; until that lands we request a high limit so
+        // every trip still renders here. Coordinate before changing this further.
+        const response = await fetch('/api/trips?limit=100');
         if (!response.ok) throw new Error(`Trip request failed (${response.status})`);
 
         const payload = await response.json();
-        const trips = Array.isArray(payload) ? payload : payload.trips || [];
+        const trips = Array.isArray(payload) ? payload : payload.data || payload.trips || [];
         populateFilterOptions(regionFilter, trips.map((trip) => trip.region), 'All Regions');
         populateFilterOptions(seasonFilter, trips.map((trip) => trip.bestSeason), 'Any Season');
         renderTrips(trips);

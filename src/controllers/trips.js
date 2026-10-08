@@ -1,23 +1,77 @@
 import {
-    getAllTrips as findAllTrips,
     getTripById as findTripById,
     getTripFilters,
+    getPaginatedTrips as findPaginatedTrips,
     updateTrip as changeTrip,
     deleteTrip as removeTrip,
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
 
+const allowedSortFields = ['name', 'region', 'bestSeason', 'distance'];
+
+const parsePositiveInteger = (value, defaultValue) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return parsed;
+};
+
 //get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
 export async function getAllTrips(req, res) {
-    try{
-        const trips = await findAllTrips ();
-        
-        return res.status(200).json(trips);
-    }catch(error){
+    try {
+        const page = parsePositiveInteger(req.query.page, 1);
+        const requestedLimit = parsePositiveInteger(req.query.limit, 10);
+
+        if (!page || !requestedLimit || requestedLimit > 50) {
+            return res.status(400).json({
+                errors: [{
+                    field: 'pagination',
+                    message: 'page and limit must be positive integers, and limit cannot exceed 50.'
+                }]
+            });
+        }
+
+        const limit = requestedLimit;
+
+        if (req.query.sort && !allowedSortFields.includes(req.query.sort)) {
+            return res.status(400).json({
+                errors: [{ field: 'sort', message: 'sort is not supported.' }]
+            });
+        }
+
+        const sort = req.query.sort || 'name';
+        const order = req.query.order === 'desc' ? -1 : 1;
+
+        const { trips, totalItems } = await findPaginatedTrips({
+            filter: {},
+            page,
+            limit,
+            sort,
+            order
+        });
+
+        return res.status(200).json({
+            data: trips,
+            pagination: {
+                page,
+                limit,
+                totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                hasNextPage: page * limit < totalItems,
+                hasPreviousPage: page > 1
+            }
+        });
+    } catch (error) {
         console.error("Error fetching Trips:", error);
 
-        return res.status(500).json({message: "Failed to fetch Trips"});
+        return res.status(500).json({ message: "Failed to fetch Trips" });
     }
 }
 

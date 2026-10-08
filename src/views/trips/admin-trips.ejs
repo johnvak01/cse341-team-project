@@ -66,6 +66,12 @@
     <p role="status">Loading trips...</p>
 </div>
 
+<nav class="admin-trips-pagination" aria-label="Trips pagination">
+    <button type="button" id="trips-prev-page">&larr; Previous</button>
+    <span id="trips-page-status" role="status">Page 1</span>
+    <button type="button" id="trips-next-page">Next &rarr;</button>
+</nav>
+
 <!-- Reuses your exact public card template setup structure -->
 <template id="trip-card-template">
     <div class="route-card">
@@ -254,18 +260,34 @@
     }
 };
 
-//loads trips
+//loads trips, paginated 10 per page
 
-    const loadTrips = async () => {
+    let currentPage = 1;
+
+    const updatePaginationControls = (pagination) => {
+        const status = document.getElementById('trips-page-status');
+        const prevButton = document.getElementById('trips-prev-page');
+        const nextButton = document.getElementById('trips-next-page');
+
+        const totalPages = Math.max(pagination.totalPages, 1);
+        status.textContent = `Page ${pagination.page} of ${totalPages} (${pagination.totalItems} trips)`;
+        prevButton.disabled = !pagination.hasPreviousPage;
+        nextButton.disabled = !pagination.hasNextPage;
+    };
+
+    const loadTrips = async (page = currentPage) => {
 
         const tripsCard = document.getElementById('trips-list');
         const templateTrip = document.getElementById('trip-card-template');
 
         try {
-            const response = await fetch('/api/trips');
+            const response = await fetch(`/api/trips?page=${page}&limit=10`);
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
-            const trips = await response.json();
+            const payload = await response.json();
+            const trips = payload.data || [];
+            currentPage = payload.pagination.page;
+            updatePaginationControls(payload.pagination);
             tripsCard.innerHTML = "";
 
             if(trips.length === 0){
@@ -365,11 +387,25 @@
         await loadStationDropdowns();
         await loadScheduleDropdown();
 
-        await loadTrips();
+        await loadTrips(1);
         applyFilters();
 
+        // NOTE: region/season filtering is still client-side and only affects
+        // the 10 trips on the current page. Server-side filtering/search lands
+        // in the follow-up PR (see Week 5 Feature Set 5 search/filter issue).
         regionFilter.addEventListener('change', applyFilters);
         seasonFilter.addEventListener('change', applyFilters);
+
+        document.getElementById('trips-prev-page').addEventListener('click', async () => {
+            if (currentPage <= 1) return;
+            await loadTrips(currentPage - 1);
+            applyFilters();
+        });
+
+        document.getElementById('trips-next-page').addEventListener('click', async () => {
+            await loadTrips(currentPage + 1);
+            applyFilters();
+        });
     });
 
 </script>
