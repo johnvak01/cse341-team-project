@@ -9,6 +9,7 @@ import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
 
 const allowedSortFields = ['name', 'region', 'bestSeason', 'distance'];
+const MAX_SEARCH_LENGTH = 100;
 
 const parsePositiveInteger = (value, defaultValue) => {
     if (value === undefined) {
@@ -21,6 +22,22 @@ const parsePositiveInteger = (value, defaultValue) => {
     }
 
     return parsed;
+};
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const parseStringFilter = (value) => {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'all') {
+        return undefined;
+    }
+    return trimmed;
 };
 
 //get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
@@ -49,8 +66,49 @@ export async function getAllTrips(req, res) {
         const sort = req.query.sort || 'name';
         const order = req.query.order === 'desc' ? -1 : 1;
 
+        const region = parseStringFilter(req.query.region);
+        if (region === null) {
+            return res.status(400).json({
+                errors: [{ field: 'region', message: 'region must be a string.' }]
+            });
+        }
+
+        const season = parseStringFilter(req.query.season);
+        if (season === null) {
+            return res.status(400).json({
+                errors: [{ field: 'season', message: 'season must be a string.' }]
+            });
+        }
+
+        const search = parseStringFilter(req.query.search);
+        if (search === null) {
+            return res.status(400).json({
+                errors: [{ field: 'search', message: 'search must be a string.' }]
+            });
+        }
+        if (search && search.length > MAX_SEARCH_LENGTH) {
+            return res.status(400).json({
+                errors: [{ field: 'search', message: `search cannot exceed ${MAX_SEARCH_LENGTH} characters.` }]
+            });
+        }
+
+        const filter = {};
+        if (region) {
+            filter.region = { $regex: `^${escapeRegExp(region)}$`, $options: 'i' };
+        }
+        if (season) {
+            filter.bestSeason = { $regex: `^${escapeRegExp(season)}$`, $options: 'i' };
+        }
+        if (search) {
+            const pattern = escapeRegExp(search);
+            filter.$or = [
+                { name: { $regex: pattern, $options: 'i' } },
+                { description: { $regex: pattern, $options: 'i' } },
+            ];
+        }
+
         const { trips, totalItems } = await findPaginatedTrips({
-            filter: {},
+            filter,
             page,
             limit,
             sort,
@@ -66,6 +124,11 @@ export async function getAllTrips(req, res) {
                 totalPages: Math.ceil(totalItems / limit),
                 hasNextPage: page * limit < totalItems,
                 hasPreviousPage: page > 1
+            },
+            filters: {
+                region: region || null,
+                season: season || null,
+                search: search || null,
             }
         });
     } catch (error) {

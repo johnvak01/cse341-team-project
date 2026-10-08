@@ -589,8 +589,8 @@ router.get("/api/stations/:id", getStationById);
  *   get:
  *     tags:
  *       - Trips
- *     summary: Get a paginated list of trips
- *     description: Returns trips from the trips collection, paginated and sorted.
+ *     summary: Get a paginated, filterable list of trips
+ *     description: Returns trips from the trips collection, paginated, sorted, and optionally filtered by region/season or a keyword search across name and description.
  *     parameters:
  *       - name: page
  *         in: query
@@ -617,11 +617,29 @@ router.get("/api/stations/:id", getStationById);
  *           type: string
  *           default: asc
  *           enum: [asc, desc]
+ *       - name: region
+ *         in: query
+ *         description: Exact, case-insensitive match on a trip's region. Omit or pass "all" for no filter.
+ *         schema:
+ *           type: string
+ *         example: central
+ *       - name: season
+ *         in: query
+ *         description: Exact, case-insensitive match on a trip's bestSeason. Omit or pass "all" for no filter.
+ *         schema:
+ *           type: string
+ *         example: autumn
+ *       - name: search
+ *         in: query
+ *         description: Case-insensitive keyword search across a trip's name and description. Max 100 characters.
+ *         schema:
+ *           type: string
+ *         example: gorge
  *     responses:
  *       '200':
- *         description: Trips retrieved successfully
+ *         description: Trips retrieved successfully. Response includes data, pagination metadata, and the applied filters.
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid pagination, sort, or filter parameter
  *       '500':
  *         description: Internal error
  */

@@ -79,3 +79,74 @@ describe('GET /api/trips', () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe('GET /api/trips filtering and search', () => {
+  test('filters by region, case-insensitively', async () => {
+    const response = await request(app).get('/api/trips?region=Central');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+    response.body.data.forEach((trip) => {
+      expect(trip.region.toLowerCase()).toBe('central');
+    });
+    expect(response.body.filters).toMatchObject({ region: 'Central' });
+  });
+
+  test('filters by season', async () => {
+    const response = await request(app).get('/api/trips?season=autumn');
+
+    expect(response.status).toBe(200);
+    response.body.data.forEach((trip) => {
+      expect(trip.bestSeason.toLowerCase()).toBe('autumn');
+    });
+  });
+
+  test('treats "all" as no filter', async () => {
+    const response = await request(app).get('/api/trips?region=all&season=all');
+
+    expect(response.status).toBe(200);
+    expect(response.body.filters).toMatchObject({ region: null, season: null });
+  });
+
+  test('searches by keyword across name and description', async () => {
+    const response = await request(app).get('/api/trips?search=gorge');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'gorge-explorer' })
+      ])
+    );
+    expect(response.body.filters).toMatchObject({ search: 'gorge' });
+  });
+
+  test('combines region filter and keyword search', async () => {
+    const response = await request(app).get('/api/trips?region=kansai&search=temple');
+
+    expect(response.status).toBe(200);
+    response.body.data.forEach((trip) => {
+      expect(trip.region.toLowerCase()).toBe('kansai');
+    });
+  });
+
+  test('returns an empty data array when nothing matches', async () => {
+    const response = await request(app).get('/api/trips?search=nonexistent-keyword-xyz');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(0);
+    expect(response.body.pagination.totalItems).toBe(0);
+  });
+
+  test('does not treat search input as a regular expression', async () => {
+    const response = await request(app).get('/api/trips?search=' + encodeURIComponent('.*'));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toHaveLength(0);
+  });
+
+  test('rejects a search term over the max length', async () => {
+    const response = await request(app).get('/api/trips?search=' + 'a'.repeat(101));
+
+    expect(response.status).toBe(400);
+  });
+});

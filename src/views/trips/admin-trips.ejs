@@ -20,6 +20,8 @@
                 <option value="<%= season %>"><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
             <% }); %>
         </select>
+        <label for="trip-keyword-search">Keyword Search:</label>
+        <input type="search" id="trip-keyword-search" placeholder="Search name or description&hellip;" maxlength="100">
     </section>
     <p id="admin-trips-error" class="admin-trips-error" role="alert" hidden></p>
 
@@ -179,8 +181,7 @@
             }
 
             closeModal();
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -198,8 +199,7 @@
                 throw new Error(error.error || error.message || 'Unable to delete trip.');
             }
 
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -275,13 +275,26 @@
         nextButton.disabled = !pagination.hasNextPage;
     };
 
+    const getActiveFilters = () => {
+        const region = document.getElementById('region-filter').value;
+        const season = document.getElementById('season-filter').value;
+        const search = document.getElementById('trip-keyword-search').value.trim();
+        return { region, season, search };
+    };
+
     const loadTrips = async (page = currentPage) => {
 
         const tripsCard = document.getElementById('trips-list');
         const templateTrip = document.getElementById('trip-card-template');
+        const { region, season, search } = getActiveFilters();
+
+        const params = new URLSearchParams({ page, limit: 10 });
+        if (region && region !== 'all') params.set('region', region);
+        if (season && season !== 'all') params.set('season', season);
+        if (search) params.set('search', search);
 
         try {
-            const response = await fetch(`/api/trips?page=${page}&limit=10`);
+            const response = await fetch(`/api/trips?${params.toString()}`);
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
             const payload = await response.json();
@@ -292,7 +305,9 @@
 
             if(trips.length === 0){
                 const emptyMessage = document.createElement('p');
-                emptyMessage.textContent = 'No trips found.';
+                emptyMessage.id = 'trips-empty';
+                emptyMessage.className = 'trips-empty';
+                emptyMessage.textContent = 'No trips match the selected filters.';
                 tripsCard.replaceChildren(emptyMessage);
                 return;
             }
@@ -339,72 +354,38 @@
         }
     }
 
-    let applyFilters = () => {};
+    const debounce = (fn, delayMs) => {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => fn(...args), delayMs);
+        };
+    };
 
     window.addEventListener('DOMContentLoaded', async () =>{
 
         const regionFilter = document.getElementById('region-filter');
         const seasonFilter = document.getElementById('season-filter');
-
-        applyFilters = () => {
-
-            const selectedRegion = regionFilter.value.toLowerCase();
-            const selectedSeason = seasonFilter.value.toLowerCase();
-            const cards = document.querySelectorAll('#trips-list .route-card');
-            const tripsList = document.getElementById('trips-list');
-            let visibleCount = 0;
-
-            cards.forEach(card => {
-                const cardRegion = card.querySelector('.route-region').textContent.trim().toLowerCase();
-                const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
-
-                const matchesRegion = (selectedRegion==='all' || cardRegion===selectedRegion);
-                const matchesSeason = (selectedSeason==='all' || badgeText.includes(selectedSeason));
-
-                if(matchesRegion && matchesSeason){
-                    card.hidden = false;
-                    visibleCount +=1;
-                }else{
-                    card.hidden = true;
-                }
-            });
-
-            let emptyState = document.getElementById('trips-empty');
-            if(visibleCount===0){
-                if(!emptyState){
-                    emptyState = document.createElement('p');
-                    emptyState.id = 'trips-empty';
-                    emptyState.className = 'trips-empty';
-                    tripsList.appendChild(emptyState);
-                }
-
-                emptyState.textContent = 'No trips match the selected filters.';
-            }else if(emptyState){
-                emptyState.remove();
-            }
-        };
+        const keywordSearch = document.getElementById('trip-keyword-search');
 
         await loadStationDropdowns();
         await loadScheduleDropdown();
 
         await loadTrips(1);
-        applyFilters();
 
-        // NOTE: region/season filtering is still client-side and only affects
-        // the 10 trips on the current page. Server-side filtering/search lands
-        // in the follow-up PR (see Week 5 Feature Set 5 search/filter issue).
-        regionFilter.addEventListener('change', applyFilters);
-        seasonFilter.addEventListener('change', applyFilters);
+        // Region/season/search are applied server-side, so any change
+        // resets to page 1 and refetches the filtered, paginated results.
+        regionFilter.addEventListener('change', () => loadTrips(1));
+        seasonFilter.addEventListener('change', () => loadTrips(1));
+        keywordSearch.addEventListener('input', debounce(() => loadTrips(1), 300));
 
-        document.getElementById('trips-prev-page').addEventListener('click', async () => {
+        document.getElementById('trips-prev-page').addEventListener('click', () => {
             if (currentPage <= 1) return;
-            await loadTrips(currentPage - 1);
-            applyFilters();
+            loadTrips(currentPage - 1);
         });
 
-        document.getElementById('trips-next-page').addEventListener('click', async () => {
-            await loadTrips(currentPage + 1);
-            applyFilters();
+        document.getElementById('trips-next-page').addEventListener('click', () => {
+            loadTrips(currentPage + 1);
         });
     });
 
