@@ -39,6 +39,7 @@ const hookTrainsCatalog = async () => {
     const templateEl = document.getElementById('train-card-template');
     const loadingEl = document.getElementById('trains-loading');
     const errorEl = document.getElementById('trains-error');
+    const emptyEl = document.getElementById('trains-empty');
     const paginationEl = document.getElementById('trains-pagination');
     const prevBtn = document.getElementById('trains-prev-page');
     const nextBtn = document.getElementById('trains-next-page');
@@ -177,6 +178,9 @@ const hookTrainsCatalog = async () => {
             if (errorEl) {
                 errorEl.hidden = true;
             }
+            if (emptyEl) {
+                emptyEl.hidden = trains.length > 0;
+            }
         } catch (error) {
             if (error.name === 'AbortError') {
                 return;
@@ -192,6 +196,9 @@ const hookTrainsCatalog = async () => {
             if (errorEl) {
                 errorEl.hidden = false;
                 errorEl.textContent = 'Unable to load trains right now. Please try again in a moment.';
+            }
+            if (emptyEl) {
+                emptyEl.hidden = true;
             }
         }
     };

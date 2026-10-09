@@ -9,6 +9,7 @@ export const trainsPage = (req, res) => {
 };
 
 const allowedSortFields = ['name', 'operator', 'maxSpeedKmh', 'capacity'];
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const parsePositiveInteger = (value, defaultValue) => {
     if (value === undefined) {
@@ -88,13 +89,19 @@ export async function getAllTrains(req, res) {
 
         const filter = {};
         if (q.value) {
-            filter.$text = { $search: q.value };
+            const searchPattern = escapeRegExp(q.value);
+            filter.$or = [
+                { name: { $regex: searchPattern, $options: 'i' } },
+                { operator: { $regex: searchPattern, $options: 'i' } },
+                { description: { $regex: searchPattern, $options: 'i' } },
+                { bestFor: { $regex: searchPattern, $options: 'i' } }
+            ];
         }
         if (type.value) {
-            filter.type = type.value;
+            filter.type = { $regex: `^${escapeRegExp(type.value)}$`, $options: 'i' };
         }
         if (powerSource.value) {
-            filter.powerSource = powerSource.value;
+            filter.powerSource = { $regex: `^${escapeRegExp(powerSource.value)}$`, $options: 'i' };
         }
 
         const { trains, totalItems } = await findPaginatedTrains({

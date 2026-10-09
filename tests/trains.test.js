@@ -102,6 +102,25 @@ describe('GET /api/trains', () => {
     expect(response.body.query.q).toBe('Steam');
   });
 
+  test('searches by a case-insensitive substring', async () => {
+    const response = await request(app).get('/api/trains?q=r');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+    expect(response.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'series-e353' })
+      ])
+    );
+  });
+
+  test('treats regular-expression characters in search as literal text', async () => {
+    const response = await request(app).get('/api/trains?q=%5B');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([]);
+  });
+
   test('filters by exact type', async () => {
     const response = await request(app).get('/api/trains?type=Steam Excursion');
 
@@ -112,6 +131,15 @@ describe('GET /api/trains', () => {
     });
   });
 
+  test('matches type filters without case sensitivity', async () => {
+    const response = await request(app).get('/api/trains?type=steam%20excursion');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toEqual([
+      expect.objectContaining({ id: 'steam-c11' })
+    ]);
+  });
+
   test('filters by exact powerSource', async () => {
     const response = await request(app).get('/api/trains?powerSource=Electric');
 
@@ -119,6 +147,16 @@ describe('GET /api/trains', () => {
     expect(response.body.data.length).toBeGreaterThan(0);
     response.body.data.forEach((train) => {
       expect(train.powerSource).toBe('Electric');
+    });
+  });
+
+  test('matches power source filters without case sensitivity', async () => {
+    const response = await request(app).get('/api/trains?powerSource=electric');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+    response.body.data.forEach((train) => {
+      expect(train.powerSource.toLowerCase()).toBe('electric');
     });
   });
 

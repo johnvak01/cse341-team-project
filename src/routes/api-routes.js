@@ -57,17 +57,17 @@ const router = Router();
  *         in: query
  *         schema:
  *           type: string
- *         description: Searches name, operator, description, and bestFor.
+ *         description: Case-insensitive substring search across name, operator, description, and bestFor.
  *       - name: type
  *         in: query
  *         schema:
  *           type: string
- *         description: Exact match against the train's type. See GET /api/trains/filters for current values.
+ *         description: Case-insensitive exact match against the train's type. See GET /api/trains/filters for current values.
  *       - name: powerSource
  *         in: query
  *         schema:
  *           type: string
- *         description: Exact match against the train's power source. See GET /api/trains/filters for current values.
+ *         description: Case-insensitive exact match against the train's power source. See GET /api/trains/filters for current values.
  *     responses:
  *       '200':
  *         description: Trains retrieved successfully
