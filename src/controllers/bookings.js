@@ -430,12 +430,13 @@ const bookingPage = async (req, res) => {
     });
 };
 
-const bookingsPage = (req, res) => {
+const bookingsPage = (req, res, { personal = false } = {}) => {
     res.render("bookings", {
-        title: "Bookings",
+        title: personal ? "Your Bookings" : "Manage Bookings",
         isAdmin: res.locals.isAdmin,
         currentUserId: String(req.user._id),
         currentUserEmail: req.user.email,
+        bookingsScope: personal ? "mine" : "all",
     });
 };
 
@@ -494,7 +495,29 @@ const getPaginatedBookings = async (req, res) => {
 
     console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
 
-    let filter = {};
+    const filter = {};
+    const isAdmin = req.user?.role?.name === "admin";
+    const requestedScope = req.query.scope || "all";
+    if (!["all", "mine"].includes(requestedScope)) {
+        return res.status(400).json({
+            errors: [{ field: "scope", message: "scope must be all or mine." }],
+        });
+    }
+    const scope = isAdmin ? requestedScope : "mine";
+
+    if (scope === "mine") {
+        const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        filter.$or = [
+            { userId: req.user._id },
+            {
+                "passengers.email": {
+                    $regex: `^${escapedEmail}$`,
+                    $options: "i",
+                },
+            },
+        ];
+    }
+
     const ticketClass = req.query.ticketClass || '';
     const startDate = req.query.startDate || '';
     const endDate = req.query.endDate || '';

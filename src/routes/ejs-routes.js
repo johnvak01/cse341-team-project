@@ -40,9 +40,10 @@ router.get("/about", aboutPage);
 // Trains page
 router.get("/trains", trainsPage);
 
-//bookings page
-router.get("/bookings-admin", requirePageLogin, bookingsPage);
-router.get("/bookings", requirePageLogin, bookingsPage);
+// Personal bookings are scoped to the signed-in user, including for admins.
+router.get("/bookings", requirePageLogin, (req, res) =>
+    bookingsPage(req, res, { personal: true })
+);
 
 // Test 500 error page
 router.get("/500", testErrorPage);
@@ -76,7 +77,12 @@ router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 router.get("/admin/users", requirePageLogin, adminUsersPage);
 router.get("/trips-admin", requirePageLogin, requirePageRole("admin"), adminTripPage);
 
-// Booking administration is restricted to logged-in users.
-router.get("/bookings-admin", requirePageLogin, bookingsPage);
+// The admin bookings page can manage all bookings.
+router.get(
+    "/bookings-admin",
+    requirePageLogin,
+    requirePageRole("admin"),
+    bookingsPage
+);
 
 export default router;

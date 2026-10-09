@@ -1077,7 +1077,8 @@ router.get("/api/ticket-classes", (req, res, next) => {
  * @swagger
  * /api/bookings_paginated:
  *   get:
- *     summary: Retrieve a paginated list of bookings
+ *     summary: Retrieve paginated bookings
+ *     description: Admins may view all bookings or their own. Non-admin users are always restricted to bookings they created or are listed as passengers on.
  *     tags:
  *       - Bookings
  *     parameters:
@@ -1128,6 +1129,13 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [standard, premium, first]
+ *       - name: scope
+ *         in: query
+ *         description: Admins may request all bookings or only their own. Non-admin users are always limited to their own bookings.
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [all, mine]
  * 
  * 
  *     responses:
@@ -1203,7 +1211,7 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *                   type: string
  *                   description: Error message
  */
-router.get("/api/bookings_paginated", requireApiLogin, requireApiRole('admin'), getPaginatedBookings);
+router.get("/api/bookings_paginated", requireApiLogin, getPaginatedBookings);
 
 
 export default router;

@@ -1405,7 +1405,8 @@
     },
     "/api/bookings_paginated": {
       "get": {
-        "summary": "Retrieve a paginated list of bookings",
+        "summary": "Retrieve paginated bookings",
+        "description": "Admins may view all bookings or their own. Non-admin users are always restricted to bookings they created or are listed as passengers on.",
         "tags": [
           "Bookings"
         ],
@@ -1482,6 +1483,19 @@
                 "standard",
                 "premium",
                 "first"
+              ]
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "description": "Admins may request all bookings or only their own. Non-admin users are always limited to their own bookings.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "mine"
               ]
             }
           }

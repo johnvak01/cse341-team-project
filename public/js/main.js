@@ -158,6 +158,8 @@ const hookBookingCatalog = async () => {
     const errorEl = document.getElementById("bookings-error");
     const emptyEl = document.getElementById("bookings-empty");
     const pageEl = document.getElementById("bookings-admin");
+    const scopeQuery =
+        pageEl?.dataset.bookingsScope === "mine" ? "&scope=mine" : "";
 
     if (!listEl || !templateEl) {
         return;
@@ -185,11 +187,11 @@ const hookBookingCatalog = async () => {
             const limit = urlParams.get('limit') || 10;
             const sort = urlParams.get('sort') || 'createdAt';
             const order = urlParams.get('order') || 'asc';
-            let startDate = urlParams.get('startDate') || '';
-            let endDate = urlParams.get('endDate') || '';
-            let ticketClass = urlParams.get('ticketClass') || '';
-            let filter = { startDate, endDate, ticketClass };
-            let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
+            const startDate = urlParams.get('startDate') || '';
+            const endDate = urlParams.get('endDate') || '';
+            const ticketClass = urlParams.get('ticketClass') || '';
+            const filter = { startDate, endDate, ticketClass };
+            const ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
 
             const [bookings, ticketClasses] = await Promise.all([
                 requestJson(ApiUrl),
@@ -378,7 +380,7 @@ const hookBookingCatalog = async () => {
                 paginationControls.innerHTML = '';
                 for (let i = 1; i <= totalPages; i++) {
                     const pageLink = document.createElement('a');
-                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
+                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
                     pageLink.textContent = i;
                     if (i === parseInt(page)) {
                         pageLink.style.fontWeight = 'bold';
@@ -407,7 +409,7 @@ const hookBookingCatalog = async () => {
 
                 // Check if the user selected a valid URL option (not the placeholder)
                 if (target) {
-                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}`;
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
                 }
             });
             const sortOrder = document.getElementById('sort-order');
@@ -430,7 +432,7 @@ const hookBookingCatalog = async () => {
 
                 // Check if the user selected a valid URL option (not the placeholder)
                 if (target) {
-                    window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}${scopeQuery}`;
                 }
             });
             // add date range and ticket class filters controls based on response
