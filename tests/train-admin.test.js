@@ -63,6 +63,18 @@ describe('train admin access', () => {
     expect(dashboard.text).toContain('href="/trains-admin"');
   });
 
+  test('admin pages link back to the admin dashboard', async () => {
+    const admin = await loginAs('admin');
+
+    for (const path of ['/admin/users', '/bookings-admin', '/trips-admin', '/trains-admin', '/register']) {
+      const response = await admin.get(path);
+
+      expect(response.status, path).toBe(200);
+      expect(response.text, path).toContain('Back to Admin Dashboard');
+      expect(response.text, path).toContain('href="/admin"');
+    }
+  });
+
   test('API routes return 401 when logged out', async () => {
     expect((await request(app).post('/api/trains').send(newTrain)).status).toBe(401);
     expect((await request(app).put('/api/trains/kiha-261').send({ capacity: 1 })).status).toBe(401);
