@@ -262,7 +262,7 @@
         const templateTrip = document.getElementById('trip-card-template');
 
         try {
-            const response = await fetch('/api/trips');
+            const response = await fetch('/api/trips/all');
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
             const trips = await response.json();

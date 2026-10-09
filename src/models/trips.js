@@ -28,3 +28,16 @@ export async function updateTrip(id, updateData) {
 export async function deleteTrip (id) {
     return Trip.deleteOne({id:id})
 }
+
+
+export const getPaginatedTrips = async ({filter = {}, page, limit, sort, order }) => {
+    const skip = (page - 1) * limit;
+    const sortOptions = {[sort]: order};
+
+    const [trips, totalTrips] = await Promise.all([
+        Trip.find(filter).sort(sortOptions).skip(skip).limit(limit).lean(),
+        Trip.countDocuments(filter)
+    ]);
+
+    return {trips, totalTrips};
+};

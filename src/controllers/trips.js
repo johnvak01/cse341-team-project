@@ -4,6 +4,7 @@ import {
     getTripFilters,
     updateTrip as changeTrip,
     deleteTrip as removeTrip,
+    getPaginatedTrips
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
@@ -214,5 +215,79 @@ export async function deleteTrip(req, res) {
     } catch (error) {
         console.error("Error deleting trip:", error);
         return res.status(500).json({ message: 'Internal server error' })
+    }
+}
+
+//-------------------------------- paginated trips controller function ---------------------------------//
+
+const allowedSortFields = ['name', 'region', 'startStation', 'endStation', 'distance' , 'bestSeason']
+
+const parsePositiveInteger = (value, defaultValue) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return parsed;
+};
+
+export const getPaginatedtripsList = async (req, res, next) => {
+    
+    try {
+
+        const page = parsePositiveInteger(req.query.page, 1);
+        const requestedLimit = parsePositiveInteger(req.query.limit, 10);
+        
+        if(!page || !requestedLimit || requestedLimit > 50){
+            return res.status(400).json({
+                errors: [{
+                    field: 'pagination', message: 'page and limit must be a positive number, maximum limit is 50'
+                }]
+            })
+        }
+
+        const limit = requestedLimit;
+
+        if(req.query.sort && !allowedSortFields.includes(req.query.sort)){
+            return res.status(400).json({
+                errors: [{
+                    field: 'sort', message: 'sort is not supported, please use one of the following: "name", "region", "startStation", "endStation", "distance", "bestSeason"'
+                }]
+            })
+        }
+
+        const sort = req.query.sort || 'name';
+        const order = req.query.order === 'desc' ? -1 : 1;
+
+        const {trips, totalTrips} = await getPaginatedTrips({
+            
+            filter: {},
+            page,
+            limit,
+            sort,
+            order
+
+        });
+
+        return res.status(200).json({
+            data: trips,
+            pagination: {
+                page,
+                limit,
+                totalTrips,
+                totalPages: Math.ceil(totalTrips / limit),
+                hasNextPage: page * limit < totalTrips,
+                hasPrevPage: page > 1
+            }
+        });
+
+    }catch (error) {
+
+        return next(error);
+        
     }
 }
