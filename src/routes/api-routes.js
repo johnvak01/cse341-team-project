@@ -8,7 +8,8 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById, updateTrip, deleteTrip, getPaginatedtripsList } from "../controllers/trips.js";
+import { getAllTrips, getTripById, updateTrip, 
+    deleteTrip, getPaginatedtripsList, getFiltersTrip } from "../controllers/trips.js";
 import {
     getAllBookings,
     createBookingApi,
@@ -603,6 +604,23 @@ router.get("/api/stations/:id", getStationById);
  *           enum:
  *             - asc
  *             - desc
+ *       - name: region
+ *         in: query
+ *         description: Exact match on region
+ *         schema:
+ *           type: string
+ *       - name: season
+ *         in: query
+ *         description: Exact match on the trip's best season
+ *         schema:
+ *           type: string
+ *       - name: q
+ *         in: query
+ *         description: Keyword search across trip name and description (case-insensitive, substring match)
+ *         schema:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 100
  *     responses:
  *       '200':
  *         description: Trips retrieved successfully
@@ -705,6 +723,39 @@ router.get("/api/trips", getPaginatedtripsList);
 router.get("/api/trips/all", getAllTrips);
 
 
+/**
+ * @openapi
+ * /api/trips/filters:
+ *   get:
+ *     tags:
+ *       - Trips
+ *     summary: Get the available filter options
+ *     description: >
+ *       Returns the distinct region and best-season values currently stored
+ *       in the trips collection, used to populate the filter dropdowns.
+ *       Takes no query parameters and is not paginated.
+ *     responses:
+ *       '200':
+ *         description: Filter options retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 regions:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: [central, coastal]
+ *                 seasons:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: [autumn, summer]
+ *       '500':
+ *         description: Internal error
+ */
+router.get("/api/trips/filters", getFiltersTrip);
 
 /**
  * @openapi

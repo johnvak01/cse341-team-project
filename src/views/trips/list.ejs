@@ -3,15 +3,20 @@
 <h1><%- title %></h1>
 
 <div id="filters">
-    Search by Region:
+
+    <label for="search-input">Search:</label>
+    <input type="search" id="search-input" placeholder="Search trips..." maxlength="100" />
+
+    <label for="region-filter">Region:</label>
     <select id="region-filter">
         <option value="all">All Regions</option>
     </select>
 
-    Search by Season:
+    <label for="season-filter">Season:</label>
     <select id="season-filter">
         <option value="all">Any Season</option>
     </select>
+    
 </div>
 
 <!--below generates the trip card info dynamically-->

@@ -1,22 +1,3 @@
-const regionFilter = document.getElementById('region-filter');
-const seasonFilter = document.getElementById('season-filter');
-const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
-
-/*
-const populateFilterOptions = (select, values, label) => {
-    const defaultOption = document.createElement('option');
-    defaultOption.value = 'all';
-    defaultOption.textContent = label;
-    select.replaceChildren(defaultOption);
-
-    [...new Set(values.map(normalizeFilterValue).filter(Boolean))].sort().forEach((value) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value.charAt(0).toUpperCase() + value.slice(1);
-        select.appendChild(option);
-    });
-};
-*/
 
 const renderTrips = (trips) => {
     const tripsList = document.getElementById('trips-list');
@@ -55,39 +36,56 @@ const renderTrips = (trips) => {
     tripsList.replaceChildren(fragment);
 };
 
-/*
-const applyFilters = () => {
-    const cards = document.querySelectorAll('#trips-list .route-card');
-    const selectedRegion = normalizeFilterValue(regionFilter.value);
-    const selectedSeason = normalizeFilterValue(seasonFilter.value);
-    let visibleCount = 0;
 
-    cards.forEach((card) => {
-        const cardRegion = normalizeFilterValue(card.querySelector('.route-region').textContent);
-        const bestSeason = normalizeFilterValue(card.querySelector('.season-badge').textContent);
-        const matchesRegion = selectedRegion === 'all' || cardRegion === selectedRegion;
-        const matchesSeason = selectedSeason === 'all' || bestSeason.includes(selectedSeason);
-        card.hidden = !(matchesRegion && matchesSeason);
-        if (!card.hidden) visibleCount += 1;
+const searchInput = document.getElementById('search-input');
+const regionFilter = document.getElementById('region-filter');
+const seasonFilter = document.getElementById('season-filter');
+
+const fillSelectOptions = (select, values) => {
+    values.forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+        select.appendChild(option);
     });
+};
 
-    document.getElementById('trips-empty')?.remove();
-    if (cards.length > 0 && visibleCount === 0) {
-        const emptyState = document.createElement('p');
-        emptyState.id = 'trips-empty';
-        emptyState.className = 'trips-empty';
-        emptyState.textContent = 'No trips match the selected filters.';
-        document.getElementById('trips-list').appendChild(emptyState);
+const loadFilterOptions = async () => {
+
+    try{
+
+        const response = await fetch('/api/trips/filters');
+        if (!response.ok) throw new Error(`Filter request failed (${response.status})`);
+
+        const { regions, seasons } = await response.json();
+
+        fillSelectOptions(regionFilter, regions);
+        fillSelectOptions(seasonFilter, seasons);
+
+    }catch (error){
+        console.error('Unable to load filter options:', error);
     }
 };
 
-*/
+const state = {page: 1, region: 'all', season: 'all', q: ''};
 
-const loadTrips = async (page = 1) => {
+const buildQuery = () => {
+    const params = new URLSearchParams();
+    if (state.region && state.region !== 'all') params.set('region', state.region);
+    if (state.season && state.season !== 'all') params.set('season', state.season);
+    const q = state.q.trim();
+    if (q) params.set('q', q);
+    if (state.page > 1) params.set('page', state.page);
+
+    return params.toString();
+}
+
+
+const loadTrips = async () => {
     const tripsList = document.getElementById('trips-list');
 
     try {
-        const response = await fetch(`/api/trips?page=${page}`);
+        const response = await fetch(`/api/trips?${buildQuery()}`);
         if (!response.ok) throw new Error(`Trip request failed (${response.status})`);
 
         /*
@@ -167,7 +165,8 @@ const renderPagination = ({ page, totalPages, hasPrevPage, hasNextPage }) => {
         btn.disabled = disabled;
         if (isCurrent) btn.setAttribute('aria-current', 'page');
         btn.addEventListener('click', async () => {
-            await loadTrips(targetPage);
+            state.page = targetPage;
+            await loadTrips();
             document.getElementById('trips-list').scrollIntoView({ behavior: 'smooth' });
         });
         nav.appendChild(btn);
@@ -186,9 +185,25 @@ const renderPagination = ({ page, totalPages, hasPrevPage, hasNextPage }) => {
     addButton('Next', page + 1, !hasNextPage);
 };
 
-/*
-regionFilter.addEventListener('change', applyFilters);
-seasonFilter.addEventListener('change', applyFilters);
-*/
+regionFilter.addEventListener('change', async () => {
+    state.region = regionFilter.value;
+    state.page = 1;
+    await loadTrips();
+});
 
+seasonFilter.addEventListener('change', async () => {
+    state.season = seasonFilter.value;
+    state.page = 1;
+    await loadTrips();
+});
+
+searchInput.addEventListener('keydown', async () => {
+    if (event.key === 'Enter') {
+        state.q = searchInput.value;
+        state.page = 1;
+        await loadTrips();
+    }
+});
+
+loadFilterOptions();
 loadTrips();

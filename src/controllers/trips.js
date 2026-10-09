@@ -4,7 +4,7 @@ import {
     getTripFilters,
     updateTrip as changeTrip,
     deleteTrip as removeTrip,
-    getPaginatedTrips
+    getPaginatedTrips, getTripFilterOptions
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
@@ -214,10 +214,13 @@ export async function deleteTrip(req, res) {
     }
 }
 
-//-------------------------------- paginated trips controller function ---------------------------------//
+//-------------------------------- paginated, sort and filter trips controller function ---------------------------------//
 
+// whitelist of allowed sort fields
 const allowedSortFields = ['name', 'region', 'startStation', 'endStation', 'distance' , 'bestSeason']
 
+
+// helper function to parse and validate positive integers from query parameters
 const parsePositiveInteger = (value, defaultValue) => {
     if (value === undefined) {
         return defaultValue;
@@ -230,6 +233,28 @@ const parsePositiveInteger = (value, defaultValue) => {
 
     return parsed;
 };
+
+// helper function to parse and validate string values from query parameters
+const parseStringParams = (value, maxLength = Infinity) => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    const trimmed = value.trim();
+    if (trimmed.length === 0 || trimmed.length > maxLength) {
+        return null;
+    }
+
+    return trimmed;
+}
+
+const escapeRegex = (text) => text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+
+
 
 export const getPaginatedtripsList = async (req, res, next) => {
     
@@ -259,9 +284,53 @@ export const getPaginatedtripsList = async (req, res, next) => {
         const sort = req.query.sort || 'name';
         const order = req.query.order === 'desc' ? -1 : 1;
 
+        const region = parseStringParams(req.query.region);
+        const season = parseStringParams(req.query.season);
+        const q = parseStringParams(req.query.q, 100);
+
+        if (region === null){
+            return res.status(400).json({
+            errors: [{
+                field: 'region', message: 'region must be a non-empty string'
+                }]
+            })
+        }
+
+        if(season === null){
+            return res.status(400).json({
+                errors: [{
+                    field: 'season', message: 'season must be a non-empty string'
+                }]
+            })
+        }
+
+        if(q === null){
+            return res.status(400).json({
+                errors: [{
+                    field: 'q', message: 'search query must be between 1 and 100 characters long'
+                }]
+            })
+        }
+
+        const filter = {};
+        if(region !== undefined){
+            filter.region = region;
+        }
+        if (season !== undefined){
+            filter.bestSeason = season;
+        }
+
+        if(q !== undefined){
+            const pattern = escapeRegex(q);
+            filter.$or = [
+                { name: {$regex: pattern, $options: 'i'} },
+                { description: {$regex: pattern, $options: 'i'} }
+            ];
+        }
+
         const {trips, totalTrips} = await getPaginatedTrips({
             
-            filter: {},
+            filter,
             page,
             limit,
             sort,
@@ -285,5 +354,18 @@ export const getPaginatedtripsList = async (req, res, next) => {
 
         return next(error);
         
+    }
+};
+
+export const getFiltersTrip = async (req, res, next) => {
+    try {
+
+        const options = await getTripFilterOptions();
+        return res.status(200).json(options);
+
+    }catch (error) {
+
+        return next(error);
+
     }
 }

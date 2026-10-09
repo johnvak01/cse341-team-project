@@ -28,7 +28,7 @@ export async function deleteTrip (id) {
 
 export const getPaginatedTrips = async ({filter = {}, page, limit, sort, order }) => {
     const skip = (page - 1) * limit;
-    const sortOptions = {[sort]: order};
+    const sortOptions = {[sort]: order, _id: 1}; // Add _id as a secondary sort (A tie breaker) to ensure consistent ordering
 
     const [trips, totalTrips] = await Promise.all([
         Trip.find(filter).sort(sortOptions).skip(skip).limit(limit).lean(),
@@ -37,3 +37,11 @@ export const getPaginatedTrips = async ({filter = {}, page, limit, sort, order }
 
     return {trips, totalTrips};
 };
+
+export const getTripFilterOptions = async () => {
+    const [regions, seasons] = await Promise.all([
+        Trip.distinct("region"),
+        Trip.distinct("bestSeason")
+    ])
+    return { regions, seasons };
+}
