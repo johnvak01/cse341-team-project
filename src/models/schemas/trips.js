@@ -33,6 +33,17 @@ const tripSchema = new mongoose.Schema(
             required: true,
             trim: true
         },
+        trainId: {
+            type: String,
+            required: true,
+            trim: true,
+            // A trip can only point at a train that exists. Train is looked up by name
+            // instead of imported, because the trains schema uses Trip too.
+            validate: {
+                validator: async (value) => Boolean(await mongoose.model("Train").exists({ id: value })),
+                message: (props) => `Train '${props.value}' does not exist`,
+            },
+        },
         duration: {
             type: String,
             required: true,

@@ -25,3 +25,31 @@ export async function getPaginatedTrains({
 
     return { trains, totalItems };
 }
+
+export async function getTrainFilterOptions() {
+    const [types, powerSources] = await Promise.all([
+        Train.distinct('type'),
+        Train.distinct('powerSource')
+    ]);
+
+    return { types, powerSources };
+}
+
+export async function createTrain(trainData) {
+    const train = await Train.create(trainData);
+    return train.toObject();
+}
+
+// runValidators makes updates follow the same schema rules as new trains
+export async function updateTrain(id, updates) {
+    return Train.findOneAndUpdate(
+        { id },
+        { $set: updates },
+        { returnDocument: "after", runValidators: true }
+    ).lean();
+}
+
+// The schema's delete hook throws a 409 error if a trip still uses this train
+export async function deleteTrain(id) {
+    return Train.deleteOne({ id });
+}

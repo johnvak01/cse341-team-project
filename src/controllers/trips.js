@@ -1,23 +1,86 @@
 import {
-    getAllTrips as findAllTrips,
     getTripById as findTripById,
     getTripFilters,
+    getPaginatedTrips as findPaginatedTrips,
     updateTrip as changeTrip,
-    deleteTrip as removeTrip,
+    deleteTrip as removeTrip
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
+import { getTrainById as findTrainById } from "../models/trains.js";
 
-//get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
-export async function getAllTrips(req, res) {
-    try{
-        const trips = await findAllTrips ();
-        
-        return res.status(200).json(trips);
-    }catch(error){
+const allowedSortFields = ['name', 'region', 'startStation', 'endStation', 'distance', 'bestSeason'];
+
+const parsePositiveInteger = (value, defaultValue) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return parsed;
+};
+
+//returns one page of trips (optionally filtered by region/season); 200 on success, 400 for bad query values, 500 for unexpected errors
+export async function getPaginatedTripsList(req, res) {
+    try {
+        const page = parsePositiveInteger(req.query.page, 1);
+        const requestedLimit = parsePositiveInteger(req.query.limit, 10);
+
+        if (!page || !requestedLimit || requestedLimit > 50) {
+            return res.status(400).json({
+                errors: [{
+                    field: 'pagination',
+                    message: 'page and limit must be positive integers, and limit cannot exceed 50.'
+                }]
+            });
+        }
+
+        const limit = requestedLimit;
+
+        if (req.query.sort && !allowedSortFields.includes(req.query.sort)) {
+            return res.status(400).json({
+                errors: [{ field: 'sort', message: 'sort is not supported.' }]
+            });
+        }
+
+        const sort = req.query.sort || 'name';
+        const order = req.query.order === 'desc' ? -1 : 1;
+
+        const filter = {};
+        if (typeof req.query.region === 'string' && req.query.region !== 'all') {
+            filter.region = req.query.region.toLowerCase();
+        }
+        if (typeof req.query.season === 'string' && req.query.season !== 'all') {
+            filter.bestSeason = req.query.season.toLowerCase();
+        }
+
+        const { trips, totalItems } = await findPaginatedTrips({
+            filter,
+            page,
+            limit,
+            sort,
+            order
+        });
+
+        return res.status(200).json({
+            data: trips,
+            pagination: {
+                page,
+                limit,
+                totalItems,
+                totalPages: Math.ceil(totalItems / limit),
+                hasNextPage: page * limit < totalItems,
+                hasPreviousPage: page > 1
+            }
+        });
+    } catch (error) {
         console.error("Error fetching Trips:", error);
 
-        return res.status(500).json({message: "Failed to fetch Trips"});
+        return res.status(500).json({ message: "Failed to fetch Trips" });
     }
 }
 
@@ -59,9 +122,12 @@ export async function getTripDetails (req, res) {
             });
         }
 
+        const train = await findTrainById(details.trainId);
+
         return res.render("trips/details", {
             title: "Trip Details",
             details,
+            train,
         });
 
     }catch(error){
