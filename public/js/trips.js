@@ -87,12 +87,17 @@ const loadTrips = async (page = 1) => {
     const tripsList = document.getElementById('trips-list');
 
     try {
-        const response = await fetch(`/api/trips?page=${page}`);
+        const params = new URLSearchParams({
+            page,
+            region: regionFilter.value,
+            season: seasonFilter.value
+        });
+        const response = await fetch(`/api/trips?${params}`);
         if (!response.ok) throw new Error(`Trip request failed (${response.status})`);
 
         /*
         const payload = await response.json();
-        const trips = Array.isArray(payload) ? payload : payload.trips || [];
+        const trips = Array.isArray(payload) ? payload : payload.data || payload.trips || [];
         populateFilterOptions(regionFilter, trips.map((trip) => trip.region), 'All Regions');
         populateFilterOptions(seasonFilter, trips.map((trip) => trip.bestSeason), 'Any Season');
         renderTrips(trips);
@@ -155,7 +160,7 @@ const getPageItems = (current, total) => {
     return items;
 };
 
-const renderPagination = ({ page, totalPages, hasPrevPage, hasNextPage }) => {
+const renderPagination = ({ page, totalPages, hasPreviousPage, hasNextPage }) => {
     const nav = document.getElementById('pagination');
     nav.replaceChildren();
     if (totalPages <= 1) return;
@@ -173,7 +178,7 @@ const renderPagination = ({ page, totalPages, hasPrevPage, hasNextPage }) => {
         nav.appendChild(btn);
     };
 
-    addButton('Previous', page - 1, !hasPrevPage);
+    addButton('Previous', page - 1, !hasPreviousPage);
     getPageItems(page, totalPages).forEach((item) => {
         if (item === '...') {
             const gap = document.createElement('span');
@@ -190,5 +195,9 @@ const renderPagination = ({ page, totalPages, hasPrevPage, hasNextPage }) => {
 regionFilter.addEventListener('change', applyFilters);
 seasonFilter.addEventListener('change', applyFilters);
 */
+
+// Filters are applied by the API, so changing one returns to page 1.
+regionFilter.addEventListener('change', () => loadTrips(1));
+seasonFilter.addEventListener('change', () => loadTrips(1));
 
 loadTrips();

@@ -841,6 +841,22 @@
                 "desc"
               ]
             }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "description": "Only return trips in this region, such as central",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "description": "Only return trips whose best season matches, such as summer",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -921,7 +937,7 @@
                         "limit": {
                           "type": "integer"
                         },
-                        "totalTrips": {
+                        "totalItems": {
                           "type": "integer"
                         },
                         "totalPages": {
@@ -930,7 +946,7 @@
                         "hasNextPage": {
                           "type": "boolean"
                         },
-                        "hasPrevPage": {
+                        "hasPreviousPage": {
                           "type": "boolean"
                         }
                       }
@@ -965,23 +981,6 @@
                 }
               }
             }
-          },
-          "500": {
-            "description": "Internal error"
-          }
-        }
-      }
-    },
-    "/api/trips/all": {
-      "get": {
-        "tags": [
-          "Trips"
-        ],
-        "summary": "Get all trips",
-        "description": "Returns every trip in the trips collection",
-        "responses": {
-          "200": {
-            "description": "Trips retrieved successfully"
           },
           "500": {
             "description": "Internal error"

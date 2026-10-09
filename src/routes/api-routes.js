@@ -8,7 +8,7 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById, updateTrip, deleteTrip, getPaginatedtripsList } from "../controllers/trips.js";
+import { getTripById, updateTrip, deleteTrip, getPaginatedTripsList } from "../controllers/trips.js";
 
 
 import {
@@ -659,6 +659,16 @@ router.get("/api/stations/:id", getStationById);
  *           enum:
  *             - asc
  *             - desc
+ *       - name: region
+ *         in: query
+ *         description: Only return trips in this region, such as central
+ *         schema:
+ *           type: string
+ *       - name: season
+ *         in: query
+ *         description: Only return trips whose best season matches, such as summer
+ *         schema:
+ *           type: string
  *     responses:
  *       '200':
  *         description: Trips retrieved successfully
@@ -715,13 +725,13 @@ router.get("/api/stations/:id", getStationById);
  *                       type: integer
  *                     limit:
  *                       type: integer
- *                     totalTrips:
+ *                     totalItems:
  *                       type: integer
  *                     totalPages:
  *                       type: integer
  *                     hasNextPage:
  *                       type: boolean
- *                     hasPrevPage:
+ *                     hasPreviousPage:
  *                       type: boolean
  *       '400':
  *         description: Invalid page, limit, or sort value
@@ -742,23 +752,7 @@ router.get("/api/stations/:id", getStationById);
  *       '500':
  *         description: Internal error
  */
-router.get("/api/trips", getPaginatedtripsList);
-
-/**
- * @openapi
- * /api/trips/all:
- *   get:
- *     tags:
- *       - Trips
- *     summary: Get all trips
- *     description: Returns every trip in the trips collection
- *     responses:
- *       '200':
- *         description: Trips retrieved successfully
- *       '500':
- *         description: Internal error
- */
-router.get("/api/trips/all", getAllTrips);
+router.get("/api/trips", getPaginatedTripsList);
 
 
 
