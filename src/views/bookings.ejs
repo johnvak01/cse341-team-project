@@ -1,15 +1,23 @@
 <%- include('./partials/header') %>
-    <section class="trains-hero">
-        <h1><%= title %></h1>
-    </section>
-    <section class="trains-catalog" id="bookings-admin" data-is-admin="<%= isAdmin %>"
-        data-bookings-scope="<%= bookingsScope %>"
-        data-current-user-id="<%= currentUserId %>" data-current-user-email="<%= currentUserEmail %>">
-        <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
-        <div class="trains-state trains-error" id="bookings-error" hidden></div>
-        <div class="trains-state" id="bookings-empty" hidden>
-            No bookings found.
-        </div>
+<section class="trains-hero">
+    <h1><%= title %></h1>
+    <% if (isAdmin) { %>
+        <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
+    <% } %>
+</section>
+<section
+    class="trains-catalog"
+    id="bookings-admin"
+    data-is-admin="<%= isAdmin %>"
+    data-bookings-scope="<%= bookingsScope %>"
+    data-current-user-id="<%= currentUserId %>"
+    data-current-user-email="<%= currentUserEmail %>"
+>
+    <div class="trains-state" id="bookings-loading">Loading Bookings...</div>
+    <div class="trains-state trains-error" id="bookings-error" hidden></div>
+    <div class="trains-state" id="bookings-empty" hidden>
+        No bookings found.
+    </div>
 
         <div class="trains-grid" id="bookings-list"></div>
 

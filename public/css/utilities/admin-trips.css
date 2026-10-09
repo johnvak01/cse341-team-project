@@ -5,9 +5,10 @@
 
 .admin-trips-heading {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 1rem;
     margin-bottom: var(--space-lg);
 }
@@ -175,6 +176,32 @@
 .admin-trip-modal :focus-visible {
     outline: 3px solid #e0a82e;
     outline-offset: 2px;
+}
+
+.admin-trips-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin: var(--space-lg) 0;
+}
+
+.admin-trips-pagination button {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid #295d49;
+    border-radius: 3px;
+    background: #295d49;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.admin-trips-pagination button:disabled {
+    border-color: #9aaca3;
+    background: #c8d4ce;
+    color: #45574e;
+    cursor: not-allowed;
 }
 
 @media (max-width: 600px) {

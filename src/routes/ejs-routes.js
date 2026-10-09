@@ -16,7 +16,7 @@ import {
     bookingsPage,
     confirmationPage,
 } from "../controllers/bookings.js";
-import { trainsPage } from "../controllers/trains.js";
+import { trainsPage, trainDetailsPage, trainsAdminPage } from "../controllers/trains.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
 
 import { accountPage, register } from "../controllers/users.js";
@@ -39,6 +39,7 @@ router.get("/about", aboutPage);
 
 // Trains page
 router.get("/trains", trainsPage);
+router.get("/trains/:id", trainDetailsPage);
 
 // Personal bookings are scoped to the signed-in user, including for admins.
 router.get("/bookings", requirePageLogin, (req, res) =>
@@ -76,6 +77,7 @@ router.get("/account-user", requirePageLogin, accountPage);
 router.get("/admin", requirePageRole("admin"), adminDashboardPage);
 router.get("/admin/users", requirePageLogin, adminUsersPage);
 router.get("/trips-admin", requirePageLogin, requirePageRole("admin"), adminTripPage);
+router.get("/trains-admin", requirePageLogin, requirePageRole("admin"), trainsAdminPage);
 
 // The admin bookings page can manage all bookings.
 router.get(
