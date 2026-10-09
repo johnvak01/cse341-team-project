@@ -21,6 +21,8 @@
                 <option value="<%= season %>"><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
             <% }); %>
         </select>
+        <label for="trip-keyword-search">Keyword Search:</label>
+        <input type="search" id="trip-keyword-search" placeholder="Search name or description&hellip;" maxlength="100">
     </section>
     <p id="admin-trips-error" class="admin-trips-error" role="alert" hidden></p>
 
@@ -274,19 +276,26 @@
         nextButton.disabled = !pagination.hasNextPage;
     };
 
+    const getActiveFilters = () => {
+        const region = document.getElementById('region-filter').value;
+        const season = document.getElementById('season-filter').value;
+        const search = document.getElementById('trip-keyword-search').value.trim();
+        return { region, season, search };
+    };
+
     const loadTrips = async (page = currentPage) => {
 
         const tripsCard = document.getElementById('trips-list');
         const templateTrip = document.getElementById('trip-card-template');
+        const { region, season, search } = getActiveFilters();
+
+        const params = new URLSearchParams({ page, limit: 10 });
+        if (region && region !== 'all') params.set('region', region);
+        if (season && season !== 'all') params.set('season', season);
+        if (search) params.set('search', search);
 
         try {
-            const params = new URLSearchParams({
-                page,
-                limit: 10,
-                region: document.getElementById('region-filter').value,
-                season: document.getElementById('season-filter').value
-            });
-            const response = await fetch(`/api/trips?${params}`);
+            const response = await fetch(`/api/trips?${params.toString()}`);
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
             const payload = await response.json();
@@ -303,6 +312,8 @@
 
             if(trips.length === 0){
                 const emptyMessage = document.createElement('p');
+                emptyMessage.id = 'trips-empty';
+                emptyMessage.className = 'trips-empty';
                 emptyMessage.textContent = 'No trips match the selected filters.';
                 tripsCard.replaceChildren(emptyMessage);
                 return;
@@ -353,27 +364,38 @@
         }
     }
 
+    const debounce = (fn, delayMs) => {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => fn(...args), delayMs);
+        };
+    };
+
     window.addEventListener('DOMContentLoaded', async () =>{
 
         const regionFilter = document.getElementById('region-filter');
         const seasonFilter = document.getElementById('season-filter');
+        const keywordSearch = document.getElementById('trip-keyword-search');
 
         await loadStationDropdowns();
         await loadScheduleDropdown();
 
         await loadTrips(1);
 
-        // Filters are applied by the API, so changing one returns to page 1.
+        // Region/season/search are applied server-side, so any change
+        // resets to page 1 and refetches the filtered, paginated results.
         regionFilter.addEventListener('change', () => loadTrips(1));
         seasonFilter.addEventListener('change', () => loadTrips(1));
+        keywordSearch.addEventListener('input', debounce(() => loadTrips(1), 300));
 
-        document.getElementById('trips-prev-page').addEventListener('click', async () => {
+        document.getElementById('trips-prev-page').addEventListener('click', () => {
             if (currentPage <= 1) return;
-            await loadTrips(currentPage - 1);
+            loadTrips(currentPage - 1);
         });
 
-        document.getElementById('trips-next-page').addEventListener('click', async () => {
-            await loadTrips(currentPage + 1);
+        document.getElementById('trips-next-page').addEventListener('click', () => {
+            loadTrips(currentPage + 1);
         });
     });
 
