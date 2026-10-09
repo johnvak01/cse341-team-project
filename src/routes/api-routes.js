@@ -488,11 +488,32 @@ router.get("/api/trains/:id/trips", getTripsByTrain);
  *   get:
  *     tags:
  *       - Schedules
- *     summary: Get all schedules
- *     description: Returns every schedule in the schedule collection
+ *     summary: Get all schedules, or one page of them
+ *     description: >
+ *       With no query parameters, returns every schedule as a plain array.
+ *       Sending any of page, limit, sort or order returns one page as
+ *       { data, pagination } instead.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - name: limit
+ *         in: query
+ *         schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+ *       - name: sort
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [departureTime, arrivalTime, tripId, id]
+ *           default: departureTime
+ *       - name: order
+ *         in: query
+ *         schema: { type: string, enum: [asc, desc], default: asc }
  *     responses:
  *       '200':
- *         description: Schedules retrieved successfully
+ *         description: Schedules retrieved successfully. A plain array without paging params, otherwise { data, pagination }.
+ *       '400':
+ *         description: Invalid page, limit, sort or order. Returns a list of field errors.
  *       '500':
  *         description: Internal server error
  */

@@ -1,0 +1,33 @@
+<%- include('./partials/header') %>
+
+<section class="timetable">
+    <h1>Timetable</h1>
+    <p>Every scheduled departure across the Kizuna Rail network.</p>
+
+    <div class="trains-state" id="timetable-loading">Loading schedules...</div>
+    <div class="trains-state trains-error" id="timetable-error" hidden></div>
+
+    <div class="timetable-table-wrap">
+        <table id="timetable-table" hidden>
+            <thead>
+                <tr>
+                    <th scope="col">Departs</th>
+                    <th scope="col">Arrives</th>
+                    <th scope="col">Trip</th>
+                    <th scope="col">Runs on</th>
+                </tr>
+            </thead>
+            <tbody id="timetable-rows"></tbody>
+        </table>
+    </div>
+
+    <div class="timetable-pagination" id="timetable-pagination" hidden>
+        <button type="button" id="timetable-prev">Previous</button>
+        <span id="timetable-page-indicator"></span>
+        <button type="button" id="timetable-next">Next</button>
+    </div>
+</section>
+
+<script src="/js/timetable.js" defer></script>
+
+<%- include('./partials/footer') %>

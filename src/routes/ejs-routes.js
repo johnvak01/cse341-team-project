@@ -18,6 +18,7 @@ import {
 } from "../controllers/bookings.js";
 import { trainsPage, trainDetailsPage } from "../controllers/trains.js";
 import { getTripsList, getTripDetails } from "../controllers/trips.js";
+import { timetablePage } from "../controllers/schedules.js";
 
 import { accountPage, register } from "../controllers/users.js";
 import { login, logout } from "../controllers/login.js";
@@ -40,6 +41,9 @@ router.get("/about", aboutPage);
 // Trains page
 router.get("/trains", trainsPage);
 router.get("/trains/:id", trainDetailsPage);
+
+// Timetable page
+router.get("/timetable", timetablePage);
 
 //bookings page
 router.get("/bookings-admin", requirePageLogin, bookingsPage);
