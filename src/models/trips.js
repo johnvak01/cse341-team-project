@@ -12,6 +12,15 @@ export async function getTripsByTrainId(trainId) {
     return Trip.find({ trainId }).lean();
 }
 
+// runValidators makes the schema check that the new train exists
+export async function updateTripTrain(tripId, trainId) {
+    return Trip.findOneAndUpdate(
+        { id: tripId },
+        { $set: { trainId } },
+        { returnDocument: "after", runValidators: true }
+    ).lean();
+}
+
 export async function getTripFilters() {
     const [regions, seasons] = await Promise.all([
         Trip.distinct("region"),

@@ -104,7 +104,7 @@ const createUpgradeQuote = async (booking, targetClassName) => {
 
     const priceDifferencePerSeat = Math.round(
         trip.distance *
-            (targetClass.priceMultiplier - currentClass.priceMultiplier)
+        (targetClass.priceMultiplier - currentClass.priceMultiplier)
     );
     return {
         quote: {
@@ -430,12 +430,13 @@ const bookingPage = async (req, res) => {
     });
 };
 
-const bookingsPage = (req, res) => {
+const bookingsPage = (req, res, { personal = false } = {}) => {
     res.render("bookings", {
-        title: "Bookings",
+        title: personal ? "Your Bookings" : "Manage Bookings",
         isAdmin: res.locals.isAdmin,
         currentUserId: String(req.user._id),
         currentUserEmail: req.user.email,
+        bookingsScope: personal ? "mine" : "all",
     });
 };
 
@@ -494,9 +495,85 @@ const getPaginatedBookings = async (req, res) => {
 
     console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
 
+    const filter = {};
+    const isAdmin = req.user?.role?.name === "admin";
+    const requestedScope = req.query.scope || "all";
+    if (!["all", "mine"].includes(requestedScope)) {
+        return res.status(400).json({
+            errors: [{ field: "scope", message: "scope must be all or mine." }],
+        });
+    }
+    const scope = isAdmin ? requestedScope : "mine";
+
+    if (scope === "mine") {
+        const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        filter.$or = [
+            { userId: req.user._id },
+            {
+                "passengers.email": {
+                    $regex: `^${escapedEmail}$`,
+                    $options: "i",
+                },
+            },
+        ];
+    }
+
+    const ticketClass = req.query.ticketClass || '';
+    const startDate = req.query.startDate || '';
+    const endDate = req.query.endDate || '';
+
+    if (ticketClass != '') {
+        filter.ticketClass = ticketClass;
+    }
+
+    // figure out how to check they aren;t overlapping and be able to create a filter for the date ranges independently
+    // if (startDate != '' && endDate != '') {
+    //     const start = new Date(startDate);
+    //     const end = new Date(endDate);
+    //     console.log(`Filtering bookings from ${start} to ${end}`);
+    //     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    //         return res.status(400).json({
+    //             errors: [{ field: 'dateRange', message: 'startDate and endDate must be valid dates.' }]
+    //         });
+    //     }
+    //     filter.createdAt.$gte = start.toISOString();
+    //     filter.createdAt.$lte= end.toISOString();
+    // }
+    if(endDate !='' && startDate != '' && endDate < startDate){
+        return res.status(400).json({
+            errors: [{ field: 'dateRange', message: 'endDate cannot be earlier than startDate.' }]
+        });
+    }
+    if (startDate != '') {
+        console.log("valid start date provided, checking if it's a valid date...");
+        const start = new Date(`${startDate}T23:59:59.999Z`);
+        if (isNaN(start.getTime())) {
+            return res.status(400).json({
+                errors: [{ field: 'startDate', message: 'startDate must be a valid date.' }]
+            });
+        }
+        filter.createdAt = filter.createdAt || {}
+        filter.createdAt.$gte = start;
+    }
+    if (endDate != '') {
+        console.log("valid end date provided, checking if it's a valid date...");
+        const end = new Date(`${endDate}T23:59:59.999Z`);
+        if (isNaN(end.getTime())) {
+            return res.status(400).json({
+                errors: [{ field: 'endDate', message: 'endDate must be a valid date.' }]
+            });
+        }
+        filter.createdAt = filter.createdAt || {}
+        filter.createdAt.$lte = end;
+    }
+    
+
+
+    console.log(`Filter applied: ${JSON.stringify(filter)}`);
+
     try {
         const bookingsData = await findPaginatedBookings({
-            filter: {},
+            filter: filter,
             page: parseInt(page),
             limit: parseInt(limit),
             sort,
@@ -507,6 +584,7 @@ const getPaginatedBookings = async (req, res) => {
         console.error("Error fetching paginated bookings:", error);
         return res.status(500).json({ error: "Failed to fetch paginated bookings" });
     }
+
 }
 
 export {

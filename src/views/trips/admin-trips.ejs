@@ -1,8 +1,9 @@
 <%- include('../partials/header') %>
 
-<div class="admin-trips">
-    <div class="admin-trips-heading">
+<div class="admin-trips admin-trains train-page trains-catalog">
+    <div class="admin-trips-heading trains-hero">
         <h1><%= title %></h1>
+        <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
     </div>
 
     <section class="admin-trips-filters" aria-label="Filter trips">
@@ -63,8 +64,8 @@
 
 </section>
 
-<!-- Reuses your exact public container classes -->
-<div id="trips-list" class="routes-grid">
+<!-- Same grid and card markup as the trains pages -->
+<div id="trips-list" class="trains-grid">
     <p role="status">Loading trips...</p>
 </div>
 
@@ -74,54 +75,54 @@
     <button type="button" id="trips-next-page">Next &rarr;</button>
 </nav>
 
-<!-- Reuses your exact public card template setup structure -->
 <template id="trip-card-template">
-    <div class="route-card">
-        <div class="route-header">
+    <article class="train-card">
+        <div class="train-image-wrap" data-field="image-wrap">
+            <img data-field="image" loading="lazy" decoding="async">
+        </div>
+
+        <header class="train-card-header">
             <h2 class="route-name"></h2>
-            <span class="route-region"></span>
-        </div>
+            <span class="train-operator route-region"></span>
+        </header>
 
-        <div class="station-info">
-            <div class="station">
-                <div class="station-type">From:</div>
-                <div class="station-name start-station"></div>
-            </div>
-            <div class="route-arrow">→</div>
-            <div class="station">
-                <div class="station-type">To:</div>
-                <div class="station-name end-station"></div>
-            </div>
-        </div>
+        <p class="train-description route-description"></p>
 
-        <div class="route-details">
-            <div class="detail-item">
-                <span class="detail-icon">🕑</span>
-                <span><span class="detail-label">Duration:</span> <span class="trip-duration"></span></span>
+        <dl class="train-specs">
+            <div class="spec-item">
+                <dt>From</dt>
+                <dd class="start-station"></dd>
             </div>
-            <div class="detail-item">
-                <span class="detail-icon">📍</span>
-                <span><span class="detail-label">Distance:</span> <span class="trip-distance"></span>km</span>
+            <div class="spec-item">
+                <dt>To</dt>
+                <dd class="end-station"></dd>
             </div>
-            <div class="detail-item">
-                <span class="season-badge"></span>
+            <div class="spec-item">
+                <dt>Duration</dt>
+                <dd class="trip-duration"></dd>
             </div>
-        </div>
+            <div class="spec-item">
+                <dt>Distance</dt>
+                <dd><span class="trip-distance"></span> km</dd>
+            </div>
+        </dl>
 
-        <div class="route-description"></div>
+        <p class="train-best-for">
+            <strong>Best Season:</strong>
+            <span class="season-badge"></span>
+        </p>
 
         <div class="highlights">
             <div class="highlights-list">
                 <!-- Highlight tags will be dynamically injected here -->
             </div>
         </div>
-            
-        <!-- Modified to stack Admin action buttons instead of a public booking button -->
-        <div class="route-actions admin-trip-card-actions">
+
+        <div class="admin-trip-card-actions">
             <button type="button" class="edit-action-btn">Edit</button>
             <button type="button" class="delete-action-btn">Delete</button>
         </div>
-    </div>
+    </article>
 </template>
 
 <script>
@@ -320,8 +321,13 @@
 
             trips.forEach(trip => {
                 const clone = templateTrip.content.cloneNode(true);
-                const cardWrapper = clone.querySelector('.route-card');
-                if(trip.region) cardWrapper.classList.add(trip.region);
+
+                if (trip.imageUrl) {
+                    clone.querySelector('[data-field="image"]').src = trip.imageUrl;
+                    clone.querySelector('[data-field="image"]').alt = `${trip.name} trip`;
+                } else {
+                    clone.querySelector('[data-field="image-wrap"]').hidden = true;
+                }
 
                 clone.querySelector('.route-name').textContent = trip.name;
                 clone.querySelector('.route-region').textContent = trip.region || '';
@@ -331,9 +337,7 @@
                 clone.querySelector('.trip-distance').textContent = trip.distance;
                 clone.querySelector('.route-description').textContent = trip.description;
 
-                const seasonBadge = clone.querySelector('.season-badge');
-                seasonBadge.textContent = trip.bestSeason ? `Best in ${trip.bestSeason}` : '';
-                if (trip.bestSeason) seasonBadge.classList.add(`season-${trip.bestSeason}`);
+                clone.querySelector('.season-badge').textContent = trip.bestSeason || '';
 
                 const highlightsList = clone.querySelector('.highlights-list');
                 if (trip.highlights && Array.isArray(trip.highlights)) {
