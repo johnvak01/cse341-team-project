@@ -564,7 +564,7 @@
             "description": "Trains retrieved successfully"
           },
           "400": {
-            "description": "Invalid pagination or sort parameter"
+            "description": "Invalid pagination, sort, or order parameter"
           },
           "500": {
             "description": "Internal server error"

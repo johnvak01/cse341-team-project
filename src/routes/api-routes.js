@@ -432,7 +432,7 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *       '200':
  *         description: Trains retrieved successfully
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid pagination, sort, or order parameter
  *       '500':
  *         description: Internal server error
  */

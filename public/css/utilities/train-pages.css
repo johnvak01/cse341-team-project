@@ -1,5 +1,6 @@
 /*
-Styles for the train details page (/trains/:id) and the train admin page (/trains-admin).
+Styles for the train details page (/trains/:id), the train admin page (/trains-admin),
+and the matching look on the trips admin page (/trips-admin).
 Builds on trains.css (cards) and admin-trips.css (fields and buttons).
 */
 
@@ -140,5 +141,30 @@ Builds on trains.css (cards) and admin-trips.css (fields and buttons).
     /* display: grid above would otherwise override the hidden attribute on the edit form */
     [data-field="edit-form"][hidden] {
         display: none;
+    }
+
+    /* Highlight tags on the trip cards (the trips admin page uses the trains card markup) */
+    .train-card .highlights {
+        margin-bottom: var(--space-md);
+
+        .highlights-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-sm);
+        }
+
+        .highlight-tag {
+            padding: calc(var(--space-xs) / 2) var(--space-sm);
+            border: 1px solid #b7c4e8;
+            border-radius: var(--radius-sm);
+            background: #eef3ff;
+            color: var(--clr-text-secondary);
+            font-size: var(--font-size-sm);
+            text-transform: capitalize;
+        }
+    }
+
+    .train-card .season-badge {
+        text-transform: capitalize;
     }
 }
