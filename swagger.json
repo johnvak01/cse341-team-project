@@ -788,8 +788,8 @@
         "tags": [
           "Trips"
         ],
-        "summary": "Get a paginated list of trips",
-        "description": "Returns trips one page at a time, sorted by the chosen field. A page beyond the last one returns an empty data array with a 200. Invalid page, limit, or sort values return 400.\n",
+        "summary": "Get a paginated, filterable list of trips",
+        "description": "Returns trips one page at a time, sorted by the chosen field, and optionally filtered by region/season or a keyword search across name and description. A page beyond the last one returns an empty data array with a 200. Invalid page, limit, sort, or filter values return 400.\n",
         "parameters": [
           {
             "name": "page",
@@ -845,18 +845,29 @@
           {
             "name": "region",
             "in": "query",
-            "description": "Only return trips in this region, such as central",
+            "description": "Exact, case-insensitive match on a trip's region. Omit or pass \"all\" for no filter.",
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "central"
           },
           {
             "name": "season",
             "in": "query",
-            "description": "Only return trips whose best season matches, such as summer",
+            "description": "Exact, case-insensitive match on a trip's bestSeason. Omit or pass \"all\" for no filter.",
             "schema": {
               "type": "string"
-            }
+            },
+            "example": "autumn"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Case-insensitive keyword search across a trip's name and description. Max 100 characters.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "gorge"
           }
         ],
         "responses": {
@@ -957,7 +968,7 @@
             }
           },
           "400": {
-            "description": "Invalid page, limit, or sort value",
+            "description": "Invalid page, limit, sort, or filter value",
             "content": {
               "application/json": {
                 "schema": {
