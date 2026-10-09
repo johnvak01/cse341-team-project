@@ -8,6 +8,7 @@ import {
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
+import { getTrainById as findTrainById } from "../models/trains.js";
 
 //get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
 export async function getAllTrips(req, res) {
@@ -60,9 +61,12 @@ export async function getTripDetails (req, res) {
             });
         }
 
+        const train = await findTrainById(details.trainId);
+
         return res.render("trips/details", {
             title: "Trip Details",
             details,
+            train,
         });
 
     }catch(error){
