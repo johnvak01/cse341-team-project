@@ -78,6 +78,39 @@ describe('GET /api/trips', () => {
 
     expect(response.status).toBe(400);
   });
+
+  test('filters trips by region and counts only the matches', async () => {
+    const response = await request(app).get('/api/trips?region=central&limit=50');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.length).toBeGreaterThan(0);
+    expect(response.body.data.every((trip) => trip.region === 'central')).toBe(true);
+    expect(response.body.pagination.totalItems).toBe(response.body.data.length);
+  });
+
+  test('filters trips by season', async () => {
+    const response = await request(app).get('/api/trips?season=summer&limit=50');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.every((trip) => trip.bestSeason === 'summer')).toBe(true);
+  });
+
+  test('ignores the "all" filter value', async () => {
+    const all = await request(app).get('/api/trips?limit=50');
+    const filtered = await request(app).get('/api/trips?region=all&season=all&limit=50');
+
+    expect(filtered.body.pagination.totalItems).toBe(all.body.pagination.totalItems);
+  });
+
+  test('reports the total number of trips and pages', async () => {
+    const response = await request(app).get('/api/trips?limit=2');
+
+    expect(response.status).toBe(200);
+    expect(response.body.pagination.totalItems).toBeGreaterThan(2);
+    expect(response.body.pagination.totalPages).toBe(
+      Math.ceil(response.body.pagination.totalItems / 2)
+    );
+  });
 });
 
 describe('GET /api/trips filtering and search', () => {

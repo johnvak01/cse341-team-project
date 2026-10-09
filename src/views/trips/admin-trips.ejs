@@ -299,6 +299,12 @@
 
             const payload = await response.json();
             const trips = payload.data || [];
+
+            // Deleting the last trip on a page leaves it empty, so step back to the last page.
+            if (trips.length === 0 && page > 1 && payload.pagination.totalPages > 0) {
+                return loadTrips(payload.pagination.totalPages);
+            }
+
             currentPage = payload.pagination.page;
             updatePaginationControls(payload.pagination);
             tripsCard.innerHTML = "";

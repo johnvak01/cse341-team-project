@@ -3,12 +3,13 @@ import {
     getTripFilters,
     getPaginatedTrips as findPaginatedTrips,
     updateTrip as changeTrip,
-    deleteTrip as removeTrip,
+    deleteTrip as removeTrip
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
+import { getTrainById as findTrainById } from "../models/trains.js";
 
-const allowedSortFields = ['name', 'region', 'bestSeason', 'distance'];
+const allowedSortFields = ['name', 'region', 'startStation', 'endStation', 'distance', 'bestSeason'];
 const MAX_SEARCH_LENGTH = 100;
 
 const parsePositiveInteger = (value, defaultValue) => {
@@ -40,8 +41,8 @@ const parseStringFilter = (value) => {
     return trimmed;
 };
 
-//get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
-export async function getAllTrips(req, res) {
+//returns one page of trips (optionally filtered by region/season/search); 200 on success, 400 for bad query values, 500 for unexpected errors
+export async function getPaginatedTripsList(req, res) {
     try {
         const page = parsePositiveInteger(req.query.page, 1);
         const requestedLimit = parsePositiveInteger(req.query.limit, 10);
@@ -176,9 +177,12 @@ export async function getTripDetails (req, res) {
             });
         }
 
+        const train = await findTrainById(details.trainId);
+
         return res.render("trips/details", {
             title: "Trip Details",
             details,
+            train,
         });
 
     }catch(error){
