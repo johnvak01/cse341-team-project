@@ -62,6 +62,7 @@ const hookTrainsCatalog = async () => {
             imageEl.alt = train.imageAlt || `${train.name} train`;
 
             card.querySelector('[data-field="name"]').textContent = train.name;
+            card.querySelector('[data-field="name"]').href = `/trains/${encodeURIComponent(train.id)}`;
             card.querySelector('[data-field="operator"]').textContent = train.operator;
             card.querySelector('[data-field="type"]').textContent = train.type;
             card.querySelector('[data-field="speed"]').textContent = `${train.maxSpeedKmh} km/h`;

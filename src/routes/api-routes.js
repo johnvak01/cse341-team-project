@@ -1,5 +1,13 @@
 import { Router } from "express";
-import { getAllTrains, getTrainById, getTripsByTrain } from "../controllers/trains.js";
+import {
+    getAllTrains,
+    getTrainById,
+    getTripsByTrain,
+    createTrain,
+    updateTrainById,
+    deleteTrainById,
+    moveTripToTrain,
+} from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
@@ -425,7 +433,7 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *       '200':
  *         description: Trains retrieved successfully
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid pagination, sort, or order parameter
  *       '500':
  *         description: Internal server error
  */
@@ -482,6 +490,175 @@ router.get("/api/trains/:id", getTrainById);
  *         description: Internal server error.
  */
 router.get("/api/trains/:id/trips", getTripsByTrain);
+
+/**
+ * @openapi
+ * /api/trains:
+ *   post:
+ *     tags:
+ *       - Trains
+ *     summary: Create a train (Admin Only)
+ *     description: Creates a new train. The id must be unique and can't be changed later.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id, name, operator, type, maxSpeedKmh, capacity, powerSource]
+ *             properties:
+ *               id: { type: string, example: shinkansen-n700 }
+ *               name: { type: string, example: N700 Shinkansen }
+ *               operator: { type: string, example: JR Central }
+ *               type: { type: string, example: High-Speed }
+ *               maxSpeedKmh: { type: number, minimum: 0, example: 300 }
+ *               capacity: { type: number, minimum: 0, example: 1323 }
+ *               powerSource: { type: string, example: Electric }
+ *               imageUrl: { type: string, example: /images/trains/series-e353-limited-express.png }
+ *               imageAlt: { type: string, example: N700 Shinkansen at a platform }
+ *               bestFor: { type: string, example: Fast long-distance travel }
+ *               description: { type: string, example: High-speed train for the Tokaido line. }
+ *     responses:
+ *       '201':
+ *         description: Train created.
+ *       '400':
+ *         description: Missing, invalid, or unknown fields. Returns a list of field errors.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '409':
+ *         description: A train with that id already exists.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.post("/api/trains", requireApiLogin, requireApiRole("admin"), createTrain);
+
+/**
+ * @openapi
+ * /api/trains/{id}:
+ *   put:
+ *     tags:
+ *       - Trains
+ *     summary: Update a train (Admin Only)
+ *     description: Updates any train fields except id. Only the fields sent are changed.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               operator: { type: string }
+ *               type: { type: string }
+ *               maxSpeedKmh: { type: number, minimum: 0 }
+ *               capacity: { type: number, minimum: 0 }
+ *               powerSource: { type: string }
+ *               imageUrl: { type: string }
+ *               imageAlt: { type: string }
+ *               bestFor: { type: string }
+ *               description: { type: string }
+ *             example:
+ *               capacity: 300
+ *               bestFor: Winter sightseeing
+ *     responses:
+ *       '200':
+ *         description: Train updated. Returns the updated train.
+ *       '400':
+ *         description: Invalid or unknown fields, an id in the body, or no changes. Returns a list of field errors.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Train was not found.
+ *       '500':
+ *         description: Internal server error.
+ *   delete:
+ *     tags:
+ *       - Trains
+ *     summary: Delete a train (Admin Only)
+ *     description: Deletes a train that no trip uses. Trips have to be moved to another train first.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     responses:
+ *       '200':
+ *         description: Train deleted.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Train was not found.
+ *       '409':
+ *         description: The train is still assigned to trips. Returns the ids of those trips.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.put("/api/trains/:id", requireApiLogin, requireApiRole("admin"), updateTrainById);
+router.delete("/api/trains/:id", requireApiLogin, requireApiRole("admin"), deleteTrainById);
+
+/**
+ * @openapi
+ * /api/trips/{id}/train:
+ *   put:
+ *     tags:
+ *       - Trains
+ *     summary: Move a trip to a different train (Admin Only)
+ *     description: Changes which train runs a trip. The new train has to exist.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the trip to move
+ *         schema:
+ *           type: string
+ *         example: alpine-panorama
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [trainId]
+ *             properties:
+ *               trainId: { type: string, example: kiha-261 }
+ *     responses:
+ *       '200':
+ *         description: Trip moved. Returns the updated trip.
+ *       '400':
+ *         description: trainId is missing, or no train has that id.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Trip was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.put("/api/trips/:id/train", requireApiLogin, requireApiRole("admin"), moveTripToTrain);
 
 /**
  * @openapi

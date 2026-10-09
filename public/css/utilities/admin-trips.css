@@ -5,9 +5,10 @@
 
 .admin-trips-heading {
     display: flex;
+    flex-direction: column;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 1rem;
     margin-bottom: var(--space-lg);
 }

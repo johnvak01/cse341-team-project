@@ -1,6 +1,9 @@
 <%- include('./partials/header') %>
 <section class="trains-hero">
     <h1>Bookings</h1>
+    <% if (isAdmin) { %>
+        <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
+    <% } %>
 </section>
 <section
     class="trains-catalog"
