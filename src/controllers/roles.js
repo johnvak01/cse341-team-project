@@ -1,4 +1,4 @@
-import { 
+import {
     getAllRoles as findAllRoles,
     getRoleByUserId as findRoleByUserId,
 } from "../models/roles.js";
@@ -13,8 +13,6 @@ export async function getAllRoles(req, res) {
     }
 }
 
-
-
 export async function getRoleByUserId(req, res) {
     try {
         const { userId } = req.params;
@@ -24,7 +22,7 @@ export async function getRoleByUserId(req, res) {
         }
         return res.status(200).json(role);
     } catch (error) {
-        if (error.name === 'CastError') {
+        if (error.name === "CastError") {
             return res.status(400).json({ error: "Invalid user ID" });
         }
         console.error("Error fetching role:", error);

@@ -16,6 +16,8 @@ export const trainsPage = (req, res) => {
     res.render("trains", { title: "Trains" });
 };
 
+const allowedSortFields = ["name", "operator", "maxSpeedKmh", "capacity"];
+
 export const trainDetailsPage = (req, res) => {
     const { id } = req.params;
 
@@ -26,7 +28,6 @@ export const trainsAdminPage = (req, res) => {
     res.render("trains-admin", { title: "Manage Trains" });
 };
 
-const allowedSortFields = ['name', 'operator', 'maxSpeedKmh', 'capacity'];
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const parsePositiveInteger = (value, defaultValue) => {
@@ -72,10 +73,13 @@ export async function getAllTrains(req, res) {
 
         if (!page || !requestedLimit || requestedLimit > 50) {
             return res.status(400).json({
-                errors: [{
-                    field: 'pagination',
-                    message: 'page and limit must be positive integers, and limit cannot exceed 50.'
-                }]
+                errors: [
+                    {
+                        field: "pagination",
+                        message:
+                            "page and limit must be positive integers, and limit cannot exceed 50.",
+                    },
+                ],
             });
         }
 
@@ -83,12 +87,12 @@ export async function getAllTrains(req, res) {
 
         if (req.query.sort && !allowedSortFields.includes(req.query.sort)) {
             return res.status(400).json({
-                errors: [{ field: 'sort', message: 'sort is not supported.' }]
+                errors: [{ field: "sort", message: "sort is not supported." }],
             });
         }
 
-        const sort = req.query.sort || 'name';
-        const order = req.query.order === 'desc' ? -1 : 1;
+        const sort = req.query.sort || "name";
+        const order = req.query.order === "desc" ? -1 : 1;
 
         const q = parseOptionalString(req.query.q, 'q', { maxLength: 100 });
         if (q.error) {
@@ -127,7 +131,7 @@ export async function getAllTrains(req, res) {
             page,
             limit,
             sort,
-            order
+            order,
         });
 
         return res.status(200).json({
@@ -143,8 +147,8 @@ export async function getAllTrains(req, res) {
                 totalItems,
                 totalPages: Math.ceil(totalItems / limit),
                 hasNextPage: page * limit < totalItems,
-                hasPreviousPage: page > 1
-            }
+                hasPreviousPage: page > 1,
+            },
         });
     } catch (error) {
         console.error("Error fetching trains:", error);

@@ -42,6 +42,7 @@ const adminUsersPage = (req, res) => {
         title: isAdmin ? "Admin Users" : "Your Account",
         usersEndpoint: isAdmin ? "/api/users" : `/api/users/${req.user._id}`,
         isAdmin,
+        isAdminList: isAdmin,
     });
 };
 
