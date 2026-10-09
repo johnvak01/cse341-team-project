@@ -1,6 +1,7 @@
 import {
     getTrainById as findTrainById,
     getPaginatedTrains as findPaginatedTrains,
+    getTrainFilterOptions as findTrainFilterOptions,
     createTrain as insertTrain,
     updateTrain as changeTrain,
     deleteTrain as removeTrain,
@@ -26,6 +27,7 @@ export const trainsAdminPage = (req, res) => {
 };
 
 const allowedSortFields = ['name', 'operator', 'maxSpeedKmh', 'capacity'];
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const parsePositiveInteger = (value, defaultValue) => {
     if (value === undefined) {
@@ -38,6 +40,29 @@ const parsePositiveInteger = (value, defaultValue) => {
     }
 
     return parsed;
+};
+
+const parseOptionalString = (value, fieldName, { maxLength } = {}) => {
+    if (value === undefined) {
+        return { value: null, error: null };
+    }
+
+    if (typeof value !== 'string') {
+        return { value: null, error: `${fieldName} must be a single string value.` };
+    }
+
+    const trimmed = value.trim();
+
+    if (!trimmed || (maxLength && trimmed.length > maxLength)) {
+        return {
+            value: null,
+            error: maxLength
+                ? `${fieldName} must be between 1 and ${maxLength} characters.`
+                : `${fieldName} must not be empty.`
+        };
+    }
+
+    return { value: trimmed, error: null };
 };
 
 export async function getAllTrains(req, res) {
@@ -65,8 +90,40 @@ export async function getAllTrains(req, res) {
         const sort = req.query.sort || 'name';
         const order = req.query.order === 'desc' ? -1 : 1;
 
+        const q = parseOptionalString(req.query.q, 'q', { maxLength: 100 });
+        if (q.error) {
+            return res.status(400).json({ errors: [{ field: 'q', message: q.error }] });
+        }
+
+        const type = parseOptionalString(req.query.type, 'type');
+        if (type.error) {
+            return res.status(400).json({ errors: [{ field: 'type', message: type.error }] });
+        }
+
+        const powerSource = parseOptionalString(req.query.powerSource, 'powerSource');
+        if (powerSource.error) {
+            return res.status(400).json({ errors: [{ field: 'powerSource', message: powerSource.error }] });
+        }
+
+        const filter = {};
+        if (q.value) {
+            const searchPattern = escapeRegExp(q.value);
+            filter.$or = [
+                { name: { $regex: searchPattern, $options: 'i' } },
+                { operator: { $regex: searchPattern, $options: 'i' } },
+                { description: { $regex: searchPattern, $options: 'i' } },
+                { bestFor: { $regex: searchPattern, $options: 'i' } }
+            ];
+        }
+        if (type.value) {
+            filter.type = { $regex: `^${escapeRegExp(type.value)}$`, $options: 'i' };
+        }
+        if (powerSource.value) {
+            filter.powerSource = { $regex: `^${escapeRegExp(powerSource.value)}$`, $options: 'i' };
+        }
+
         const { trains, totalItems } = await findPaginatedTrains({
-            filter: {},
+            filter,
             page,
             limit,
             sort,
@@ -75,6 +132,11 @@ export async function getAllTrains(req, res) {
 
         return res.status(200).json({
             data: trains,
+            query: {
+                q: q.value,
+                type: type.value,
+                powerSource: powerSource.value
+            },
             pagination: {
                 page,
                 limit,
@@ -89,6 +151,20 @@ export async function getAllTrains(req, res) {
 
         return res.status(500).json({
             error: "Failed to fetch trains",
+        });
+    }
+}
+
+export async function getTrainFilterOptions(req, res) {
+    try {
+        const options = await findTrainFilterOptions();
+
+        return res.status(200).json(options);
+    } catch (error) {
+        console.error("Error fetching train filter options:", error);
+
+        return res.status(500).json({
+            error: "Failed to fetch train filter options",
         });
     }
 }

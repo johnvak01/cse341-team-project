@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     getAllTrains,
     getTrainById,
+    getTrainFilterOptions,
     getTripsByTrain,
     createTrain,
     updateTrainById,
@@ -401,8 +402,8 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *   get:
  *     tags:
  *       - Trains
- *     summary: Get a paginated list of trains
- *     description: Returns trains from the trains collection, paginated and sorted.
+ *     summary: Get a paginated, searchable list of trains
+ *     description: Returns trains from the trains collection, paginated, sorted, and optionally filtered by search text, type, or power source.
  *     parameters:
  *       - name: page
  *         in: query
@@ -429,15 +430,46 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *           type: string
  *           default: asc
  *           enum: [asc, desc]
+ *       - name: q
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive substring search across name, operator, description, and bestFor.
+ *       - name: type
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive exact match against the train's type. See GET /api/trains/filters for current values.
+ *       - name: powerSource
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive exact match against the train's power source. See GET /api/trains/filters for current values.
  *     responses:
  *       '200':
  *         description: Trains retrieved successfully
  *       '400':
- *         description: Invalid pagination, sort, or order parameter
+ *         description: Invalid pagination, sort, or filter parameter
  *       '500':
  *         description: Internal server error
  */
 router.get("/api/trains", getAllTrains);
+
+/**
+ * @openapi
+ * /api/trains/filters:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the current train filter options
+ *     description: Returns the distinct type and powerSource values currently present in the trains collection, for building filter dropdowns.
+ *     responses:
+ *       '200':
+ *         description: Filter options retrieved successfully
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/trains/filters", getTrainFilterOptions);
 
 /**
  * @openapi
@@ -1470,8 +1502,8 @@ router.get("/api/ticket-classes", (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [all, mine]
- * 
- * 
+ *
+ *
  *     responses:
  *       200:
  *         description: A paginated list of bookings

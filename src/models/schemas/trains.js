@@ -67,6 +67,13 @@ const trainSchema = new mongoose.Schema(
   }
 );
 
+trainSchema.index({
+  name: 'text',
+  operator: 'text',
+  description: 'text',
+  bestFor: 'text',
+});
+
 // Refuse to delete a train that a trip still uses, no matter which code path deletes it.
 // Trip is looked up by name instead of imported, because the trips schema uses Train too.
 trainSchema.pre(
