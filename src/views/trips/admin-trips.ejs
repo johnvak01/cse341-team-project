@@ -67,6 +67,12 @@
     <p role="status">Loading trips...</p>
 </div>
 
+<nav class="admin-trips-pagination" aria-label="Trips pagination">
+    <button type="button" id="trips-prev-page">&larr; Previous</button>
+    <span id="trips-page-status" role="status">Page 1</span>
+    <button type="button" id="trips-next-page">Next &rarr;</button>
+</nav>
+
 <template id="trip-card-template">
     <article class="train-card">
         <div class="train-image-wrap" data-field="image-wrap">
@@ -174,8 +180,7 @@
             }
 
             closeModal();
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -193,8 +198,7 @@
                 throw new Error(error.error || error.message || 'Unable to delete trip.');
             }
 
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -255,23 +259,51 @@
     }
 };
 
-//loads trips
+//loads trips, paginated 10 per page
 
-    const loadTrips = async () => {
+    let currentPage = 1;
+
+    const updatePaginationControls = (pagination) => {
+        const status = document.getElementById('trips-page-status');
+        const prevButton = document.getElementById('trips-prev-page');
+        const nextButton = document.getElementById('trips-next-page');
+
+        const totalPages = Math.max(pagination.totalPages, 1);
+        status.textContent = `Page ${pagination.page} of ${totalPages} (${pagination.totalItems} trips)`;
+        prevButton.disabled = !pagination.hasPreviousPage;
+        nextButton.disabled = !pagination.hasNextPage;
+    };
+
+    const loadTrips = async (page = currentPage) => {
 
         const tripsCard = document.getElementById('trips-list');
         const templateTrip = document.getElementById('trip-card-template');
 
         try {
-            const response = await fetch('/api/trips');
+            const params = new URLSearchParams({
+                page,
+                limit: 10,
+                region: document.getElementById('region-filter').value,
+                season: document.getElementById('season-filter').value
+            });
+            const response = await fetch(`/api/trips?${params}`);
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
-            const trips = await response.json();
+            const payload = await response.json();
+            const trips = payload.data || [];
+
+            // Deleting the last trip on a page leaves it empty, so step back to the last page.
+            if (trips.length === 0 && page > 1 && payload.pagination.totalPages > 0) {
+                return loadTrips(payload.pagination.totalPages);
+            }
+
+            currentPage = payload.pagination.page;
+            updatePaginationControls(payload.pagination);
             tripsCard.innerHTML = "";
 
             if(trips.length === 0){
                 const emptyMessage = document.createElement('p');
-                emptyMessage.textContent = 'No trips found.';
+                emptyMessage.textContent = 'No trips match the selected filters.';
                 tripsCard.replaceChildren(emptyMessage);
                 return;
             }
@@ -321,59 +353,28 @@
         }
     }
 
-    let applyFilters = () => {};
-
     window.addEventListener('DOMContentLoaded', async () =>{
 
         const regionFilter = document.getElementById('region-filter');
         const seasonFilter = document.getElementById('season-filter');
 
-        applyFilters = () => {
-
-            const selectedRegion = regionFilter.value.toLowerCase();
-            const selectedSeason = seasonFilter.value.toLowerCase();
-            const cards = document.querySelectorAll('#trips-list .train-card');
-            const tripsList = document.getElementById('trips-list');
-            let visibleCount = 0;
-
-            cards.forEach(card => {
-                const cardRegion = card.querySelector('.route-region').textContent.trim().toLowerCase();
-                const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
-
-                const matchesRegion = (selectedRegion==='all' || cardRegion===selectedRegion);
-                const matchesSeason = (selectedSeason==='all' || badgeText.includes(selectedSeason));
-
-                if(matchesRegion && matchesSeason){
-                    card.hidden = false;
-                    visibleCount +=1;
-                }else{
-                    card.hidden = true;
-                }
-            });
-
-            let emptyState = document.getElementById('trips-empty');
-            if(visibleCount===0){
-                if(!emptyState){
-                    emptyState = document.createElement('p');
-                    emptyState.id = 'trips-empty';
-                    emptyState.className = 'trips-empty';
-                    tripsList.appendChild(emptyState);
-                }
-
-                emptyState.textContent = 'No trips match the selected filters.';
-            }else if(emptyState){
-                emptyState.remove();
-            }
-        };
-
         await loadStationDropdowns();
         await loadScheduleDropdown();
 
-        await loadTrips();
-        applyFilters();
+        await loadTrips(1);
 
-        regionFilter.addEventListener('change', applyFilters);
-        seasonFilter.addEventListener('change', applyFilters);
+        // Filters are applied by the API, so changing one returns to page 1.
+        regionFilter.addEventListener('change', () => loadTrips(1));
+        seasonFilter.addEventListener('change', () => loadTrips(1));
+
+        document.getElementById('trips-prev-page').addEventListener('click', async () => {
+            if (currentPage <= 1) return;
+            await loadTrips(currentPage - 1);
+        });
+
+        document.getElementById('trips-next-page').addEventListener('click', async () => {
+            await loadTrips(currentPage + 1);
+        });
     });
 
 </script>
