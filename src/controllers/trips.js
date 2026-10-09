@@ -3,12 +3,13 @@ import {
     getTripFilters,
     getPaginatedTrips as findPaginatedTrips,
     updateTrip as changeTrip,
-    deleteTrip as removeTrip,
+    deleteTrip as removeTrip
 } from "../models/trips.js";
 import Station from "../models/schemas/stations.js";
 import Schedule from "../models/schemas/schedules.js";
+import { getTrainById as findTrainById } from "../models/trains.js";
 
-const allowedSortFields = ['name', 'region', 'bestSeason', 'distance'];
+const allowedSortFields = ['name', 'region', 'startStation', 'endStation', 'distance', 'bestSeason'];
 
 const parsePositiveInteger = (value, defaultValue) => {
     if (value === undefined) {
@@ -23,8 +24,8 @@ const parsePositiveInteger = (value, defaultValue) => {
     return parsed;
 };
 
-//get all trips function needs to connect with db and return a status 200 for success and a status 500 for error with a safe message to user
-export async function getAllTrips(req, res) {
+//returns one page of trips (optionally filtered by region/season); 200 on success, 400 for bad query values, 500 for unexpected errors
+export async function getPaginatedTripsList(req, res) {
     try {
         const page = parsePositiveInteger(req.query.page, 1);
         const requestedLimit = parsePositiveInteger(req.query.limit, 10);
@@ -49,8 +50,16 @@ export async function getAllTrips(req, res) {
         const sort = req.query.sort || 'name';
         const order = req.query.order === 'desc' ? -1 : 1;
 
+        const filter = {};
+        if (typeof req.query.region === 'string' && req.query.region !== 'all') {
+            filter.region = req.query.region.toLowerCase();
+        }
+        if (typeof req.query.season === 'string' && req.query.season !== 'all') {
+            filter.bestSeason = req.query.season.toLowerCase();
+        }
+
         const { trips, totalItems } = await findPaginatedTrips({
-            filter: {},
+            filter,
             page,
             limit,
             sort,
@@ -113,9 +122,12 @@ export async function getTripDetails (req, res) {
             });
         }
 
+        const train = await findTrainById(details.trainId);
+
         return res.render("trips/details", {
             title: "Trip Details",
             details,
+            train,
         });
 
     }catch(error){

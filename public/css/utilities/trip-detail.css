@@ -66,12 +66,20 @@ article.route-detail {
         flex-direction: column;
         gap: var(--space-xl);
 
+        /* Flexbox instead of grid so a partly filled last row is centered,
+           no matter how many info cards there are. --info-columns sets cards per row. */
         .info-grid {
-            display: grid;
-            gap: var(--space-md);
-            grid-template-columns: 1fr;
+            --info-columns: 1;
+            --info-gap: var(--space-md);
+
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--info-gap);
 
             .info-item {
+                /* Same width a grid column would have: the row minus the gaps, split evenly */
+                flex: 0 0 calc((100% - (var(--info-columns) - 1) * var(--info-gap)) / var(--info-columns));
                 display: flex;
                 flex-direction: column;
                 gap: var(--space-xs);
@@ -335,8 +343,8 @@ article.route-detail {
 
             .info-grid {
                 grid-area: info;
-                grid-template-columns: repeat(2, 1fr);
-                gap: var(--space-lg);
+                --info-columns: 2;
+                --info-gap: var(--space-lg);
             }
 
             .route-stations {
@@ -376,7 +384,7 @@ article.route-detail {
             grid-template-columns: 1fr 2fr;
 
             .info-grid {
-                grid-template-columns: repeat(4, 1fr);
+                --info-columns: 4;
             }
 
             .route-stations {

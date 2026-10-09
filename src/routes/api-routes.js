@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllTrains, getTrainById } from "../controllers/trains.js";
+import { getAllTrains, getTrainById, getTripsByTrain } from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
@@ -8,8 +8,9 @@ import {
     validateMonth,
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
-import { getAllTrips, getTripById, updateTrip, deleteTrip } from "../controllers/trips.js";
-// import { getAllBookings, getMyBookings, updateBookingById, deleteBookingById, getPaginatedBookings } from "../controllers/bookings.js";
+import { getTripById, updateTrip, deleteTrip, getPaginatedTripsList } from "../controllers/trips.js";
+
+
 import {
     getAllBookings,
     createBookingApi,
@@ -458,6 +459,32 @@ router.get("/api/trains/:id", getTrainById);
 
 /**
  * @openapi
+ * /api/trains/{id}/trips:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the trips a train runs
+ *     description: Returns every trip whose trainId matches the requested train.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the train to look up trips for, such as kiha-261
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully.
+ *       '404':
+ *         description: Train was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.get("/api/trains/:id/trips", getTripsByTrain);
+
+/**
+ * @openapi
  * /api/schedules:
  *   get:
  *     tags:
@@ -590,16 +617,21 @@ router.get("/api/stations/:id", getStationById);
  *     tags:
  *       - Trips
  *     summary: Get a paginated list of trips
- *     description: Returns trips from the trips collection, paginated and sorted.
+ *     description: >
+ *       Returns trips one page at a time, sorted by the chosen field.
+ *       A page beyond the last one returns an empty data array with a 200.
+ *       Invalid page, limit, or sort values return 400.
  *     parameters:
  *       - name: page
  *         in: query
+ *         description: Page number, starting at 1
  *         schema:
  *           type: integer
  *           default: 1
  *           minimum: 1
  *       - name: limit
  *         in: query
+ *         description: Trips per page
  *         schema:
  *           type: integer
  *           default: 10
@@ -607,25 +639,122 @@ router.get("/api/stations/:id", getStationById);
  *           maximum: 50
  *       - name: sort
  *         in: query
+ *         description: Field to sort by
  *         schema:
  *           type: string
  *           default: name
- *           enum: [name, region, bestSeason, distance]
+ *           enum:
+ *             - name
+ *             - region
+ *             - startStation
+ *             - endStation
+ *             - distance
+ *             - bestSeason
  *       - name: order
  *         in: query
+ *         description: Sort direction
  *         schema:
  *           type: string
  *           default: asc
- *           enum: [asc, desc]
+ *           enum:
+ *             - asc
+ *             - desc
+ *       - name: region
+ *         in: query
+ *         description: Only return trips in this region, such as central
+ *         schema:
+ *           type: string
+ *       - name: season
+ *         in: query
+ *         description: Only return trips whose best season matches, such as summer
+ *         schema:
+ *           type: string
  *     responses:
  *       '200':
  *         description: Trips retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       region:
+ *                         type: string
+ *                       startStation:
+ *                         type: string
+ *                       endStation:
+ *                         type: string
+ *                       duration:
+ *                         type: string
+ *                       distance:
+ *                         type: number
+ *                       highlights:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       bestSeason:
+ *                         type: string
+ *                       operatingMonths:
+ *                         type: array
+ *                         items:
+ *                           type: integer
+ *                       imageUrl:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalItems:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPreviousPage:
+ *                       type: boolean
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid page, limit, or sort value
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       field:
+ *                         type: string
+ *                       message:
+ *                         type: string
  *       '500':
  *         description: Internal error
  */
-router.get("/api/trips", getAllTrips);
+router.get("/api/trips", getPaginatedTripsList);
+
+
 
 /**
  * @openapi
