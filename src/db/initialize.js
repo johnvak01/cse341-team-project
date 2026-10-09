@@ -5,6 +5,7 @@ import ticketClasses from './seeds/ticket-classes.json' with { type: 'json' };
 import trains from './seeds/trains.json' with { type: 'json' };
 
 const starterCollections = [
+  ['roles', [{ name: 'customer' }, { name: 'admin' }]],
   ['trips', trips],
   ['schedules', schedules],
   ['stations', stations],

@@ -88,7 +88,6 @@ describe('GET /api/trains', () => {
 
     expect(response.status).toBe(400);
   });
-
   test('searches by keyword across name, operator, description, and bestFor', async () => {
     const response = await request(app).get('/api/trains?q=Steam');
 
@@ -213,5 +212,43 @@ describe('GET /api/trains/filters', () => {
     expect(response.body).toHaveProperty('powerSources');
     expect(response.body.types).toEqual(expect.arrayContaining(['Steam Excursion']));
     expect(response.body.powerSources).toEqual(expect.arrayContaining(['Electric', 'Diesel', 'Steam']));
+  });
+});
+
+describe('GET /api/trains/:id/trips', () => {
+  test('returns the trips assigned to that train', async () => {
+    const response = await request(app).get('/api/trains/series-e353/trips');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('application/json');
+    expect(response.body).toHaveProperty('trips');
+    expect(response.body.trips).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'alpine-panorama', trainId: 'series-e353' })
+      ])
+    );
+    response.body.trips.forEach((trip) => {
+      expect(trip.trainId).toBe('series-e353');
+    });
+  });
+
+  test('returns an empty array for a train with no trips', async () => {
+    await getDb().collection('trains').insertOne({
+      id: 'test-express',
+      name: 'Test Express',
+      operator: 'Test Railway'
+    });
+
+    const response = await request(app).get('/api/trains/test-express/trips');
+
+    expect(response.status).toBe(200);
+    expect(response.body.trips).toEqual([]);
+  });
+
+  test('returns 404 for an unknown train id', async () => {
+    const response = await request(app).get('/api/trains/not-a-real-train/trips');
+
+    expect(response.status).toBe(404);
+    expect(response.body).toHaveProperty('error');
   });
 });
