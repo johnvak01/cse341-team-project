@@ -1,0 +1,97 @@
+/* Styles for the /timetable page */
+.timetable {
+    .trains-state {
+        margin-bottom: var(--space-md);
+        color: var(--clr-text-secondary);
+    }
+
+    .trains-error {
+        color: #8f1f1f;
+    }
+
+    /* Filter controls in one row that wraps on narrow screens */
+    .timetable-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            color: var(--clr-text-primary);
+            font-weight: 600;
+        }
+
+        select,
+        input {
+            font-weight: 400;
+        }
+    }
+
+    /* Lets the table scroll sideways on narrow screens instead of squashing */
+    .timetable-table-wrap {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--clr-surface);
+        border: 1px solid var(--clr-border);
+        border-radius: var(--radius-md);
+    }
+
+    th,
+    td {
+        padding: var(--space-sm) var(--space-md);
+        text-align: left;
+        border-bottom: 1px solid var(--clr-border-light);
+        color: var(--clr-text-primary);
+    }
+
+    th {
+        background: var(--clr-surface-alt);
+        font-weight: 600;
+    }
+
+    td a {
+        color: var(--clr-link-dark);
+
+        &:hover,
+        &:focus {
+            color: var(--clr-link-dark-hover);
+        }
+    }
+
+    .timetable-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-md);
+        margin-top: var(--space-lg);
+
+        button {
+            padding: var(--space-xs) var(--space-md);
+            border: 1px solid #295d49;
+            border-radius: var(--radius-sm);
+            background: #295d49;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+
+            &:disabled {
+                border-color: #9aaca3;
+                background: #e4ebe7;
+                color: #45574e;
+                cursor: not-allowed;
+            }
+        }
+    }
+
+    /* display: flex above would otherwise override the hidden attribute */
+    .timetable-pagination[hidden] {
+        display: none;
+    }
+}

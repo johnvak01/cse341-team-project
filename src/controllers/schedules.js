@@ -1,9 +1,13 @@
 import {
     getAllSchedules as findAllSchedules,
+    getPaginatedSchedules as findPaginatedSchedules,
     getScheduleById as findScheduleById,
     getSchedulesByTripId as findSchedulesByTripId,
 } from "../models/schedules.js";
-import { getTripById as findTripById } from "../models/trips.js";
+import {
+    getTripById as findTripById,
+    getTripsByTrainId as findTripsByTrainId,
+} from "../models/trips.js";
 
 // --------------------------
 /***HELPER Function***/
@@ -33,15 +37,148 @@ export function validateMonth(req, res, next) {
 /***CONTROLLER FUNCTIONS***/
 // ----------------------------
 
-// GET all schedules
+export const timetablePage = (req, res) => {
+    res.render("timetable", { title: "Timetable" });
+};
+
+const filterParams = ["tripId", "trainId", "dayOfWeek", "startTime", "endTime"];
+const pagingParams = ["page", "limit", "sort", "order", ...filterParams];
+const allowedSortFields = ["departureTime", "arrivalTime", "tripId", "id"];
+const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// Returns the trimmed text, null when the param wasn't sent, or undefined when it's empty or repeated
+const parseText = (value) => {
+    if (value === undefined) {
+        return null;
+    }
+    if (typeof value !== "string" || value.trim() === "") {
+        return undefined;
+    }
+    return value.trim();
+};
+
+// Returns the number if value is a whole number from min to max, otherwise null
+const parseWholeNumber = (value, defaultValue, min, max) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < min || number > max) {
+        return null;
+    }
+    return number;
+};
+
+// GET all schedules. Without paging params it returns the plain array, so existing callers keep working.
 export async function getAllSchedules(req, res) {
     try {
+        const wantsPaging = pagingParams.some((param) => req.query[param] !== undefined);
+        if (wantsPaging) {
+            return getPaginatedSchedules(req, res);
+        }
+
         const schedules = await findAllSchedules();
         return res.status(200).json(schedules);
     } catch (error) {
         console.error("Error fetching schedules:", error);
         return res.status(500).json({ error: "Failed to fetch schedules" });
     }
+}
+
+// GET one page of schedules, with metadata about the page
+async function getPaginatedSchedules(req, res) {
+    const page = parseWholeNumber(req.query.page, 1, 1, Number.MAX_SAFE_INTEGER);
+    const limit = parseWholeNumber(req.query.limit, 10, 1, 50);
+    const sort = req.query.sort ?? "departureTime";
+    const order = req.query.order ?? "asc";
+
+    const errors = [];
+    if (page === null) {
+        errors.push({ field: "page", message: "page must be a whole number of 1 or more." });
+    }
+    if (limit === null) {
+        errors.push({ field: "limit", message: "limit must be a whole number from 1 to 50." });
+    }
+    if (!allowedSortFields.includes(sort)) {
+        errors.push({ field: "sort", message: `sort must be one of: ${allowedSortFields.join(", ")}.` });
+    }
+    if (order !== "asc" && order !== "desc") {
+        errors.push({ field: "order", message: "order must be asc or desc." });
+    }
+
+    // Filters: null means "not sent", undefined means "sent but empty or repeated"
+    const day = parseText(req.query.dayOfWeek);
+    const query = {
+        tripId: parseText(req.query.tripId),
+        trainId: parseText(req.query.trainId),
+        dayOfWeek: typeof day === "string" ? day.toLowerCase() : day,
+        startTime: parseText(req.query.startTime),
+        endTime: parseText(req.query.endTime),
+    };
+    for (const field of ["tripId", "trainId"]) {
+        if (query[field] === undefined) {
+            errors.push({ field, message: `${field} can't be empty.` });
+        }
+    }
+    if (query.dayOfWeek !== null && !daysOfWeek.includes(query.dayOfWeek)) {
+        errors.push({ field: "dayOfWeek", message: `dayOfWeek must be one of: ${daysOfWeek.join(", ")}.` });
+    }
+    for (const field of ["startTime", "endTime"]) {
+        if (query[field] !== null && !timePattern.test(query[field] ?? "")) {
+            errors.push({ field, message: `${field} must be a time from 00:00 to 23:59.` });
+        }
+    }
+    // HH:MM strings sort the same way as the times they stand for
+    if (timePattern.test(query.startTime ?? "") && timePattern.test(query.endTime ?? "") && query.startTime > query.endTime) {
+        errors.push({ field: "startTime", message: "startTime can't be later than endTime." });
+    }
+
+    if (errors.length > 0) {
+        return res.status(400).json({ errors });
+    }
+
+    const filter = {};
+    if (query.trainId) {
+        // Schedules only store tripId, so a train filter becomes "any trip that runs on this train"
+        const trainTripIds = (await findTripsByTrainId(query.trainId)).map((trip) => trip.id);
+        filter.tripId = { $in: trainTripIds };
+    }
+    if (query.tripId) {
+        // Combined with a train filter, the trip also has to run on that train
+        filter.tripId = filter.tripId
+            ? { $in: filter.tripId.$in.filter((tripId) => tripId === query.tripId) }
+            : query.tripId;
+    }
+    if (query.dayOfWeek) {
+        filter.daysOfWeek = query.dayOfWeek;
+    }
+    if (query.startTime || query.endTime) {
+        filter.departureTime = {};
+        if (query.startTime) filter.departureTime.$gte = query.startTime;
+        if (query.endTime) filter.departureTime.$lte = query.endTime;
+    }
+
+    const { schedules, totalItems } = await findPaginatedSchedules({
+        filter,
+        page,
+        limit,
+        sort,
+        order: order === "desc" ? -1 : 1,
+    });
+
+    return res.status(200).json({
+        data: schedules,
+        query,
+        pagination: {
+            page,
+            limit,
+            totalItems,
+            totalPages: Math.ceil(totalItems / limit),
+            hasNextPage: page * limit < totalItems,
+            hasPreviousPage: page > 1,
+        },
+    });
 }
 
 // GET one schedule by id
