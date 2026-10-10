@@ -30,7 +30,9 @@ describe("GET /api/users", () => {
         expect(response.headers["content-type"]).toContain("application/json");
         expect(response.body.data).toBeInstanceOf(Array);
         expect(response.body.data).toHaveLength(3);
-        expect(response.body.data[0]).not.toHaveProperty("passwordHash");
+        response.body.data.forEach((user) => {
+            expect(user).not.toHaveProperty("passwordHash");
+        });
     });
 
     // 2. Test that pagination works correctly
@@ -107,6 +109,51 @@ describe("GET /api/users", () => {
         // Assert
         expect(response.status).toBe(403);
     });
+
+    test("searches display names, usernames, and email addresses", async () => {
+        const agent = await signIn("admin@example.com");
+        const customer = await User.findOne({ email: "customer@example.com" });
+        await User.updateOne(
+            { _id: customer._id },
+            {
+                $set: {
+                    name: "Quartz Display",
+                    username: "tangerine-user",
+                    email: "cobalt@example.com",
+                },
+            }
+        );
+
+        for (const term of ["Quartz", "tangerine", "cobalt"]) {
+            const response = await agent.get("/api/users").query({ q: term });
+
+            expect(response.status).toBe(200);
+            expect(response.body.data.map((user) => user._id)).toContain(
+                customer._id.toString()
+            );
+            expect(response.body.query.q).toBe(term);
+        }
+    });
+
+    test("returns empty data and pagination metadata when search has no matches", async () => {
+        const agent = await signIn("admin@example.com");
+
+        const response = await agent
+            .get("/api/users")
+            .query({ q: "no-user-has-this-unique-term" });
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toEqual([]);
+        expect(response.body.query.q).toBe("no-user-has-this-unique-term");
+        expect(response.body.pagination).toMatchObject({
+            page: 1,
+            limit: 10,
+            totalUsers: 0,
+            totalPages: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+        });
+    });
 });
 
 /* Tests for the GET:ID /api/users/:id endpoint */
@@ -126,6 +173,19 @@ describe("GET /api/users/:id", () => {
         expect(response.body._id).toBe(customer._id.toString());
         expect(response.body.email).toBe("customer@example.com");
         expect(response.body).not.toHaveProperty("passwordHash");
+    });
+
+    test("allows an administrator to retrieve another user without authentication data", async () => {
+        const other = await User.findOne({ email: "other@example.com" });
+        const agent = await signIn("admin@example.com");
+
+        const response = await agent.get(`/api/users/${other._id}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body._id).toBe(other._id.toString());
+        expect(response.body.email).toBe("other@example.com");
+        expect(response.body).not.toHaveProperty("passwordHash");
+        expect(response.body).not.toHaveProperty("password");
     });
 
     // 2. Test that a customer cannot retrieve another user's record
@@ -178,7 +238,12 @@ describe("POST /api/users", () => {
 
         expect(savedUser).not.toBeNull();
         expect(savedUser.name).toBe("New Person");
+        expect(savedUser.username).toBe("new-person");
+        expect(savedUser.email).toBe("new@example.com");
         expect(savedUser.role.name).toBe("customer");
+        expect(savedUser.passwordHash).toBeTruthy();
+        expect(savedUser.passwordHash).not.toBe(newUser.password);
+        expect(response.body).not.toHaveProperty("passwordHash");
     });
 
     // 2. Test that registration fails when the password is missing
@@ -228,10 +293,43 @@ describe("PUT /api/users/:id", () => {
 
         // Assert
         expect(response.status).toBe(200);
+        expect(response.body).not.toHaveProperty("passwordHash");
 
         const savedUser = await User.findById(customer._id);
 
         expect(savedUser.name).toBe("Renamed Customer");
+    });
+
+    test("allows an administrator to update another user's record", async () => {
+        const other = await User.findOne({ email: "other@example.com" });
+        const agent = await signIn("admin@example.com");
+
+        const response = await agent
+            .put(`/api/users/${other._id}`)
+            .send({
+                name: "Updated Other",
+                email: "other@example.com",
+                role: "admin",
+            });
+
+        expect(response.status).toBe(200);
+        expect(response.body).not.toHaveProperty("passwordHash");
+
+        const savedUser = await User.findById(other._id).populate("role");
+        expect(savedUser.name).toBe("Updated Other");
+        expect(savedUser.role.name).toBe("admin");
+    });
+
+    test("prevents a customer from updating another user's record", async () => {
+        const other = await User.findOne({ email: "other@example.com" });
+        const agent = await signIn("customer@example.com");
+
+        const response = await agent
+            .put(`/api/users/${other._id}`)
+            .send({ name: "Unauthorized Change", email: "other@example.com" });
+
+        expect(response.status).toBe(403);
+        expect((await User.findById(other._id)).name).toBe("Other Customer");
     });
 
     // 2. Test that a customer cannot change their role
@@ -283,5 +381,17 @@ describe("DELETE /api/users/:id", () => {
         // Assert
         expect(response.status).toBe(403);
         expect(await User.findById(other._id)).not.toBeNull();
+    });
+
+    test("allows a customer to delete their own account and clears their session", async () => {
+        const customer = await User.findOne({ email: "customer@example.com" });
+        const agent = await signIn("customer@example.com");
+
+        const response = await agent.delete(`/api/users/${customer._id}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body.deletedSelf).toBe(true);
+        expect(await User.findById(customer._id)).toBeNull();
+        expect((await agent.get(`/api/users/${customer._id}`)).status).toBe(401);
     });
 });
