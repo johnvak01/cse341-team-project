@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { getDb } from '../src/db/connect.js';
+import Train from '../src/models/schemas/trains.js';
 
 describe('GET /api/trains', () => {
   test('returns a successful JSON response', async () => {
@@ -31,10 +31,14 @@ describe('GET /api/trains', () => {
   });
 
   test('returns a train added to the test database', async () => {
-    await getDb().collection('trains').insertOne({
+    await Train.create({
       id: 'test-express',
       name: 'Test Express',
-      operator: 'Test Railway'
+      operator: 'Test Railway',
+      type: 'Express',
+      maxSpeedKmh: 200,
+      capacity: 500,
+      powerSource: 'Electric'
     });
 
     const response = await request(app).get('/api/trains');
@@ -233,10 +237,14 @@ describe('GET /api/trains/:id/trips', () => {
   });
 
   test('returns an empty array for a train with no trips', async () => {
-    await getDb().collection('trains').insertOne({
+    await Train.create({
       id: 'test-express',
       name: 'Test Express',
-      operator: 'Test Railway'
+      operator: 'Test Railway',
+      type: 'Express',
+      maxSpeedKmh: 200,
+      capacity: 500,
+      powerSource: 'Electric'
     });
 
     const response = await request(app).get('/api/trains/test-express/trips');

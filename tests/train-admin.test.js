@@ -1,24 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { createUser } from '../src/models/users.js';
-import { User } from '../src/models/schemas/users.js';
-import { Role } from '../src/models/schemas/roles.js';
 import Train from '../src/models/schemas/trains.js';
 import Trip from '../src/models/schemas/trips.js';
 
-const password = 'Password123!';
+const password = 'known test password';
 
 // Logs in through the API and returns an agent that keeps the session cookie
 const loginAs = async (role) => {
   const email = `${role}@example.com`;
-  const userId = await createUser(`Test ${role}`, `test-${role}`, email, password);
-
-  if (role === 'admin') {
-    const adminRole = await Role.findOne({ name: 'admin' });
-    await User.updateOne({ _id: userId }, { role: adminRole._id });
-  }
-
   const agent = request.agent(app);
   const response = await agent.post('/api/auth/login').send({ identifier: email, password });
   expect(response.status).toBe(200);
