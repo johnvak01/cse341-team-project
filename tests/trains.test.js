@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { getDb } from '../src/db/connect.js';
+import Train from '../src/models/schemas/trains.js';
 
 describe('GET /api/trains', () => {
   test('returns a successful JSON response', async () => {
@@ -250,5 +251,57 @@ describe('GET /api/trains/:id/trips', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toHaveProperty('error');
+  });
+});
+
+describe('GET /api/trains/:id', () => {
+  test('returns a seeded train with its saved fields', async () => {
+    const response = await request(app).get('/api/trains/series-e353');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 'series-e353',
+      name: 'Series E353 Limited Express',
+      operator: 'JR East',
+      type: 'Limited Express',
+      maxSpeedKmh: 130,
+      capacity: 360,
+      powerSource: 'Electric'
+    });
+  });
+
+  test('returns 404 with a JSON error for a train that does not exist', async () => {
+    const response = await request(app).get('/api/trains/not-a-real-train');
+
+    expect(response.status).toBe(404);
+    expect(response.headers['content-type']).toContain('application/json');
+    expect(response.body).toHaveProperty('error');
+  });
+
+  test('returns a train created in the test database', async () => {
+    await Train.create({
+      id: 'read-test-express',
+      name: 'Read Test Express',
+      operator: 'Test Railway',
+      type: 'Express',
+      maxSpeedKmh: 200,
+      capacity: 500,
+      powerSource: 'Electric'
+    });
+
+    const response = await request(app).get('/api/trains/read-test-express');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ id: 'read-test-express', name: 'Read Test Express' });
+  });
+});
+
+describe('GET /api/trains (all trains)', () => {
+  test('includes every seeded train', async () => {
+    const response = await request(app).get('/api/trains?limit=50');
+    const ids = response.body.data.map((train) => train.id);
+
+    expect(response.status).toBe(200);
+    expect(ids).toEqual(expect.arrayContaining(['series-e353', 'kiha-261', 'series-287', 'steam-c11']));
   });
 });
