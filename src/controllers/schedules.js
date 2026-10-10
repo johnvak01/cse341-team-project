@@ -4,7 +4,10 @@ import {
     getScheduleById as findScheduleById,
     getSchedulesByTripId as findSchedulesByTripId,
 } from "../models/schedules.js";
-import { getTripById as findTripById } from "../models/trips.js";
+import {
+    getTripById as findTripById,
+    getTripsByTrainId as findTripsByTrainId,
+} from "../models/trips.js";
 
 // --------------------------
 /***HELPER Function***/
@@ -38,8 +41,22 @@ export const timetablePage = (req, res) => {
     res.render("timetable", { title: "Timetable" });
 };
 
-const pagingParams = ["page", "limit", "sort", "order"];
+const filterParams = ["tripId", "trainId", "dayOfWeek", "startTime", "endTime"];
+const pagingParams = ["page", "limit", "sort", "order", ...filterParams];
 const allowedSortFields = ["departureTime", "arrivalTime", "tripId", "id"];
+const daysOfWeek = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+// Returns the trimmed text, null when the param wasn't sent, or undefined when it's empty or repeated
+const parseText = (value) => {
+    if (value === undefined) {
+        return null;
+    }
+    if (typeof value !== "string" || value.trim() === "") {
+        return undefined;
+    }
+    return value.trim();
+};
 
 // Returns the number if value is a whole number from min to max, otherwise null
 const parseWholeNumber = (value, defaultValue, min, max) => {
@@ -89,11 +106,61 @@ async function getPaginatedSchedules(req, res) {
     if (order !== "asc" && order !== "desc") {
         errors.push({ field: "order", message: "order must be asc or desc." });
     }
+
+    // Filters: null means "not sent", undefined means "sent but empty or repeated"
+    const day = parseText(req.query.dayOfWeek);
+    const query = {
+        tripId: parseText(req.query.tripId),
+        trainId: parseText(req.query.trainId),
+        dayOfWeek: typeof day === "string" ? day.toLowerCase() : day,
+        startTime: parseText(req.query.startTime),
+        endTime: parseText(req.query.endTime),
+    };
+    for (const field of ["tripId", "trainId"]) {
+        if (query[field] === undefined) {
+            errors.push({ field, message: `${field} can't be empty.` });
+        }
+    }
+    if (query.dayOfWeek !== null && !daysOfWeek.includes(query.dayOfWeek)) {
+        errors.push({ field: "dayOfWeek", message: `dayOfWeek must be one of: ${daysOfWeek.join(", ")}.` });
+    }
+    for (const field of ["startTime", "endTime"]) {
+        if (query[field] !== null && !timePattern.test(query[field] ?? "")) {
+            errors.push({ field, message: `${field} must be a time from 00:00 to 23:59.` });
+        }
+    }
+    // HH:MM strings sort the same way as the times they stand for
+    if (timePattern.test(query.startTime ?? "") && timePattern.test(query.endTime ?? "") && query.startTime > query.endTime) {
+        errors.push({ field: "startTime", message: "startTime can't be later than endTime." });
+    }
+
     if (errors.length > 0) {
         return res.status(400).json({ errors });
     }
 
+    const filter = {};
+    if (query.trainId) {
+        // Schedules only store tripId, so a train filter becomes "any trip that runs on this train"
+        const trainTripIds = (await findTripsByTrainId(query.trainId)).map((trip) => trip.id);
+        filter.tripId = { $in: trainTripIds };
+    }
+    if (query.tripId) {
+        // Combined with a train filter, the trip also has to run on that train
+        filter.tripId = filter.tripId
+            ? { $in: filter.tripId.$in.filter((tripId) => tripId === query.tripId) }
+            : query.tripId;
+    }
+    if (query.dayOfWeek) {
+        filter.daysOfWeek = query.dayOfWeek;
+    }
+    if (query.startTime || query.endTime) {
+        filter.departureTime = {};
+        if (query.startTime) filter.departureTime.$gte = query.startTime;
+        if (query.endTime) filter.departureTime.$lte = query.endTime;
+    }
+
     const { schedules, totalItems } = await findPaginatedSchedules({
+        filter,
         page,
         limit,
         sort,
@@ -102,6 +169,7 @@ async function getPaginatedSchedules(req, res) {
 
     return res.status(200).json({
         data: schedules,
+        query,
         pagination: {
             page,
             limit,

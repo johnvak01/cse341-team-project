@@ -10,12 +10,12 @@ export async function getScheduleById(id) {
 }
 
 // id is a second sort key so schedules with the same time keep the same order across pages
-export async function getPaginatedSchedules({ page, limit, sort, order }) {
+export async function getPaginatedSchedules({ filter = {}, page, limit, sort, order }) {
     const skip = (page - 1) * limit;
 
     const [schedules, totalItems] = await Promise.all([
-        Schedule.find({}).sort({ [sort]: order, id: 1 }).skip(skip).limit(limit).lean(),
-        Schedule.countDocuments({}),
+        Schedule.find(filter).sort({ [sort]: order, id: 1 }).skip(skip).limit(limit).lean(),
+        Schedule.countDocuments(filter),
     ]);
 
     return { schedules, totalItems };

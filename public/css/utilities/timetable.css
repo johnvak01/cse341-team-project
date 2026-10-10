@@ -9,6 +9,27 @@
         color: #8f1f1f;
     }
 
+    /* Filter controls in one row that wraps on narrow screens */
+    .timetable-filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-md);
+        margin-bottom: var(--space-lg);
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-xs);
+            color: var(--clr-text-primary);
+            font-weight: 600;
+        }
+
+        select,
+        input {
+            font-weight: 400;
+        }
+    }
+
     /* Lets the table scroll sideways on narrow screens instead of squashing */
     .timetable-table-wrap {
         overflow-x: auto;
