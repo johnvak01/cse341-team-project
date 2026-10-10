@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { getAllTrains, getTrainById } from "../controllers/trains.js";
+import {
+    getAllTrains,
+    getTrainById,
+    getTrainFilterOptions,
+    getTripsByTrain,
+    createTrain,
+    updateTrainById,
+    deleteTrainById,
+    moveTripToTrain,
+} from "../controllers/trains.js";
 import {
     getAllSchedules,
     getScheduleById,
@@ -9,10 +18,10 @@ import {
 } from "../controllers/schedules.js";
 import { getAllStations, getStationById } from "../controllers/stations.js";
 import {
-    getAllTrips,
     getTripById,
     updateTrip,
     deleteTrip,
+    getPaginatedTripsList,
 } from "../controllers/trips.js";
 import {
     getAllBookings,
@@ -478,8 +487,8 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *   get:
  *     tags:
  *       - Trains
- *     summary: Get a paginated list of trains
- *     description: Returns trains from the trains collection, paginated and sorted.
+ *     summary: Get a paginated, searchable list of trains
+ *     description: Returns trains from the trains collection, paginated, sorted, and optionally filtered by search text, type, or power source.
  *     parameters:
  *       - name: page
  *         in: query
@@ -506,15 +515,46 @@ router.get("/api/roles/user/:userId", requireApiRole("admin"), getRoleByUserId);
  *           type: string
  *           default: asc
  *           enum: [asc, desc]
+ *       - name: q
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive substring search across name, operator, description, and bestFor.
+ *       - name: type
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive exact match against the train's type. See GET /api/trains/filters for current values.
+ *       - name: powerSource
+ *         in: query
+ *         schema:
+ *           type: string
+ *         description: Case-insensitive exact match against the train's power source. See GET /api/trains/filters for current values.
  *     responses:
  *       '200':
  *         description: Trains retrieved successfully
  *       '400':
- *         description: Invalid pagination or sort parameter
+ *         description: Invalid pagination, sort, or filter parameter
  *       '500':
  *         description: Internal server error
  */
 router.get("/api/trains", getAllTrains);
+
+/**
+ * @openapi
+ * /api/trains/filters:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the current train filter options
+ *     description: Returns the distinct type and powerSource values currently present in the trains collection, for building filter dropdowns.
+ *     responses:
+ *       '200':
+ *         description: Filter options retrieved successfully
+ *       '500':
+ *         description: Internal server error
+ */
+router.get("/api/trains/filters", getTrainFilterOptions);
 
 /**
  * @openapi
@@ -541,6 +581,201 @@ router.get("/api/trains", getAllTrains);
  *         description: Internal server error.
  */
 router.get("/api/trains/:id", getTrainById);
+
+/**
+ * @openapi
+ * /api/trains/{id}/trips:
+ *   get:
+ *     tags:
+ *       - Trains
+ *     summary: Get the trips a train runs
+ *     description: Returns every trip whose trainId matches the requested train.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the train to look up trips for, such as kiha-261
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     responses:
+ *       '200':
+ *         description: Trips retrieved successfully.
+ *       '404':
+ *         description: Train was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.get("/api/trains/:id/trips", getTripsByTrain);
+
+/**
+ * @openapi
+ * /api/trains:
+ *   post:
+ *     tags:
+ *       - Trains
+ *     summary: Create a train (Admin Only)
+ *     description: Creates a new train. The id must be unique and can't be changed later.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [id, name, operator, type, maxSpeedKmh, capacity, powerSource]
+ *             properties:
+ *               id: { type: string, example: shinkansen-n700 }
+ *               name: { type: string, example: N700 Shinkansen }
+ *               operator: { type: string, example: JR Central }
+ *               type: { type: string, example: High-Speed }
+ *               maxSpeedKmh: { type: number, minimum: 0, example: 300 }
+ *               capacity: { type: number, minimum: 0, example: 1323 }
+ *               powerSource: { type: string, example: Electric }
+ *               imageUrl: { type: string, example: /images/trains/series-e353-limited-express.png }
+ *               imageAlt: { type: string, example: N700 Shinkansen at a platform }
+ *               bestFor: { type: string, example: Fast long-distance travel }
+ *               description: { type: string, example: High-speed train for the Tokaido line. }
+ *     responses:
+ *       '201':
+ *         description: Train created.
+ *       '400':
+ *         description: Missing, invalid, or unknown fields. Returns a list of field errors.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '409':
+ *         description: A train with that id already exists.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.post("/api/trains", requireApiLogin, requireApiRole("admin"), createTrain);
+
+/**
+ * @openapi
+ * /api/trains/{id}:
+ *   put:
+ *     tags:
+ *       - Trains
+ *     summary: Update a train (Admin Only)
+ *     description: Updates any train fields except id. Only the fields sent are changed.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name: { type: string }
+ *               operator: { type: string }
+ *               type: { type: string }
+ *               maxSpeedKmh: { type: number, minimum: 0 }
+ *               capacity: { type: number, minimum: 0 }
+ *               powerSource: { type: string }
+ *               imageUrl: { type: string }
+ *               imageAlt: { type: string }
+ *               bestFor: { type: string }
+ *               description: { type: string }
+ *             example:
+ *               capacity: 300
+ *               bestFor: Winter sightseeing
+ *     responses:
+ *       '200':
+ *         description: Train updated. Returns the updated train.
+ *       '400':
+ *         description: Invalid or unknown fields, an id in the body, or no changes. Returns a list of field errors.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Train was not found.
+ *       '500':
+ *         description: Internal server error.
+ *   delete:
+ *     tags:
+ *       - Trains
+ *     summary: Delete a train (Admin Only)
+ *     description: Deletes a train that no trip uses. Trips have to be moved to another train first.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: kiha-261
+ *     responses:
+ *       '200':
+ *         description: Train deleted.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Train was not found.
+ *       '409':
+ *         description: The train is still assigned to trips. Returns the ids of those trips.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.put("/api/trains/:id", requireApiLogin, requireApiRole("admin"), updateTrainById);
+router.delete("/api/trains/:id", requireApiLogin, requireApiRole("admin"), deleteTrainById);
+
+/**
+ * @openapi
+ * /api/trips/{id}/train:
+ *   put:
+ *     tags:
+ *       - Trains
+ *     summary: Move a trip to a different train (Admin Only)
+ *     description: Changes which train runs a trip. The new train has to exist.
+ *     security:
+ *       - SessionCookieAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the trip to move
+ *         schema:
+ *           type: string
+ *         example: alpine-panorama
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [trainId]
+ *             properties:
+ *               trainId: { type: string, example: kiha-261 }
+ *     responses:
+ *       '200':
+ *         description: Trip moved. Returns the updated trip.
+ *       '400':
+ *         description: trainId is missing, or no train has that id.
+ *       '401':
+ *         description: Unauthorized. User is not logged in.
+ *       '403':
+ *         description: Forbidden. User does not have the admin role.
+ *       '404':
+ *         description: Trip was not found.
+ *       '500':
+ *         description: Internal server error.
+ */
+router.put("/api/trips/:id/train", requireApiLogin, requireApiRole("admin"), moveTripToTrain);
 
 /**
  * @openapi
@@ -675,15 +910,152 @@ router.get("/api/stations/:id", getStationById);
  *   get:
  *     tags:
  *       - Trips
- *     summary: Get all trips
- *     description: Returns every trip in the trips collection
+ *     summary: Get a paginated, filterable list of trips
+ *     description: >
+ *       Returns trips one page at a time, sorted by the chosen field, and optionally filtered
+ *       by region/season or a keyword search across name and description.
+ *       A page beyond the last one returns an empty data array with a 200.
+ *       Invalid page, limit, sort, or filter values return 400.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         description: Page number, starting at 1
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *       - name: limit
+ *         in: query
+ *         description: Trips per page
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           minimum: 1
+ *           maximum: 50
+ *       - name: sort
+ *         in: query
+ *         description: Field to sort by
+ *         schema:
+ *           type: string
+ *           default: name
+ *           enum:
+ *             - name
+ *             - region
+ *             - startStation
+ *             - endStation
+ *             - distance
+ *             - bestSeason
+ *       - name: order
+ *         in: query
+ *         description: Sort direction
+ *         schema:
+ *           type: string
+ *           default: asc
+ *           enum: [asc, desc]
+ *       - name: region
+ *         in: query
+ *         description: Exact, case-insensitive match on a trip's region. Omit or pass "all" for no filter.
+ *         schema:
+ *           type: string
+ *         example: central
+ *       - name: season
+ *         in: query
+ *         description: Exact, case-insensitive match on a trip's bestSeason. Omit or pass "all" for no filter.
+ *         schema:
+ *           type: string
+ *         example: autumn
+ *       - name: search
+ *         in: query
+ *         description: Case-insensitive keyword search across a trip's name and description. Max 100 characters.
+ *         schema:
+ *           type: string
+ *         example: gorge
  *     responses:
  *       '200':
  *         description: Trips retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       region:
+ *                         type: string
+ *                       startStation:
+ *                         type: string
+ *                       endStation:
+ *                         type: string
+ *                       duration:
+ *                         type: string
+ *                       distance:
+ *                         type: number
+ *                       highlights:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       bestSeason:
+ *                         type: string
+ *                       operatingMonths:
+ *                         type: array
+ *                         items:
+ *                           type: integer
+ *                       imageUrl:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalItems:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     hasNextPage:
+ *                       type: boolean
+ *                     hasPreviousPage:
+ *                       type: boolean
+ *       '400':
+ *         description: Invalid page, limit, sort, or filter value
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 errors:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       field:
+ *                         type: string
+ *                       message:
+ *                         type: string
  *       '500':
  *         description: Internal error
  */
-router.get("/api/trips", getAllTrips);
+router.get("/api/trips", getPaginatedTripsList);
+
+
 
 /**
  * @openapi
@@ -1132,7 +1504,8 @@ router.delete("/api/bookings/:id", requireApiLogin, deleteBookingById);
  * @openapi
  * /api/bookings_paginated:
  *   get:
- *     summary: Retrieve a paginated list of bookings
+ *     summary: Retrieve paginated bookings
+ *     description: Admins may view all bookings or their own. Non-admin users are always restricted to bookings they created or are listed as passengers on.
  *     tags:
  *       - Bookings
  *     parameters:
@@ -1164,6 +1537,34 @@ router.delete("/api/bookings/:id", requireApiLogin, deleteBookingById);
  *         schema:
  *           type: string
  *           enum: [asc, desc]
+ *       - name: startDate
+ *         in: query
+ *         description: "The date the booking was created on or after (format: YYYY-MM-DD)"
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: endDate
+ *         in: query
+ *         description: "The date the booking was created on or before (format: YYYY-MM-DD)"
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - name: ticketClass
+ *         in: query
+ *         description: Filter bookings by ticket class (e.g., 'standard', 'premium', 'first')
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [standard, premium, first]
+ *       - name: scope
+ *         in: query
+ *         description: Admins may request all bookings or only their own. Non-admin users are always limited to their own bookings.
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [all, mine]
+ *
+ *
  *     responses:
  *       200:
  *         description: A paginated list of bookings
@@ -1237,7 +1638,7 @@ router.delete("/api/bookings/:id", requireApiLogin, deleteBookingById);
  *                   type: string
  *                   description: Error message
  */
-router.get("/api/bookings_paginated", requireApiLogin, requireApiRole('admin'), getPaginatedBookings);
+router.get("/api/bookings_paginated", requireApiLogin, getPaginatedBookings);
 
 /**
  * @openapi

@@ -13,7 +13,8 @@
 @import "utilities/trip-detail.css" layer(utilities);
 @import "utilities/trips.css" layer(utilities);
 @import "utilities/admin-trips.css" layer(utilities);
-@import "utilities/users.css" layer(utilities);
+@import 'utilities/train-pages.css' layer(utilities);
+@import 'utilities/users.css' layer(utilities);
 
 @import "components/content-grid.css" layer(components);
 @import "components/columns-grid.css" layer(components);

@@ -1,8 +1,9 @@
 <%- include('../partials/header') %>
 
-<div class="admin-trips">
-    <div class="admin-trips-heading">
+<div class="admin-trips admin-trains train-page trains-catalog">
+    <div class="admin-trips-heading trains-hero">
         <h1><%= title %></h1>
+        <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
     </div>
 
     <section class="admin-trips-filters" aria-label="Filter trips">
@@ -20,6 +21,8 @@
                 <option value="<%= season %>"><%= season.charAt(0).toUpperCase() + season.slice(1) %></option>
             <% }); %>
         </select>
+        <label for="trip-keyword-search">Keyword Search:</label>
+        <input type="search" id="trip-keyword-search" placeholder="Search name or description&hellip;" maxlength="100">
     </section>
     <p id="admin-trips-error" class="admin-trips-error" role="alert" hidden></p>
 
@@ -61,59 +64,65 @@
 
 </section>
 
-<!-- Reuses your exact public container classes -->
-<div id="trips-list" class="routes-grid">
+<!-- Same grid and card markup as the trains pages -->
+<div id="trips-list" class="trains-grid">
     <p role="status">Loading trips...</p>
 </div>
 
-<!-- Reuses your exact public card template setup structure -->
+<nav class="admin-trips-pagination" aria-label="Trips pagination">
+    <button type="button" id="trips-prev-page">&larr; Previous</button>
+    <span id="trips-page-status" role="status">Page 1</span>
+    <button type="button" id="trips-next-page">Next &rarr;</button>
+</nav>
+
 <template id="trip-card-template">
-    <div class="route-card">
-        <div class="route-header">
+    <article class="train-card">
+        <div class="train-image-wrap" data-field="image-wrap">
+            <img data-field="image" loading="lazy" decoding="async">
+        </div>
+
+        <header class="train-card-header">
             <h2 class="route-name"></h2>
-            <span class="route-region"></span>
-        </div>
+            <span class="train-operator route-region"></span>
+        </header>
 
-        <div class="station-info">
-            <div class="station">
-                <div class="station-type">From:</div>
-                <div class="station-name start-station"></div>
-            </div>
-            <div class="route-arrow">→</div>
-            <div class="station">
-                <div class="station-type">To:</div>
-                <div class="station-name end-station"></div>
-            </div>
-        </div>
+        <p class="train-description route-description"></p>
 
-        <div class="route-details">
-            <div class="detail-item">
-                <span class="detail-icon">🕑</span>
-                <span><span class="detail-label">Duration:</span> <span class="trip-duration"></span></span>
+        <dl class="train-specs">
+            <div class="spec-item">
+                <dt>From</dt>
+                <dd class="start-station"></dd>
             </div>
-            <div class="detail-item">
-                <span class="detail-icon">📍</span>
-                <span><span class="detail-label">Distance:</span> <span class="trip-distance"></span>km</span>
+            <div class="spec-item">
+                <dt>To</dt>
+                <dd class="end-station"></dd>
             </div>
-            <div class="detail-item">
-                <span class="season-badge"></span>
+            <div class="spec-item">
+                <dt>Duration</dt>
+                <dd class="trip-duration"></dd>
             </div>
-        </div>
+            <div class="spec-item">
+                <dt>Distance</dt>
+                <dd><span class="trip-distance"></span> km</dd>
+            </div>
+        </dl>
 
-        <div class="route-description"></div>
+        <p class="train-best-for">
+            <strong>Best Season:</strong>
+            <span class="season-badge"></span>
+        </p>
 
         <div class="highlights">
             <div class="highlights-list">
                 <!-- Highlight tags will be dynamically injected here -->
             </div>
         </div>
-            
-        <!-- Modified to stack Admin action buttons instead of a public booking button -->
-        <div class="route-actions admin-trip-card-actions">
+
+        <div class="admin-trip-card-actions">
             <button type="button" class="edit-action-btn">Edit</button>
             <button type="button" class="delete-action-btn">Delete</button>
         </div>
-    </div>
+    </article>
 </template>
 
 <script>
@@ -173,8 +182,7 @@
             }
 
             closeModal();
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -192,8 +200,7 @@
                 throw new Error(error.error || error.message || 'Unable to delete trip.');
             }
 
-            await loadTrips(); 
-            applyFilters();
+            await loadTrips();
         } catch (error) {
             const errorElement = document.getElementById('admin-trips-error');
             errorElement.textContent = error.message;
@@ -254,31 +261,73 @@
     }
 };
 
-//loads trips
+//loads trips, paginated 10 per page
 
-    const loadTrips = async () => {
+    let currentPage = 1;
+
+    const updatePaginationControls = (pagination) => {
+        const status = document.getElementById('trips-page-status');
+        const prevButton = document.getElementById('trips-prev-page');
+        const nextButton = document.getElementById('trips-next-page');
+
+        const totalPages = Math.max(pagination.totalPages, 1);
+        status.textContent = `Page ${pagination.page} of ${totalPages} (${pagination.totalItems} trips)`;
+        prevButton.disabled = !pagination.hasPreviousPage;
+        nextButton.disabled = !pagination.hasNextPage;
+    };
+
+    const getActiveFilters = () => {
+        const region = document.getElementById('region-filter').value;
+        const season = document.getElementById('season-filter').value;
+        const search = document.getElementById('trip-keyword-search').value.trim();
+        return { region, season, search };
+    };
+
+    const loadTrips = async (page = currentPage) => {
 
         const tripsCard = document.getElementById('trips-list');
         const templateTrip = document.getElementById('trip-card-template');
+        const { region, season, search } = getActiveFilters();
+
+        const params = new URLSearchParams({ page, limit: 10 });
+        if (region && region !== 'all') params.set('region', region);
+        if (season && season !== 'all') params.set('season', season);
+        if (search) params.set('search', search);
 
         try {
-            const response = await fetch('/api/trips');
+            const response = await fetch(`/api/trips?${params.toString()}`);
             if(!response.ok) throw new Error('Failed to retrieve Trips');
 
-            const trips = await response.json();
+            const payload = await response.json();
+            const trips = payload.data || [];
+
+            // Deleting the last trip on a page leaves it empty, so step back to the last page.
+            if (trips.length === 0 && page > 1 && payload.pagination.totalPages > 0) {
+                return loadTrips(payload.pagination.totalPages);
+            }
+
+            currentPage = payload.pagination.page;
+            updatePaginationControls(payload.pagination);
             tripsCard.innerHTML = "";
 
             if(trips.length === 0){
                 const emptyMessage = document.createElement('p');
-                emptyMessage.textContent = 'No trips found.';
+                emptyMessage.id = 'trips-empty';
+                emptyMessage.className = 'trips-empty';
+                emptyMessage.textContent = 'No trips match the selected filters.';
                 tripsCard.replaceChildren(emptyMessage);
                 return;
             }
 
             trips.forEach(trip => {
                 const clone = templateTrip.content.cloneNode(true);
-                const cardWrapper = clone.querySelector('.route-card');
-                if(trip.region) cardWrapper.classList.add(trip.region);
+
+                if (trip.imageUrl) {
+                    clone.querySelector('[data-field="image"]').src = trip.imageUrl;
+                    clone.querySelector('[data-field="image"]').alt = `${trip.name} trip`;
+                } else {
+                    clone.querySelector('[data-field="image-wrap"]').hidden = true;
+                }
 
                 clone.querySelector('.route-name').textContent = trip.name;
                 clone.querySelector('.route-region').textContent = trip.region || '';
@@ -288,9 +337,7 @@
                 clone.querySelector('.trip-distance').textContent = trip.distance;
                 clone.querySelector('.route-description').textContent = trip.description;
 
-                const seasonBadge = clone.querySelector('.season-badge');
-                seasonBadge.textContent = trip.bestSeason ? `Best in ${trip.bestSeason}` : '';
-                if (trip.bestSeason) seasonBadge.classList.add(`season-${trip.bestSeason}`);
+                clone.querySelector('.season-badge').textContent = trip.bestSeason || '';
 
                 const highlightsList = clone.querySelector('.highlights-list');
                 if (trip.highlights && Array.isArray(trip.highlights)) {
@@ -317,59 +364,39 @@
         }
     }
 
-    let applyFilters = () => {};
+    const debounce = (fn, delayMs) => {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => fn(...args), delayMs);
+        };
+    };
 
     window.addEventListener('DOMContentLoaded', async () =>{
 
         const regionFilter = document.getElementById('region-filter');
         const seasonFilter = document.getElementById('season-filter');
-
-        applyFilters = () => {
-
-            const selectedRegion = regionFilter.value.toLowerCase();
-            const selectedSeason = seasonFilter.value.toLowerCase();
-            const cards = document.querySelectorAll('#trips-list .route-card');
-            const tripsList = document.getElementById('trips-list');
-            let visibleCount = 0;
-
-            cards.forEach(card => {
-                const cardRegion = card.querySelector('.route-region').textContent.trim().toLowerCase();
-                const badgeText = card.querySelector('.season-badge').textContent.toLowerCase();
-
-                const matchesRegion = (selectedRegion==='all' || cardRegion===selectedRegion);
-                const matchesSeason = (selectedSeason==='all' || badgeText.includes(selectedSeason));
-
-                if(matchesRegion && matchesSeason){
-                    card.hidden = false;
-                    visibleCount +=1;
-                }else{
-                    card.hidden = true;
-                }
-            });
-
-            let emptyState = document.getElementById('trips-empty');
-            if(visibleCount===0){
-                if(!emptyState){
-                    emptyState = document.createElement('p');
-                    emptyState.id = 'trips-empty';
-                    emptyState.className = 'trips-empty';
-                    tripsList.appendChild(emptyState);
-                }
-
-                emptyState.textContent = 'No trips match the selected filters.';
-            }else if(emptyState){
-                emptyState.remove();
-            }
-        };
+        const keywordSearch = document.getElementById('trip-keyword-search');
 
         await loadStationDropdowns();
         await loadScheduleDropdown();
 
-        await loadTrips();
-        applyFilters();
+        await loadTrips(1);
 
-        regionFilter.addEventListener('change', applyFilters);
-        seasonFilter.addEventListener('change', applyFilters);
+        // Region/season/search are applied server-side, so any change
+        // resets to page 1 and refetches the filtered, paginated results.
+        regionFilter.addEventListener('change', () => loadTrips(1));
+        seasonFilter.addEventListener('change', () => loadTrips(1));
+        keywordSearch.addEventListener('input', debounce(() => loadTrips(1), 300));
+
+        document.getElementById('trips-prev-page').addEventListener('click', () => {
+            if (currentPage <= 1) return;
+            loadTrips(currentPage - 1);
+        });
+
+        document.getElementById('trips-next-page').addEventListener('click', () => {
+            loadTrips(currentPage + 1);
+        });
     });
 
 </script>

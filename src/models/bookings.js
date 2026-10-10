@@ -67,7 +67,8 @@ export async function getPaginatedBookings({ filter = {}, page, limit, sort, ord
         bookings,
         total: totalBookings,
         page,
-        limit
+        limit,
+        filter
     };
 
 }

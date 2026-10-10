@@ -34,6 +34,12 @@ const initializeDatabase = async () => {
     for (const [collectionName, documents] of starterCollections) {
         const Model = starterModels[collectionName];
         await Model.deleteMany({});
+    }
+
+    const insertOrder = ["roles", "trains", "trips", "schedules", "stations", "ticket-classes"];
+    for (const collectionName of insertOrder) {
+        const documents = starterCollections.find(([name]) => name === collectionName)[1];
+        const Model = starterModels[collectionName];
         await Model.insertMany(documents);
     }
 
@@ -49,6 +55,7 @@ const initializeDatabase = async () => {
 
     await Booking.deleteMany({});
     await Booking.createIndexes();
+    await Train.createIndexes();
 };
 
 export { initializeDatabase, starterCollections };

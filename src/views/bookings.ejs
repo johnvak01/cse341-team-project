@@ -1,11 +1,15 @@
 <%- include('./partials/header') %>
 <section class="trains-hero">
-    <h1>Bookings</h1>
+    <h1><%= title %></h1>
+    <% if (isAdmin) { %>
+        <a href="/admin" class="admin-trips-back">&larr; Back to Admin Dashboard</a>
+    <% } %>
 </section>
 <section
     class="trains-catalog"
     id="bookings-admin"
     data-is-admin="<%= isAdmin %>"
+    data-bookings-scope="<%= bookingsScope %>"
     data-current-user-id="<%= currentUserId %>"
     data-current-user-email="<%= currentUserEmail %>"
 >
@@ -16,7 +20,7 @@
     </div>
 
         <div class="trains-grid" id="bookings-list"></div>
-        
+
         <div class="pagination-controls" id="pagination-controls">
             <button id="prev-page" class="btn-pagination" disabled>Previous</button>
             <span id="current-page">Page 1</span>
@@ -32,20 +36,33 @@
             </select>
         </div>
 
+        <div class="booking-filters" id="booking-filter-form">
+            <form class="booking-filters-form" method="get">
+                <label for="ticket-class">Ticket Class:</label>
+                <select id="ticket-class" name="ticketClass">
+                    <option value="">All Classes</option> 
+                </select>
+
+                <label for="start-date">Booking Start Date:</label>
+                <input type="date" id="start-date" name="startDate">
+
+                <label for="end-date">Booking End Date:</label>
+                <input type="date" id="end-date" name="endDate">
+
+                <button type="submit" class="btn-filter" id="btn-booking-filter">Filter</button>
+            </form>
+        </div>
         <template id="booking-card-template">
             <article class="train-card">
                 <header class="train-card-header">
                     <a class="booking-confirmation-link">
                         <h2 data-field="name"></h2>
-                        <span
-                            class="train-operator booking-email"
-                            data-field="email"
-                        ></span>
+                        <span class="train-operator booking-email" data-field="email"></span>
                     </a>
                 </header>
-    
+
                 <p class="train-description" data-field="ticket"></p>
-    
+
                 <dl class="train-specs">
                     <div class="spec-item">
                         <dt>Trip</dt>
@@ -72,7 +89,7 @@
                         <dd data-field="bookingDate"></dd>
                     </div>
                 </dl>
-    
+
                 <div class="booking-view-actions">
                     <button type="button" class="btn-edit-passengers">Edit</button>
                     <button type="button" class="btn-upgrade-booking">
@@ -81,11 +98,8 @@
                     <button type="button" class="btn-delete-booking">Delete</button>
                 </div>
                 <p class="booking-owner-message" hidden></p>
-    
-                <dialog
-                    class="booking-flow-dialog booking-passenger-dialog"
-                    aria-label="Edit passenger details"
-                >
+
+                <dialog class="booking-flow-dialog booking-passenger-dialog" aria-label="Edit passenger details">
                     <form class="booking-passengers-form">
                         <header class="booking-dialog-header">
                             <h2>Edit passenger details</h2>
@@ -103,11 +117,8 @@
                         </div>
                     </form>
                 </dialog>
-    
-                <dialog
-                    class="booking-flow-dialog booking-upgrade-dialog"
-                    aria-label="Upgrade booking"
-                >
+
+                <dialog class="booking-flow-dialog booking-upgrade-dialog" aria-label="Upgrade booking">
                     <form class="booking-upgrade-form">
                         <header class="booking-dialog-header">
                             <h2>Upgrade all seats</h2>
@@ -120,11 +131,7 @@
                             New ticket class
                             <select name="ticketClass" required></select>
                         </label>
-                        <p
-                            class="booking-upgrade-quote"
-                            aria-live="polite"
-                            hidden
-                        ></p>
+                        <p class="booking-upgrade-quote" aria-live="polite" hidden></p>
                         <div class="booking-dialog-actions">
                             <button type="button" class="btn-cancel-upgrade">
                                 Cancel
@@ -135,11 +142,8 @@
                         </div>
                     </form>
                 </dialog>
-    
-                <dialog
-                    class="booking-flow-dialog booking-delete-dialog"
-                    aria-label="Delete booking"
-                >
+
+                <dialog class="booking-flow-dialog booking-delete-dialog" aria-label="Delete booking">
                     <div class="booking-dialog-header">
                         <h2>Delete booking?</h2>
                         <p>
@@ -159,7 +163,7 @@
                 </dialog>
             </article>
         </template>
-        
-</section>
 
-<%- include('./partials/footer') %>
+    </section>
+
+    <%- include('./partials/footer') %>

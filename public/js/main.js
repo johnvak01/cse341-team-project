@@ -39,16 +39,21 @@ const hookTrainsCatalog = async () => {
     const templateEl = document.getElementById('train-card-template');
     const loadingEl = document.getElementById('trains-loading');
     const errorEl = document.getElementById('trains-error');
+    const emptyEl = document.getElementById('trains-empty');
     const paginationEl = document.getElementById('trains-pagination');
     const prevBtn = document.getElementById('trains-prev-page');
     const nextBtn = document.getElementById('trains-next-page');
     const pageIndicatorEl = document.getElementById('trains-page-indicator');
+    const searchInput = document.getElementById('trains-search');
+    const typeSelect = document.getElementById('trains-type-filter');
+    const powerSelect = document.getElementById('trains-power-filter');
 
     if (!listEl || !templateEl) {
         return;
     }
 
     let currentPage = 1;
+    let searchDebounceTimer = null;
     let activeRequest = null;
 
     const renderTrains = (trains) => {
@@ -62,6 +67,7 @@ const hookTrainsCatalog = async () => {
             imageEl.alt = train.imageAlt || `${train.name} train`;
 
             card.querySelector('[data-field="name"]').textContent = train.name;
+            card.querySelector('[data-field="name"]').href = `/trains/${encodeURIComponent(train.id)}`;
             card.querySelector('[data-field="operator"]').textContent = train.operator;
             card.querySelector('[data-field="type"]').textContent = train.type;
             card.querySelector('[data-field="speed"]').textContent = `${train.maxSpeedKmh} km/h`;
@@ -76,6 +82,64 @@ const hookTrainsCatalog = async () => {
         listEl.replaceChildren(fragment);
     };
 
+    const populateFilterOptions = async () => {
+        if (!typeSelect && !powerSelect) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/trains/filters', { cache: 'no-store' });
+            if (!response.ok) {
+                return;
+            }
+
+            const options = await response.json();
+
+            if (typeSelect) {
+                (options.types || []).forEach((type) => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeSelect.appendChild(option);
+                });
+            }
+
+            if (powerSelect) {
+                (options.powerSources || []).forEach((power) => {
+                    const option = document.createElement('option');
+                    option.value = power;
+                    option.textContent = power;
+                    powerSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            // Dropdowns just stay at "All" if this fails, loadTrains still works.
+        }
+    };
+
+    const buildQueryString = (page) => {
+        const params = new URLSearchParams();
+        params.set('page', page);
+        params.set('limit', 10);
+
+        const q = searchInput ? searchInput.value.trim() : '';
+        if (q) {
+            params.set('q', q);
+        }
+
+        const type = typeSelect ? typeSelect.value : '';
+        if (type) {
+            params.set('type', type);
+        }
+
+        const powerSource = powerSelect ? powerSelect.value : '';
+        if (powerSource) {
+            params.set('powerSource', powerSource);
+        }
+
+        return params.toString();
+    };
+
     const loadTrains = async (page) => {
         if (activeRequest) {
             activeRequest.abort();
@@ -84,7 +148,7 @@ const hookTrainsCatalog = async () => {
         const { signal } = activeRequest;
 
         try {
-            const response = await fetch(`/api/trains?page=${page}&limit=10`, { cache: 'no-store', signal });
+            const response = await fetch(`/api/trains?${buildQueryString(page)}`, { cache: 'no-store', signal });
             if (!response.ok) {
                 throw new Error(`Failed to load trains (${response.status})`);
             }
@@ -115,6 +179,9 @@ const hookTrainsCatalog = async () => {
             if (errorEl) {
                 errorEl.hidden = true;
             }
+            if (emptyEl) {
+                emptyEl.hidden = trains.length > 0;
+            }
         } catch (error) {
             if (error.name === 'AbortError') {
                 return;
@@ -130,6 +197,9 @@ const hookTrainsCatalog = async () => {
             if (errorEl) {
                 errorEl.hidden = false;
                 errorEl.textContent = 'Unable to load trains right now. Please try again in a moment.';
+            }
+            if (emptyEl) {
+                emptyEl.hidden = true;
             }
         }
     };
@@ -148,6 +218,22 @@ const hookTrainsCatalog = async () => {
         });
     }
 
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => loadTrains(1), 400);
+        });
+    }
+
+    if (typeSelect) {
+        typeSelect.addEventListener('change', () => loadTrains(1));
+    }
+
+    if (powerSelect) {
+        powerSelect.addEventListener('change', () => loadTrains(1));
+    }
+
+    await populateFilterOptions();
     loadTrains(currentPage);
 };
 
@@ -158,6 +244,8 @@ const hookBookingCatalog = async () => {
     const errorEl = document.getElementById("bookings-error");
     const emptyEl = document.getElementById("bookings-empty");
     const pageEl = document.getElementById("bookings-admin");
+    const scopeQuery =
+        pageEl?.dataset.bookingsScope === "mine" ? "&scope=mine" : "";
 
     if (!listEl || !templateEl) {
         return;
@@ -185,8 +273,11 @@ const hookBookingCatalog = async () => {
             const limit = urlParams.get('limit') || 10;
             const sort = urlParams.get('sort') || 'createdAt';
             const order = urlParams.get('order') || 'asc';
-            let filter = {};
-            let ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+            const startDate = urlParams.get('startDate') || '';
+            const endDate = urlParams.get('endDate') || '';
+            const ticketClass = urlParams.get('ticketClass') || '';
+            const filter = { startDate, endDate, ticketClass };
+            const ApiUrl = `/api/bookings_paginated?page=${page}&limit=${limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
 
             const [bookings, ticketClasses] = await Promise.all([
                 requestJson(ApiUrl),
@@ -375,7 +466,7 @@ const hookBookingCatalog = async () => {
                 paginationControls.innerHTML = '';
                 for (let i = 1; i <= totalPages; i++) {
                     const pageLink = document.createElement('a');
-                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}`;
+                    pageLink.href = `?page=${i}&limit=${bookings.limit}&sort=${sort}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
                     pageLink.textContent = i;
                     if (i === parseInt(page)) {
                         pageLink.style.fontWeight = 'bold';
@@ -404,7 +495,7 @@ const hookBookingCatalog = async () => {
 
                 // Check if the user selected a valid URL option (not the placeholder)
                 if (target) {
-                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}`;
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${target}&order=${order}&startDate=${startDate}&endDate=${endDate}&ticketClass=${ticketClass}${scopeQuery}`;
                 }
             });
             const sortOrder = document.getElementById('sort-order');
@@ -427,9 +518,40 @@ const hookBookingCatalog = async () => {
 
                 // Check if the user selected a valid URL option (not the placeholder)
                 if (target) {
-                    window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}`;
+                    window.location.href = `?page=${page}&limit=${limit}&sort=${sort}&order=${target}${scopeQuery}`;
                 }
             });
+            // add date range and ticket class filters controls based on response
+
+            const bookingFilterForm = document.getElementById("ticket-class");
+            if (bookingFilterForm) {
+                try {
+                    const ticketClassesUrl = "/api/ticket-classes";
+                    const response = await fetch(ticketClassesUrl, { cache: 'no-store' });
+
+                    // Check if the response status is 200-299
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    // Parse the response body as JSON
+                    const data = await response.json();
+                    console.log(data);
+                    for (const item of data) {
+                        const option = document.createElement('option');
+                        option.value = item.class;
+                        option.textContent = item.name;
+                        if (item.class === ticketClass) {
+                            option.selected = true;
+                        }
+                        bookingFilterForm.appendChild(option);
+                    }
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                }
+            }
+
+
         } catch (error) {
             if (errorEl) {
                 errorEl.hidden = false;

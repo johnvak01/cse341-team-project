@@ -2,6 +2,7 @@ const regionFilter = document.getElementById('region-filter');
 const seasonFilter = document.getElementById('season-filter');
 const normalizeFilterValue = (value) => String(value || '').trim().toLowerCase();
 
+/*
 const populateFilterOptions = (select, values, label) => {
     const defaultOption = document.createElement('option');
     defaultOption.value = 'all';
@@ -15,6 +16,7 @@ const populateFilterOptions = (select, values, label) => {
         select.appendChild(option);
     });
 };
+*/
 
 const renderTrips = (trips) => {
     const tripsList = document.getElementById('trips-list');
@@ -53,6 +55,7 @@ const renderTrips = (trips) => {
     tripsList.replaceChildren(fragment);
 };
 
+/*
 const applyFilters = () => {
     const cards = document.querySelectorAll('#trips-list .route-card');
     const selectedRegion = normalizeFilterValue(regionFilter.value);
@@ -78,14 +81,23 @@ const applyFilters = () => {
     }
 };
 
-const loadTrips = async () => {
+*/
+
+const loadTrips = async (page = 1) => {
     const tripsList = document.getElementById('trips-list');
+
     try {
-        const response = await fetch('/api/trips');
+        const params = new URLSearchParams({
+            page,
+            region: regionFilter.value,
+            season: seasonFilter.value
+        });
+        const response = await fetch(`/api/trips?${params}`);
         if (!response.ok) throw new Error(`Trip request failed (${response.status})`);
 
+        /*
         const payload = await response.json();
-        const trips = Array.isArray(payload) ? payload : payload.trips || [];
+        const trips = Array.isArray(payload) ? payload : payload.data || payload.trips || [];
         populateFilterOptions(regionFilter, trips.map((trip) => trip.region), 'All Regions');
         populateFilterOptions(seasonFilter, trips.map((trip) => trip.bestSeason), 'Any Season');
         renderTrips(trips);
@@ -107,8 +119,85 @@ const loadTrips = async () => {
         errorMessage.textContent = 'Failed to render trips.';
         tripsList.replaceChildren(errorMessage);
     }
+
+    */
+
+        const { data, pagination } = await response.json();
+
+        if (data.length === 0) {
+            const empty = document.createElement('p');
+            empty.textContent = 'No trips found';
+            tripsList.replaceChildren(empty);
+        }else {
+            renderTrips(data);
+        }
+
+        renderPagination(pagination);
+
+    }catch (error) {
+        console.error('Unable to load trips:', error);
+        const errorMessage = document.createElement('p');
+        errorMessage.className = 'error';
+        errorMessage.textContent = 'Failed to render trips.';
+        tripsList.replaceChildren(errorMessage);
+        document.getElementById('pagination').replaceChildren();
+    }
 };
 
+// Builds [1, '...', 4, 5, 6, '...', 20]
+const getPageItems = (current, total) => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+    const pages = [...new Set([1, total, current - 1, current, current + 1])]
+        .filter((p) => p >= 1 && p <= total)
+        .sort((a, b) => a - b);
+
+    const items = [];
+    pages.forEach((p, i) => {
+        if (i > 0 && p - pages[i - 1] > 1) items.push('...');
+        items.push(p);
+    });
+    return items;
+};
+
+const renderPagination = ({ page, totalPages, hasPreviousPage, hasNextPage }) => {
+    const nav = document.getElementById('pagination');
+    nav.replaceChildren();
+    if (totalPages <= 1) return;
+
+    const addButton = (label, targetPage, disabled = false, isCurrent = false) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = label;
+        btn.disabled = disabled;
+        if (isCurrent) btn.setAttribute('aria-current', 'page');
+        btn.addEventListener('click', async () => {
+            await loadTrips(targetPage);
+            document.getElementById('trips-list').scrollIntoView({ behavior: 'smooth' });
+        });
+        nav.appendChild(btn);
+    };
+
+    addButton('Previous', page - 1, !hasPreviousPage);
+    getPageItems(page, totalPages).forEach((item) => {
+        if (item === '...') {
+            const gap = document.createElement('span');
+            gap.textContent = '…';
+            nav.appendChild(gap);
+        } else {
+            addButton(String(item), item, item === page, item === page);
+        }
+    });
+    addButton('Next', page + 1, !hasNextPage);
+};
+
+/*
 regionFilter.addEventListener('change', applyFilters);
 seasonFilter.addEventListener('change', applyFilters);
+*/
+
+// Filters are applied by the API, so changing one returns to page 1.
+regionFilter.addEventListener('change', () => loadTrips(1));
+seasonFilter.addEventListener('change', () => loadTrips(1));
+
 loadTrips();
