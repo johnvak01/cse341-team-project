@@ -55,8 +55,8 @@ describe("personal and admin bookings views", () => {
         const { agent, user } = await loginAs("admin", "personal-bookings");
         const otherUserId = await createUser(
             "Other User",
-            "other-user",
-            "other@example.com",
+            "other-user-personal-bookings",
+            "other-personal-bookings@example.com",
             password
         );
         await createBooking({
