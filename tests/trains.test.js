@@ -304,4 +304,24 @@ describe('GET /api/trains (all trains)', () => {
     expect(response.status).toBe(200);
     expect(ids).toEqual(expect.arrayContaining(['series-e353', 'kiha-261', 'series-287', 'steam-c11']));
   });
+
+  test('returns the expected fields for each train', async () => {
+    const response = await request(app).get('/api/trains?limit=50');
+
+    expect(response.status).toBe(200);
+    response.body.data.forEach((train) => {
+      expect(train).toEqual(expect.objectContaining({
+        id: expect.any(String),
+        name: expect.any(String),
+        operator: expect.any(String),
+        type: expect.any(String),
+        maxSpeedKmh: expect.any(Number),
+        capacity: expect.any(Number),
+        powerSource: expect.any(String)
+      }));
+    });
+
+    const kiha = response.body.data.find((train) => train.id === 'kiha-261');
+    expect(kiha).toMatchObject({ name: 'KiHa 261 North Scenic', operator: 'JR Hokkaido', powerSource: 'Diesel' });
+  });
 });
