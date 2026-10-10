@@ -70,3 +70,80 @@ describe("GET /api/trips/:id station relationships", () => {
         expect(response.body).not.toHaveProperty("endStation");
     });
 });
+
+/* Tests for the relationship between schedules and trips */
+describe("GET /api/trips/:tripId/schedules schedule relationships", () => {
+    // 1. Test that a known schedule references its expected trip
+    test("returns the trip referenced by a known schedule", async () => {
+        // Arrange
+        const scheduleId = 1;
+
+        // Act
+        const scheduleResponse = await request(app).get(
+            `/api/schedules/${scheduleId}`
+        );
+        const tripResponse = await request(app).get(
+            `/api/trips/${scheduleResponse.body.tripId}`
+        );
+
+        // Assert
+        expect(scheduleResponse.status).toBe(200);
+        expect(scheduleResponse.body.tripId).toBe("alpine-panorama");
+        expect(tripResponse.status).toBe(200);
+        expect(tripResponse.body).toMatchObject({
+            id: "alpine-panorama",
+            name: "Alpine Panorama Express",
+        });
+    });
+
+    // 2. Test that a trip's schedules contain only schedules connected to it
+    test("returns only schedules connected to the selected trip", async () => {
+        // Arrange
+        const tripId = "alpine-panorama";
+
+        // Act
+        const response = await request(app).get(
+            `/api/trips/${tripId}/schedules`
+        );
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.headers["content-type"]).toContain("application/json");
+        expect(response.body).toBeInstanceOf(Array);
+        expect(response.body.map((schedule) => schedule.id)).toEqual([1, 2]);
+        expect(
+            response.body.every((schedule) => schedule.tripId === tripId)
+        ).toBe(true);
+    });
+
+    // 3. Test that an unknown trip returns a not-found response
+    test("returns 404 when the selected trip does not exist", async () => {
+        // Arrange
+        const tripId = "not-a-real-trip";
+
+        // Act
+        const response = await request(app).get(
+            `/api/trips/${tripId}/schedules`
+        );
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.body.error).toContain("not found");
+        expect(response.body).not.toBeInstanceOf(Array);
+    });
+
+    // 4. Test that the trip schedule endpoint rejects an invalid month
+    test("returns 400 when the requested month is invalid", async () => {
+        // Arrange
+        const tripId = "alpine-panorama";
+
+        // Act
+        const response = await request(app).get(
+            `/api/trips/${tripId}/schedules?month=13`
+        );
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(response.body.error).toContain("month");
+    });
+});
