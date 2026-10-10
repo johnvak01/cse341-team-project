@@ -1,11 +1,117 @@
 .users-admin {
-    width: min(100% - 2rem, 72rem);
-    margin: 0 auto 3rem;
+    width: 100%;
+    margin: 0 0 3rem;
+}
+
+.users-controls {
+    display: grid;
+    grid-template-columns: minmax(14rem, 2fr) repeat(3, minmax(8rem, 1fr)) auto;
+    align-items: end;
+    gap: 0.75rem;
+    padding: 0.75rem 0 1rem;
+    border-bottom: 1px solid #c8d4ce;
+}
+
+.users-controls label {
+    display: grid;
+    min-width: 0;
+    gap: 0.35rem;
+    color: #1d2924;
+    font-weight: 600;
+}
+
+.users-controls input,
+.users-controls select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #9aaca3;
+    border-radius: 3px;
+    background: #fff;
+    color: #1d2924;
+    font: inherit;
+}
+
+.users-control-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.users-control-actions button,
+.users-pagination button {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid #295d49;
+    border-radius: 3px;
+    background: #295d49;
+    color: #fff;
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.users-control-actions button[type="button"] {
+    border-color: #9aaca3;
+    background: #fff;
+    color: #29352f;
+}
+
+.users-results-count {
+    margin: 0.75rem 0;
+    color: #45574e;
+}
+
+.users-pagination,
+.users-page-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.users-pagination {
+    margin-top: 1rem;
+}
+
+.users-pagination[hidden] {
+    display: none;
+}
+
+.users-page-links button {
+    min-width: 2.75rem;
+    padding-inline: 0.55rem;
+    background: #fff;
+    color: #295d49;
+}
+
+.users-page-links button[aria-current="page"] {
+    background: #295d49;
+    color: #fff;
+    font-weight: 700;
+}
+
+.users-pagination button:disabled {
+    border-color: #9aaca3;
+    background: #edf1ee;
+    color: #6b756f;
+    cursor: not-allowed;
+}
+
+.users-page-ellipsis {
+    padding-inline: 0.25rem;
+    color: #45574e;
 }
 
 .users-list {
     display: grid;
     gap: 0.75rem;
+}
+
+.users-admin[data-is-admin-list="false"] .users-list {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
 }
 
 .user-card {
@@ -19,6 +125,11 @@
     border-radius: 4px;
     background: #fff;
     box-shadow: 0 2px 7px rgb(29 41 36 / 7%);
+}
+
+.users-admin[data-is-admin-list="false"] .user-card {
+    box-sizing: border-box;
+    width: min(100%, 72rem);
 }
 
 .user-details h2,
@@ -133,7 +244,22 @@
     color: #8e3029;
 }
 
+@media (min-width: 768px) {
+    .users-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 760px) {
+    .users-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .users-search-control,
+    .users-control-actions {
+        grid-column: 1 / -1;
+    }
+
     .user-edit-form {
         grid-template-columns: 1fr;
         align-items: start;
@@ -146,5 +272,11 @@
     .user-actions {
         grid-column: 1;
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .users-controls {
+        grid-template-columns: 1fr;
     }
 }

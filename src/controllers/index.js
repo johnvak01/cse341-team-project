@@ -25,7 +25,10 @@ const loginPage = (req, res) => {
 };
 
 const registerPage = (req, res) => {
-    res.render("register", { title: "Register" });
+    res.render("register", {
+        title: "Register",
+        isAdmin: res.locals.isAdmin,
+    });
 };
 
 const adminDashboardPage = (req, res) => {
@@ -39,6 +42,7 @@ const adminUsersPage = (req, res) => {
         title: isAdmin ? "Admin Users" : "Your Account",
         usersEndpoint: isAdmin ? "/api/users" : `/api/users/${req.user._id}`,
         isAdmin,
+        isAdminList: isAdmin,
     });
 };
 

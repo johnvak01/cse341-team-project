@@ -24,9 +24,37 @@ const initializeDatabase = async (db) => {
     await collection.insertMany(documents);
   }
 
+  const userCollection = db.collection('users');
+  const hasUsersCollection = await db
+    .listCollections({ name: 'users' }, { nameOnly: true })
+    .hasNext();
+  if (hasUsersCollection) {
+    const textIndex = (await userCollection.indexes()).find((index) => index.weights);
+    const existingFields = Object.keys(textIndex?.weights ?? {}).sort();
+    const searchableFields = ['email', 'name', 'username'];
+    if (textIndex && existingFields.join(',') !== searchableFields.join(',')) {
+      await userCollection.dropIndex(textIndex.name);
+    }
+  }
+
+  await userCollection.createIndex({
+    name: 'text',
+    username: 'text',
+    email: 'text'
+  });
+
   const bookings = db.collection('bookings');
   await bookings.deleteMany({});
   await bookings.createIndex({ id: 1 }, { unique: true });
+
+  const trains = db.collection('trains');
+  await trains.createIndex({
+    name: 'text',
+    operator: 'text',
+    description: 'text',
+    bestFor: 'text'
+  });
 };
 
 export { initializeDatabase, starterCollections };
+
