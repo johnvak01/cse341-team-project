@@ -32,7 +32,7 @@ const registerPage = (req, res) => {
 };
 
 const adminDashboardPage = (req, res) => {
-    console.log("Rendering admin dashboard for user:", req.user);
+    // console.log("Rendering admin dashboard for user:", req.user);
     res.render("admin", { title: "Admin Dashboard" });
 };
 

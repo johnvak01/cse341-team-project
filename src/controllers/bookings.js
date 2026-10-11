@@ -493,7 +493,7 @@ const getPaginatedBookings = async (req, res) => {
     const sort = req.query.sort || 'createdAt';
     const order = req.query.order || 'asc';
 
-    console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
+    // console.log(`Fetching bookings with pagination: page=${page}, limit=${limit}, sort=${sort}, order=${order}`);
 
     const filter = {};
     const isAdmin = req.user?.role?.name === "admin";
@@ -545,7 +545,7 @@ const getPaginatedBookings = async (req, res) => {
         });
     }
     if (startDate != '') {
-        console.log("valid start date provided, checking if it's a valid date...");
+        // console.log("valid start date provided, checking if it's a valid date...");
         const start = new Date(`${startDate}T23:59:59.999Z`);
         if (isNaN(start.getTime())) {
             return res.status(400).json({
@@ -556,7 +556,7 @@ const getPaginatedBookings = async (req, res) => {
         filter.createdAt.$gte = start;
     }
     if (endDate != '') {
-        console.log("valid end date provided, checking if it's a valid date...");
+        // console.log("valid end date provided, checking if it's a valid date...");
         const end = new Date(`${endDate}T23:59:59.999Z`);
         if (isNaN(end.getTime())) {
             return res.status(400).json({
@@ -569,7 +569,7 @@ const getPaginatedBookings = async (req, res) => {
     
 
 
-    console.log(`Filter applied: ${JSON.stringify(filter)}`);
+    // console.log(`Filter applied: ${JSON.stringify(filter)}`);
 
     try {
         const bookingsData = await findPaginatedBookings({
