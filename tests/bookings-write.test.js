@@ -37,7 +37,9 @@ const seededSchedules = [
         departureTime: "14:30",
         arrivalTime: "19:30",
         daysOfWeek: [
-            "monday"
+            "monday",
+            "tuesday",
+            "wednesday"
         ],
         status: true
     },
@@ -187,7 +189,7 @@ describe("test POST /api/bookings", () => {
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty("message", "Booking created successfully");
     })
-    
+
     test("Test Un-Authenticated Access POST", async () => {
         //arrange
         const newBooking = {
@@ -210,7 +212,7 @@ describe("test POST /api/bookings", () => {
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty("message", "Authentication required");
     });
-    
+
     test("Test Invalid Details POST", async () => {
         //arrange
         const adminLogin = await loginAs("admin", "post-bookings-invalid");
@@ -260,6 +262,69 @@ describe("test POST /api/bookings", () => {
         expect(response.body).toHaveProperty("error", "Schedule not found");
     });
 });
+
+describe("test PUT /api/bookings/{id}", () => {
+    test("Test Successful PUT", async () => {
+        //arrange
+        const adminLogin = await loginAs("admin", "put-bookings");
+        const bookingToUpdate = seededBookings[0];
+        let newPassengers = bookingToUpdate.passengers
+        newPassengers[0].firstName = "UpdatedPassengerFName12";
+        //act
+        const response = await adminLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
+        //assert
+        console.log("Response body:", response.body); // Log the response body for debugging
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty("id", bookingToUpdate.id);
+        expect(response.body.passengers[0]).toHaveProperty("firstName", "UpdatedPassengerFName12");
+    });
+    test("Test Invalid Booking PUT", async () => {
+        const adminLogin = await loginAs("admin", "put-bookings-invalid");
+        const bookingToUpdate = seededBookings[0];
+        let newday = "friday"; //invalid day
+        //act
+        const response = await adminLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "selectedDay": newday });
+        //assert
+        expect(response.status).toBe(400);
+        expect(response.body).toHaveProperty("error", "Only ticket upgrades are supported");
+    });
+    test("Test Un-Authenticated Access PUT", async () => {
+        //arrange
+        const adminLogin = await loginAs("admin", "put-bookings-unauthenticated");
+        const bookingToUpdate = seededBookings[0];
+        let newPassengers = bookingToUpdate.passengers
+        newPassengers[0].firstName = "UpdatedPassengerFName12";
+        //act
+        const response = await request(app).put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
+        //assert
+        expect(response.status).toBe(401);
+        expect(response.body).toHaveProperty("message", "Authentication required");
+    });
+
+    test("Test Un-Authorized Access PUT", async () => {
+        //arrange
+        const standardLogin = await loginAs("customer", "put-bookings-unauthorized");
+        const bookingToUpdate = seededBookings[0];
+        let newPassengers = bookingToUpdate.passengers
+        newPassengers[0].firstName = "UpdatedPassengerFName12";
+        //act
+        const response = await standardLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
+        //assert 
+        expect(response.status).toBe(403);
+        expect(response.body).toHaveProperty("message", "Forbidden");
+    });
+
+    test("Test Invalid Booking ID PUT", async () => {
+        const adminLogin = await loginAs("admin", "put-bookings-invalid-id");
+        const invalidBookingId = -1; //invalid bookingId
+        //act
+        const response = await adminLogin.agent.put(`/api/bookings/${invalidBookingId}`).send({ "selectedDay": "monday" });
+        //assert
+        expect(response.status).toBe(404);
+        expect(response.body).toHaveProperty("error", "Booking not found");
+    });
+});
+
 
 describe("test DELETE /api/bookings/{id}", () => {
     test("Test Successful DELETE", async () => {
