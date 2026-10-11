@@ -163,12 +163,22 @@ afterEach(async () => {
 describe("test GET /api/bookings", () => {
     test("Test Authenticated Standard Access", async () => {
         //arrange
-        const adminLogin = await loginAs("customer", "get-bookings");
+        const standardLogin = await loginAs("customer", "get-bookings");
         //act
-        const response = await adminLogin.agent.get("/api/bookings");
+        const response = await standardLogin.agent.get("/api/bookings");
         //assert
         expect(response.status).toBe(200);
-        expect(response.body).toBeInstanceOf(Array);
+        for (const matchingBooking of response.body) {
+            const seededBooking = seededBookings.find(b => b.id === matchingBooking.id);
+            expect(matchingBooking.id).toMatchObject(seededBooking.id);
+            expect(matchingBooking.scheduleId).toMatchObject(seededBooking.scheduleId);
+            expect(matchingBooking.tripId).toMatchObject(seededBooking.tripId);
+            expect(matchingBooking.ticketClass).toMatchObject(seededBooking.ticketClass);
+            expect(matchingBooking.selectedDay).toMatchObject(seededBooking.selectedDay);
+            expect(matchingBooking.passengers).toMatchObject(seededBooking.passengers);
+        }
+        expect(response.body.length).toBe(1); // Standard user should only see their own booking
+        expect(response.body[0].passengers.some(p => p.email === standardLogin.email)).toBe(true); // Ensure the booking belongs to the logged-in user
     });
     test("Test Authenticated Admin Access", async () => {
         //arrange
@@ -177,7 +187,15 @@ describe("test GET /api/bookings", () => {
         const response = await adminLogin.agent.get("/api/bookings");
         //assert
         expect(response.status).toBe(200);
-        expect(response.body).toBeInstanceOf(Array);
+        for (const seededBooking of seededBookings) {
+            const matchingBooking = response.body.find(b => b.id === seededBooking.id);
+            expect(matchingBooking.id).toMatchObject(seededBooking.id);
+            expect(matchingBooking.scheduleId).toMatchObject(seededBooking.scheduleId);
+            expect(matchingBooking.tripId).toMatchObject(seededBooking.tripId);
+            expect(matchingBooking.ticketClass).toMatchObject(seededBooking.ticketClass);
+            expect(matchingBooking.selectedDay).toMatchObject(seededBooking.selectedDay);
+            expect(matchingBooking.passengers).toMatchObject(seededBooking.passengers);
+        }
     });
     test("test Un-Authenticated Access", async () => {
         //arrange
@@ -200,7 +218,7 @@ describe("test GET /api/bookings/{id}", () => {
             const response = await adminLogin.agent.get(`/api/bookings/${booking.id}`);
             //assert
             expect(response.status).toBe(200);
-            expect(response.body).toMatch(seededBookings.find(b => b.id === booking.id));
+            expect(response.body).toMatchObject(seededBookings.find(b => b.id === booking.id));
         }
     });
 
