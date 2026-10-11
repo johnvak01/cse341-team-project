@@ -166,12 +166,9 @@ describe("test GET /api/bookings", () => {
         const standardLogin = await loginAs("customer", "get-bookings");
         //act
         const response = await standardLogin.agent.get("/api/bookings");
-        console.log("Response body:", response.body);
         //assert
         expect(response.status).toBe(200);
         expect(response.body.length).toBe(0); // Standard user should see no bookings but not be rejected
-
-
     });
     test("Test Authenticated Admin Access", async () => {
         //arrange
@@ -239,13 +236,9 @@ describe("test GET /api/bookings/{id}", () => {
         }
         const setupResponse = await standardLogin.agent.post("/api/bookings").send(testBooking); // Create a booking for the standard user
 
-        console.log("Setup response for creating booking:", setupResponse.body);
-        console.log("testbooking id:", testBooking.id);
-        console.log("setupresponnse body id:", setupResponse.body.bookingId);
         //act
         const response = await standardLogin.agent.get(`/api/bookings/${setupResponse.body.bookingId}`);
 
-        console.log("Response body for standard user:", response.body);
         //assert
         expect(response.status).toBe(200);
 
@@ -262,7 +255,6 @@ describe("test GET /api/bookings/{id}", () => {
         //arrange
         const testBookingId = seededBookings[0].id;
         //act
-        // console.log("Testing Un-Authenticated Access for booking ID:", testBookingId);
         const response = await request(app).get(`/api/bookings/${testBookingId}`);
         //assert
         expect(response.status).toBe(401);
