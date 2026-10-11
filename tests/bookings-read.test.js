@@ -200,7 +200,7 @@ describe("test GET /api/bookings/{id}", () => {
             const response = await adminLogin.agent.get(`/api/bookings/${booking.id}`);
             //assert
             expect(response.status).toBe(200);
-            expect(response.body).toHaveProperty("id", booking.id.toString());
+            expect(response.body).toMatch(seededBookings.find(b => b.id === booking.id));
         }
     });
 
@@ -212,7 +212,7 @@ describe("test GET /api/bookings/{id}", () => {
         const response = await standardLogin.agent.get(`/api/bookings/${testBookingId}`);
         //assert
         expect(response.status).toBe(200);
-        // expect(response.body).toBeInstanceOf(Array);
+        expect(response.body).toMatchObject(seededBookings.find(b => b.id === testBookingId));
 
     });
 
