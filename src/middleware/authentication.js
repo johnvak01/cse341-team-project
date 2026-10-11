@@ -126,8 +126,8 @@ export const requirePageRole = (role) => async (req, res, next) => {
         return res.redirect("/login");
     }
 
-    console.log("Checking role for user:", req.user);
-    console.log("Required role:", role);
+    // console.log("Checking role for user:", req.user);
+    // console.log("Required role:", role);
     if (!hasRole(req.user, role)) {
         return res.status(403).render("errors/403", {
             title: "Forbidden",

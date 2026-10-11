@@ -4,7 +4,7 @@ import { initializeDatabase } from './initialize.js';
 try {
   const db = await connectToDb();
   await initializeDatabase(db);
-  console.log('MongoDB import complete.');
+  // console.log('MongoDB import complete.');
 } finally {
   await closeDb();
 }
