@@ -185,9 +185,11 @@ describe("test POST /api/bookings", () => {
         };
         //act
         const response = await adminLogin.agent.post("/api/bookings").send(newBooking);
+        const createdBooking = await Booking.findOne({ tripId: newBooking.tripId, scheduleId: newBooking.scheduleId });
         //assert
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty("message", "Booking created successfully");
+        expect(createdBooking).not.toBeNull();
     })
 
     test("Test Un-Authenticated Access POST", async () => {
@@ -272,11 +274,14 @@ describe("test PUT /api/bookings/{id}", () => {
         newPassengers[0].firstName = "UpdatedPassengerFName12";
         //act
         const response = await adminLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
+        console.log("booking ID to update:", bookingToUpdate.id);
+        const updatedBooking = await Booking.findOne({ id: bookingToUpdate.id });
         //assert
-        console.log("Response body:", response.body); // Log the response body for debugging
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("id", bookingToUpdate.id);
         expect(response.body.passengers[0]).toHaveProperty("firstName", "UpdatedPassengerFName12");
+        expect(updatedBooking.passengers[0].firstName).toBe("UpdatedPassengerFName12");
+
     });
     test("Test Invalid Booking PUT", async () => {
         const adminLogin = await loginAs("admin", "put-bookings-invalid");
@@ -333,9 +338,11 @@ describe("test DELETE /api/bookings/{id}", () => {
         const bookingToDelete = seededBookings[0];
         //act
         const response = await adminLogin.agent.delete(`/api/bookings/${bookingToDelete.id}`);
+        const deletedBooking = await Booking.findOne({ id: bookingToDelete.id });
         //assert
         expect(response.status).toBe(200);
         expect(response.body).toHaveProperty("message", "Booking deleted");
+        expect(deletedBooking).toBeNull();
     });
     test("Test Un-Authenticated Access DELETE", async () => {
         //arrange
