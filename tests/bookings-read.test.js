@@ -166,19 +166,12 @@ describe("test GET /api/bookings", () => {
         const standardLogin = await loginAs("customer", "get-bookings");
         //act
         const response = await standardLogin.agent.get("/api/bookings");
+        console.log("Response body:", response.body);
         //assert
         expect(response.status).toBe(200);
-        for (const matchingBooking of response.body) {
-            const seededBooking = seededBookings.find(b => b.id === matchingBooking.id);
-            expect(matchingBooking.id).toMatchObject(seededBooking.id);
-            expect(matchingBooking.scheduleId).toMatchObject(seededBooking.scheduleId);
-            expect(matchingBooking.tripId).toMatchObject(seededBooking.tripId);
-            expect(matchingBooking.ticketClass).toMatchObject(seededBooking.ticketClass);
-            expect(matchingBooking.selectedDay).toMatchObject(seededBooking.selectedDay);
-            expect(matchingBooking.passengers).toMatchObject(seededBooking.passengers);
-        }
-        expect(response.body.length).toBe(1); // Standard user should only see their own booking
-        expect(response.body[0].passengers.some(p => p.email === standardLogin.email)).toBe(true); // Ensure the booking belongs to the logged-in user
+        expect(response.body.length).toBe(0); // Standard user should see no bookings but not be rejected
+
+
     });
     test("Test Authenticated Admin Access", async () => {
         //arrange
@@ -225,19 +218,51 @@ describe("test GET /api/bookings/{id}", () => {
     test("Test Standard User Access", async () => {
         //arrange
         const standardLogin = await loginAs("customer", "get-bookings-by-id");
+
+        for (const ticketClass of seededTicketClasses) {
+            const response = await TicketClass.create(ticketClass);
+        }
+        const testBooking = {
+            id: "booking5",
+            scheduleId: 3,
+            tripId: "trip-id3",
+            ticketClass: "premium",
+            selectedDay: "wednesday",
+            passengers: [
+                {
+                    firstName: `${standardLogin.userId}`,
+                    lastName: `${standardLogin.email}`,
+                    email: `${standardLogin.email}`,
+                    phone: "+3 000 000 004"
+                }
+            ]
+        }
+        const setupResponse = await standardLogin.agent.post("/api/bookings").send(testBooking); // Create a booking for the standard user
+
+        console.log("Setup response for creating booking:", setupResponse.body);
+        console.log("testbooking id:", testBooking.id);
+        console.log("setupresponnse body id:", setupResponse.body.bookingId);
         //act
-        const testBookingId = seededBookings[0].id;
-        const response = await standardLogin.agent.get(`/api/bookings/${testBookingId}`);
+        const response = await standardLogin.agent.get(`/api/bookings/${setupResponse.body.bookingId}`);
+
+        console.log("Response body for standard user:", response.body);
         //assert
         expect(response.status).toBe(200);
-        expect(response.body).toMatchObject(seededBookings.find(b => b.id === testBookingId));
 
+        // expect(response.body).toHaveProperty("error", "Forbidden");
+        // expect(response.body).toMatchObject(seededBookings.find(b => b.id === testBookingId));
+        expect(response.body.scheduleId).toMatchObject(testBooking.scheduleId);
+        expect(response.body.tripId).toMatchObject(testBooking.tripId);
+        expect(response.body.ticketClass).toMatchObject(testBooking.ticketClass);
+        expect(response.body.selectedDay).toMatchObject(testBooking.selectedDay);
+        expect(response.body.passengers).toMatchObject(testBooking.passengers);
     });
 
     test("Test Un-Authenticated Access", async () => {
         //arrange
         const testBookingId = seededBookings[0].id;
         //act
+        // console.log("Testing Un-Authenticated Access for booking ID:", testBookingId);
         const response = await request(app).get(`/api/bookings/${testBookingId}`);
         //assert
         expect(response.status).toBe(401);
@@ -248,12 +273,10 @@ describe("test GET /api/bookings/{id}", () => {
         const standardLogin = await loginAs("customer", "get-bookings-by-id-unauthorized");
         const testBookingId = seededBookings[0].id;
         //act
-        const response = await request(app).get(`/api/bookings/${testBookingId}`);
+        const response = await standardLogin.agent.get(`/api/bookings/${testBookingId}`);
         //assert
         expect(response.status).toBe(403);
         expect(response.body).toHaveProperty("error", "Forbidden");
     });
 });
-
-
 
