@@ -10,8 +10,6 @@ import  TicketClass  from '../src/models/schemas/ticket-classes.js';
 import e from 'express';
 
 const password = 'Password123!';
-const seededRoles = [];
-const seededUsers = [];
 const seededTicketClasses = [
     {
         class: "premium",
@@ -128,35 +126,8 @@ const loginAs = async (role, suffix) => {
     return { agent, userId, email };
 };
 
-const loginAsStandard = async () => {
-    const email = 'bookings-standard@example.com';
-    const password = 'Password123!';
-    const userId = await createUser('Bookings Standard', 'bookings-standard', email, password);
-
-    const agent = request.agent(app);
-    const response = await agent.post('/api/auth/login').send({ identifier: email, password });
-
-    return agent;
-};
-
-const loginAsAdmin = async () => {
-    const email = 'bookings-admin@example.com';
-    const password = 'Password123!';
-    const userId = await createUser('Bookings Admin', 'bookings-admin', email, password);
-    const adminRole = await Role.findOne({ name: 'admin' });
-    await User.updateOne({ _id: userId }, { role: adminRole._id });
-
-    const agent = request.agent(app);
-    const response = await agent.post('/api/auth/login').send({ identifier: email, password });
-
-    return agent;
-};
-
 // setup --------------------------------
 beforeEach(async () => {
-    // unsure roles exist
-    let adminLogin = await loginAs("admin", "setup");
-
     for (const ticketClass of seededTicketClasses) {
         const response = await TicketClass.create(ticketClass);
     }
@@ -169,18 +140,16 @@ beforeEach(async () => {
     for (const booking of seededBookings) {
         const response = await Booking.create(booking);
     }
-
 });
 
 afterEach(async () => {
     // Clean up seeded data
     await Booking.deleteMany({});
     await Schedule.deleteMany({});
+    await TicketClass.deleteMany({});
 });
 
 // tests --------------------------------
-
-
 
 describe("test GET /api/bookings", () => {
     test("Test Authenticated Access", async () => {
@@ -191,9 +160,6 @@ describe("test GET /api/bookings", () => {
         //assert
         expect(response.status).toBe(200);
         expect(response.body).toBeInstanceOf(Array);
-        console.log("Bookings:", response.body);
-
-
     });
     test("test unauthenticated access", async () => {
         //arrange
@@ -243,7 +209,7 @@ describe("test GET /api/bookings/{id}", () => {
 
     });
 
-    test("test unauthenticated access", async () => {
+    test("Test Un-Authenticated Access", async () => {
         //arrange
 
         //act
@@ -252,7 +218,7 @@ describe("test GET /api/bookings/{id}", () => {
         expect(response.status).toBe(401);
         expect(response.body).toHaveProperty("message", "Authentication required");
     });
-    test("test unauthorized access", async () => {
+    test("Test Un-Authorized Access", async () => {
         //arrange
 
         //act
