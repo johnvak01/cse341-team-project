@@ -62,13 +62,15 @@ export async function getPaginatedBookings({ filter = {}, page, limit, sort, ord
         .skip(skip)
         .limit(limit);
     const totalBookings = await Booking.countDocuments(filter);
+    const totalPages = Math.ceil(totalBookings / limit);
 
     return {
         bookings,
         total: totalBookings,
         page,
         limit,
-        filter
+        filter,
+        totalPages
     };
 
 }
