@@ -467,9 +467,9 @@ describe("test GET /api/bookings_paginated, standard responses", () => {
 
     test("should return paginated bookings with endDate filtering", async () => {
         // Arrange
-        let yesterday = new Date()
+        const yesterday = new Date()
         yesterday.setDate(yesterday.getDate() - 1)
-        let yesterdayString = new Date(yesterday).toISOString().split('T')[0];
+        const yesterdayString = new Date(yesterday).toISOString().split('T')[0];
 
         const adminLogin = await loginAs('admin', 'pagination-filter-endDate');
 

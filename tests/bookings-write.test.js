@@ -270,7 +270,7 @@ describe("test PUT /api/bookings/{id}", () => {
         //arrange
         const adminLogin = await loginAs("admin", "put-bookings");
         const bookingToUpdate = seededBookings[0];
-        let newPassengers = bookingToUpdate.passengers
+        const newPassengers = bookingToUpdate.passengers
         newPassengers[0].firstName = "UpdatedPassengerFName12";
         //act
         const response = await adminLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
@@ -286,7 +286,7 @@ describe("test PUT /api/bookings/{id}", () => {
     test("Test Invalid Booking PUT", async () => {
         const adminLogin = await loginAs("admin", "put-bookings-invalid");
         const bookingToUpdate = seededBookings[0];
-        let newday = "friday"; //invalid day
+        const newday = "friday"; //invalid day
         //act
         const response = await adminLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "selectedDay": newday });
         //assert
@@ -297,7 +297,7 @@ describe("test PUT /api/bookings/{id}", () => {
         //arrange
         const adminLogin = await loginAs("admin", "put-bookings-unauthenticated");
         const bookingToUpdate = seededBookings[0];
-        let newPassengers = bookingToUpdate.passengers
+        const newPassengers = bookingToUpdate.passengers
         newPassengers[0].firstName = "UpdatedPassengerFName12";
         //act
         const response = await request(app).put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
@@ -310,7 +310,7 @@ describe("test PUT /api/bookings/{id}", () => {
         //arrange
         const standardLogin = await loginAs("customer", "put-bookings-unauthorized");
         const bookingToUpdate = seededBookings[0];
-        let newPassengers = bookingToUpdate.passengers
+        const newPassengers = bookingToUpdate.passengers
         newPassengers[0].firstName = "UpdatedPassengerFName12";
         //act
         const response = await standardLogin.agent.put(`/api/bookings/${bookingToUpdate.id}`).send({ "passengers": newPassengers });
