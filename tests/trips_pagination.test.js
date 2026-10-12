@@ -7,8 +7,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
     test('returns the first page of trips with default limit', async () => {
         const response = await request(app).get('/api/trips?page=1&limit=4');
 
-        console.log(response.body); // Log the response body for debugging
-
         expect(response.status).toBe(200);
         expect(response.body.data).toHaveLength(4); // Assuming limit is 4
         expect(response.body.pagination).toMatchObject({
@@ -25,7 +23,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
 
         const response = await request(app).get('/api/trips?page=2&limit=4');
 
-        console.log(response.body); // Log the response body for debugging
 
         expect(response.status).toBe(200);
         expect(response.body.data).toHaveLength(2); // Assuming limit is 4 and total items are 6
@@ -43,7 +40,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
 
         const response = await request(app).get('/api/trips?region=central');
 
-        console.log(response.body); // Log the response body for debugging
 
         expect(response.status).toBe(200);
         expect(response.body.data.every(trip => trip.region === 'central')).toBe(true);
@@ -53,7 +49,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
 
         const response = await request(app).get('/api/trips?season=winter');
 
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         expect(response.body.data.every(trip => trip.bestSeason === 'winter')).toBe(true);
@@ -63,7 +58,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
 
         const response = await request(app).get('/api/trips?region=central&season=autumn');
 
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         expect(response.body.data.every(trip => trip.region === 'central' && trip.bestSeason === 'autumn')).toBe(true);
@@ -72,8 +66,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
     test('return every trip whose name or description contains the keyword', async() =>{
 
         const response = await request(app).get('/api/trips?search=gorge');
-
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         
@@ -92,8 +84,6 @@ describe('GET /api/trips with pagination, filter and search', () => {
     test('return empty array when search do not find a trip', async () => {
 
         const response = await request(app).get('/api/trips?region=kansai&&season=winter');
-
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         expect(response.body.data.every(trip => trip.region === 'kansai' && trip.bestSeason === 'winter'));
