@@ -783,11 +783,58 @@ router.put("/api/trips/:id/train", requireApiLogin, requireApiRole("admin"), mov
  *   get:
  *     tags:
  *       - Schedules
- *     summary: Get all schedules
- *     description: Returns every schedule in the schedule collection
+ *     summary: Get all schedules, or one page of them
+ *     description: >
+ *       With no query parameters, returns every schedule as a plain array.
+ *       Sending any of page, limit, sort or order returns one page as
+ *       { data, pagination } instead.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *       - name: limit
+ *         in: query
+ *         schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+ *       - name: sort
+ *         in: query
+ *         schema:
+ *           type: string
+ *           enum: [departureTime, arrivalTime, tripId, id]
+ *           default: departureTime
+ *       - name: order
+ *         in: query
+ *         schema: { type: string, enum: [asc, desc], default: asc }
+ *       - name: tripId
+ *         in: query
+ *         description: Only schedules for this trip.
+ *         schema: { type: string }
+ *         example: alpine-panorama
+ *       - name: trainId
+ *         in: query
+ *         description: Only schedules for trips that run on this train.
+ *         schema: { type: string }
+ *         example: steam-c11
+ *       - name: dayOfWeek
+ *         in: query
+ *         description: Only schedules that run on this day.
+ *         schema:
+ *           type: string
+ *           enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+ *       - name: startTime
+ *         in: query
+ *         description: Only schedules departing at or after this time (HH:MM).
+ *         schema: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+ *         example: '09:00'
+ *       - name: endTime
+ *         in: query
+ *         description: Only schedules departing at or before this time (HH:MM).
+ *         schema: { type: string, pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' }
+ *         example: '12:00'
  *     responses:
  *       '200':
- *         description: Schedules retrieved successfully
+ *         description: Schedules retrieved successfully. A plain array without any params, otherwise { data, query, pagination }, where query lists the filters applied.
+ *       '400':
+ *         description: Invalid page, limit, sort, order or filter values. Returns a list of field errors.
  *       '500':
  *         description: Internal server error
  */

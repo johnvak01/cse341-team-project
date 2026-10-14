@@ -1,0 +1,61 @@
+<%- include('./partials/header') %>
+
+<section class="timetable">
+    <h1>Timetable</h1>
+    <p>Every scheduled departure across the Kizuna Rail network.</p>
+
+    <form class="timetable-filters" id="timetable-filters">
+        <label>Trip
+            <select name="tripId"><option value="">All trips</option></select>
+        </label>
+        <label>Train
+            <select name="trainId"><option value="">All trains</option></select>
+        </label>
+        <label>Day
+            <select name="dayOfWeek">
+                <option value="">Any day</option>
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+                <option value="saturday">Saturday</option>
+                <option value="sunday">Sunday</option>
+            </select>
+        </label>
+        <label>Departs after
+            <input type="time" name="startTime">
+        </label>
+        <label>Departs before
+            <input type="time" name="endTime">
+        </label>
+    </form>
+
+    <div class="trains-state" id="timetable-loading">Loading schedules...</div>
+    <p class="trains-state" id="timetable-empty" hidden>No schedules match these filters.</p>
+    <div class="trains-state trains-error" id="timetable-error" hidden></div>
+
+    <div class="timetable-table-wrap">
+        <table id="timetable-table" hidden>
+            <thead>
+                <tr>
+                    <th scope="col">Departs</th>
+                    <th scope="col">Arrives</th>
+                    <th scope="col">Trip</th>
+                    <th scope="col">Runs on</th>
+                </tr>
+            </thead>
+            <tbody id="timetable-rows"></tbody>
+        </table>
+    </div>
+
+    <div class="timetable-pagination" id="timetable-pagination" hidden>
+        <button type="button" id="timetable-prev">Previous</button>
+        <span id="timetable-page-indicator"></span>
+        <button type="button" id="timetable-next">Next</button>
+    </div>
+</section>
+
+<script src="/js/timetable.js" defer></script>
+
+<%- include('./partials/footer') %>
