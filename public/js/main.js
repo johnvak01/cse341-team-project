@@ -289,7 +289,7 @@ const hookBookingCatalog = async () => {
             const currentUserEmail = pageEl?.dataset.currentUserEmail
                 ?.trim()
                 .toLowerCase();
-            console.log("bookings: ", bookings);
+            // console.log("bookings: ", bookings);
             if (bookings.length === 0) {
                 const noBookingsEl = document.createElement('p');
                 noBookingsEl.textContent = 'No bookings found.';
@@ -462,7 +462,7 @@ const hookBookingCatalog = async () => {
 
             if (paginationControls) {
                 const totalPages = Math.ceil(bookings.total / bookings.limit);
-                console.log("totalPages: ", totalPages);
+                // console.log("totalPages: ", totalPages);
                 paginationControls.innerHTML = '';
                 for (let i = 1; i <= totalPages; i++) {
                     const pageLink = document.createElement('a');
@@ -536,7 +536,7 @@ const hookBookingCatalog = async () => {
 
                     // Parse the response body as JSON
                     const data = await response.json();
-                    console.log(data);
+                    // console.log(data);
                     for (const item of data) {
                         const option = document.createElement('option');
                         option.value = item.class;
