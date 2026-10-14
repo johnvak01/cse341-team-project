@@ -1,5 +1,6 @@
 import {
     getAllSchedules as findAllSchedules,
+    getPaginatedSchedules as findPaginatedSchedules,
     getScheduleById as findScheduleById,
     getSchedulesByTripId as findSchedulesByTripId,
 } from "../models/schedules.js";
@@ -33,15 +34,83 @@ export function validateMonth(req, res, next) {
 /***CONTROLLER FUNCTIONS***/
 // ----------------------------
 
-// GET all schedules
+export const timetablePage = (req, res) => {
+    res.render("timetable", { title: "Timetable" });
+};
+
+const pagingParams = ["page", "limit", "sort", "order"];
+const allowedSortFields = ["departureTime", "arrivalTime", "tripId", "id"];
+
+// Returns the number if value is a whole number from min to max, otherwise null
+const parseWholeNumber = (value, defaultValue, min, max) => {
+    if (value === undefined) {
+        return defaultValue;
+    }
+    const number = Number(value);
+    if (!Number.isInteger(number) || number < min || number > max) {
+        return null;
+    }
+    return number;
+};
+
+// GET all schedules. Without paging params it returns the plain array, so existing callers keep working.
 export async function getAllSchedules(req, res) {
     try {
+        const wantsPaging = pagingParams.some((param) => req.query[param] !== undefined);
+        if (wantsPaging) {
+            return getPaginatedSchedules(req, res);
+        }
+
         const schedules = await findAllSchedules();
         return res.status(200).json(schedules);
     } catch (error) {
         console.error("Error fetching schedules:", error);
         return res.status(500).json({ error: "Failed to fetch schedules" });
     }
+}
+
+// GET one page of schedules, with metadata about the page
+async function getPaginatedSchedules(req, res) {
+    const page = parseWholeNumber(req.query.page, 1, 1, Number.MAX_SAFE_INTEGER);
+    const limit = parseWholeNumber(req.query.limit, 10, 1, 50);
+    const sort = req.query.sort ?? "departureTime";
+    const order = req.query.order ?? "asc";
+
+    const errors = [];
+    if (page === null) {
+        errors.push({ field: "page", message: "page must be a whole number of 1 or more." });
+    }
+    if (limit === null) {
+        errors.push({ field: "limit", message: "limit must be a whole number from 1 to 50." });
+    }
+    if (!allowedSortFields.includes(sort)) {
+        errors.push({ field: "sort", message: `sort must be one of: ${allowedSortFields.join(", ")}.` });
+    }
+    if (order !== "asc" && order !== "desc") {
+        errors.push({ field: "order", message: "order must be asc or desc." });
+    }
+    if (errors.length > 0) {
+        return res.status(400).json({ errors });
+    }
+
+    const { schedules, totalItems } = await findPaginatedSchedules({
+        page,
+        limit,
+        sort,
+        order: order === "desc" ? -1 : 1,
+    });
+
+    return res.status(200).json({
+        data: schedules,
+        pagination: {
+            page,
+            limit,
+            totalItems,
+            totalPages: Math.ceil(totalItems / limit),
+            hasNextPage: page * limit < totalItems,
+            hasPreviousPage: page > 1,
+        },
+    });
 }
 
 // GET one schedule by id
